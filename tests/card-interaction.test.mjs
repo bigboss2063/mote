@@ -23,7 +23,7 @@ function cardFixture(mobile) {
     createDiv() { throw stop; },
   };
   const view = {
-    settings: {enableMoodColoring: false},
+    settings: {},
     enterEditMode(value) { assert.equal(value, memo); edits++; },
   };
   assert.throws(() => module.exports.MemoriaView.prototype.renderMemoCard.call(

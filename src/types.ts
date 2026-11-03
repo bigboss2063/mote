@@ -66,8 +66,6 @@ export interface MemoriaSettings {
   contentWidth: "focused" | "balanced" | "wide";
   /** v2.0.0: 启用 Vim 快捷键 */
   enableVimKeys: boolean;
-  /** v2.0.0: 启用情感色彩可视化（卡片左边色条） */
-  enableMoodColoring: boolean;
   /** v2.0.0: 启用智能回顾（替代现有的"随机 5 条"为智能挑选） */
   enableSmartReview: boolean;
   /** v2.0.0: UI 语言。"auto" 会跟随 Obsidian 的 moment locale；否则强制指定 */
@@ -125,7 +123,6 @@ export const DEFAULT_SETTINGS: MemoriaSettings = {
   density: "cozy",
   contentWidth: "balanced",
   enableVimKeys: false,
-  enableMoodColoring: false,
   enableSmartReview: true,
   language: "auto",
   sendHotkey: "ctrl-enter",

@@ -14,7 +14,7 @@
  *   CHAOS    （混沌气）= 最近 7 天 vs 历史平均的活跃度偏离（写得多/少都涨，稳定才降）
  *   WISDOM   （智慧光）= max(标签率, 双链率) + 0.3 × min(两者)
  *                       老用户标签已满 → 接近 1.0；同时用两种 → 额外加成
- *   SNARK    （吐槽欲）= 有明显情绪的笔记比例（复用 mood.ts，比括号正则准多了）
+ *   SNARK    （吐槽欲）= 表达活跃度（含感叹号或 emoji 的笔记比例）
  *
  * 最终值 = base × 0.5 + (行为分 0~1) × 50
  *   - 物种 base 决定 0~50 的下限基线
@@ -25,7 +25,6 @@
 import { Memo } from "../types";
 import { SPECIES } from "./species";
 import { HatchedBuddy } from "./hatch";
-import { detectMood } from "../mood";
 
 export interface BuddyStats {
   debugging: number;
@@ -134,12 +133,11 @@ function computeBehaviorScores(memos: Memo[]): BuddyStats {
   );
 
   // ============ SNARK ============
-  // 有明显情绪（非 neutral）的笔记比例
-  //   v2.1.0-iter11: 复用 mood.ts 的关键词检测，干掉之前的"括号正则"误判
-  //   "吐槽欲" 在我们这里更接近"情绪表达欲"——表情符号、情绪关键词、感叹号都算
-  //   如何升级：写笔记时大胆表达情绪（开心、难过、感动、加油 ...）
-  const moody = memos.filter((m) => detectMood(m.content) !== "neutral").length;
-  const snark = clampF(moody / memos.length);
+  // 表达活跃度：含感叹号或 emoji 的笔记比例
+  //   如何升级：写笔记时带一点语气（感叹号、表情符号）
+  const expressiveRe = /[!！]|[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+  const expressive = memos.filter((m) => expressiveRe.test(m.content)).length;
+  const snark = clampF(expressive / memos.length);
 
   return { debugging, patience, chaos, wisdom, snark };
 }

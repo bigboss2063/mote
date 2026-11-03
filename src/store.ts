@@ -388,7 +388,7 @@ export class MemoStore {
    *
    * 格式：每条带来源注释 + 原时间 + 原内容，方便将来人肉恢复：
    *   ## 已删除 2026-05-04 01:30
-   *   - 来源：Memoria/2026.md · 原时间 2026-04-25 12:43
+   *   - 来源：Memoria/2026.md，原时间 2026-04-25 12:43
    *     <原 memo 内容>
    *
    * 注意：_trash.md 没有 `# YYYY` 头、也不按日期分组，避免被 parseFile 误识别成正常 memo；
@@ -409,7 +409,7 @@ export class MemoStore {
 
     const block =
       `\n## 已删除 ${delStamp}\n\n` +
-      `- 来源：\`${memo.file}\` · 原时间 ${memo.date} ${memo.time}\n` +
+      `- 来源：\`${memo.file}\`，原时间 ${memo.date} ${memo.time}\n` +
       `${indented}\n`;
 
     const existing = this.app.vault.getAbstractFileByPath(trashPath) as

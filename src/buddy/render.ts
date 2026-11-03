@@ -151,14 +151,8 @@ export function renderBuddy(
   });
   rarityWrap.createSpan({
     cls: `memoria-buddy-stage memoria-buddy-stage-tag-${stage}`,
-    text: ` · ${t(STAGE_KEY[stage])}`,
+    text: t(STAGE_KEY[stage]),
   });
-  if (buddy.shiny) {
-    rarityWrap.createSpan({
-      cls: "memoria-buddy-shiny-tag",
-      text: "✨",
-    });
-  }
   topbar.createSpan({
     cls: "memoria-buddy-days",
     // v2.1.0-iter10: 首日显示"陪你的第 1 天"而不是"已陪你 0 天"
@@ -172,27 +166,12 @@ export function renderBuddy(
   });
 
   // ===== ASCII 精灵 =====
-  //   v2.1.0-iter13: 少年 / 成年阶段，sprite 周围加"气场"装饰元素
-  //     - 少年：头顶 ✦ ✦（gentle-float 浮动）
-  //     - 成年：头顶 ✦ ✦ + 底部 ┈┈┈┈┈ 光晕（gentle-pulse 呼吸）
   const spriteWrap = card.createDiv({ cls: "memoria-buddy-sprite-wrap" });
-  if (stage === "teen" || stage === "adult") {
-    spriteWrap.createDiv({
-      cls: "memoria-buddy-aura memoria-buddy-aura-top",
-      text: "✦ ✦",
-    });
-  }
   const spriteLines = composeSprite(buddy);
   const sprite = spriteWrap.createDiv({ cls: "memoria-buddy-sprite" });
   sprite.setText(spriteLines.join("\n"));
-  if (stage === "adult") {
-    spriteWrap.createDiv({
-      cls: "memoria-buddy-aura memoria-buddy-aura-bottom",
-      text: "┈┈┈┈┈┈┈",
-    });
-  }
 
-  // ===== 名字行：名字 · 物种 =====
+  // ===== 名字行：名字 + 物种 =====
   // v2.1.0-iter10: 双击名字进入内联重命名模式
   // v2.1.0-iter15: 移除阶段标签（移到顶栏与稀有度聚类）+ 移除 Motto 独立行
   //   Motto 收进"物种"的 hover title 里 —— 平时少一行视觉信息，
@@ -215,7 +194,7 @@ export function renderBuddy(
   }
   const speciesSpan = nameRow.createSpan({
     cls: "memoria-buddy-species",
-    text: ` · ${t(meta.nameKey)}`,
+    text: t(meta.nameKey),
   });
   // v2.1.0-iter15: Motto 隐藏到物种 hover 里（人格感保留，但不抢视觉）
   speciesSpan.setAttr("title", `「${t(meta.mottoKey)}」`);

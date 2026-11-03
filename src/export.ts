@@ -493,7 +493,7 @@ body {
   parts.push(
     '<meta name="viewport" content="width=device-width, initial-scale=1">'
   );
-  parts.push(`<title>Memoria · ${escapeHtml(filterDesc)}</title>`);
+  parts.push(`<title>Memoria - ${escapeHtml(filterDesc)}</title>`);
   parts.push("<style>" + css + "</style>");
   parts.push("</head>");
   parts.push("<body>");

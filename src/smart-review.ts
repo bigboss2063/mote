@@ -1,7 +1,7 @@
 /**
  * v2.0.0: 智能回顾 —— 替代"随机 5 条"的加权挑选。
  *
- * 灵感：艾宾浩斯 + 间隔重复 + 主题回响 + 情感配对
+ * 灵感：艾宾浩斯 + 间隔重复 + 主题回响
  *
  * 算法（简单但有效）：
  *   对每条 memo 计算一个"值得被翻出来"的分数，取 top 5。
@@ -9,7 +9,6 @@
  *   score = base_novelty_decay        // 基础：越久没"碰到"分越高
  *         + recent_touch_penalty      // 负项：最近碰过的扣分
  *         + topic_echo_bonus          // 主题回响：和今天写的笔记标签重合加分
- *         + mood_contrast_bonus       // 情感配对：今天偏 emo → 翻出历史 happy 的加分
  *         + random_jitter             // 抖动：避免完全相同的排序，给随机一点惊喜
  *
  * 设计原则：
@@ -24,7 +23,6 @@
  */
 
 import { Memo } from "./types";
-import { detectMood, Mood } from "./mood";
 
 /** localStorage key：最近展示过的 memo range[0] 列表（用 file:range[0] 作为 key） */
 const RECENT_SHOWN_KEY = "memoria:smart-review:recent";
@@ -35,7 +33,7 @@ export interface SmartReviewOptions {
   count: number;
   /** 当前"今日"日期，用于跳过"今天刚写的" */
   todayStr: string;
-  /** 今日已写的 memos（用于算"主题回响" + "情感配对"） */
+  /** 今日已写的 memos（用于算"主题回响"） */
   todayMemos: Memo[];
 }
 
@@ -57,9 +55,6 @@ export function pickSmartReview(
   // 今日笔记的标签集合（用于主题回响）
   const todayTags = new Set<string>();
   for (const m of todayMemos) for (const t of m.tags) todayTags.add(t);
-
-  // 今日笔记的主导情绪（多条里占比最高的那种）
-  const todayMood = dominantMood(todayMemos);
 
   // 最近展示过的 id 集合（从 localStorage 读）
   const recentShown = loadRecentShown();
@@ -91,21 +86,10 @@ export function pickSmartReview(
       }
     }
 
-    // 4) 情感配对：今日 emo → 翻出历史 happy / touched 的加分
-    //              今日 happy → 翻出历史 touched 的也加分
-    let moodBonus = 0;
-    const memoMood = detectMood(memo.content);
-    if (todayMood === "sad" || todayMood === "angry") {
-      if (memoMood === "happy" || memoMood === "touched") moodBonus = 4;
-    } else if (todayMood === "happy") {
-      if (memoMood === "touched") moodBonus = 2;
-    }
-
-    // 5) 小抖动（同分时让选择有随机性）
+    // 4) 小抖动（同分时让选择有随机性）
     const jitter = Math.random() * 1.5;
 
-    const score =
-      noveltyScore + recentPenalty + topicEcho + moodBonus + jitter;
+    const score = noveltyScore + recentPenalty + topicEcho + jitter;
     return { memo, score };
   });
 
@@ -130,33 +114,6 @@ function shuffle<T>(arr: T[]): T[] {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
-}
-
-function dominantMood(memos: Memo[]): Mood {
-  if (memos.length === 0) return "neutral";
-  // v2.0.19 修复：之前漏了 inspired / fear / tired 三个 mood，
-  //   detectMood 返回这三种时会让 count[mood]++ 从 undefined 变 NaN，
-  //   后续 sort 的行为就会变得不可预测（情感配对加分可能算错）。
-  //   现在把 Mood 类型里所有 8 种都显式初始化。
-  const count: Record<Mood, number> = {
-    happy: 0,
-    touched: 0,
-    inspired: 0,
-    sad: 0,
-    angry: 0,
-    fear: 0,
-    tired: 0,
-    neutral: 0,
-  };
-  for (const m of memos) {
-    const mood = detectMood(m.content);
-    count[mood]++;
-  }
-  const entries = Object.entries(count) as Array<[Mood, number]>;
-  entries.sort((a, b) => b[1] - a[1]);
-  // 如果主导是 neutral 或 0 > top，返回 neutral
-  if (entries[0][0] === "neutral" || entries[0][1] === 0) return "neutral";
-  return entries[0][0];
 }
 
 function loadRecentShown(): string[] {

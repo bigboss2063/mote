@@ -21,8 +21,7 @@ import { extractImages, renderImageGrid, openLightbox } from "./image-grid";
 import { renderCalendar } from "./calendar";
 import { parseSearchQuery, matchesQuery, SearchQuery, EMPTY_QUERY } from "./search";
 import { pickSmartReview } from "./smart-review";
-import { detectMood, moodClass } from "./mood";
-import { t } from "./i18n";
+import { getCurrentLocale, t } from "./i18n";
 import { shouldConvertHtmlToMd, htmlToMarkdown, looksLikeMarkdown } from "./html-to-md";
 import { exportMemos, ExportFormat } from "./export";
 import { hatch, HatchedBuddy } from "./buddy/hatch";
@@ -80,6 +79,7 @@ export class MemoriaView extends ItemView {
     type: "all",
     keyword: "",
   };
+  private reviewFiltersOpen = false;
   private unsubscribe: (() => void) | null = null;
   private inputEl!: HTMLTextAreaElement;
   /** Keep the native image picker alive while iOS hands control to Photos/Camera. */
@@ -298,113 +298,116 @@ export class MemoriaView extends ItemView {
     //   现在改成独立的 topbar-tools 区域，语义上"左内容右工具"，也方便未来扩展。
     const tools = topBar.createDiv({ cls: "memoria-topbar-tools" });
 
-    // v2.0.0: 密度切换按钮 —— 紧凑 / 宽松两档切换
-    //   紧凑模式每张卡片只显示前几行，适合"找某条"的高密度浏览
-    //   宽松模式是默认，适合阅读沉浸
-    const densityBtn = tools.createEl("button", {
-      cls: "memoria-icon-btn",
-      attr: { "aria-label": t("density.toggle") },
-    });
-    const updateDensityIcon = () => {
-      densityBtn.empty();
-      setIcon(
-        densityBtn,
-        this.settings.density === "compact" ? "list" : "rows-3"
-      );
-    };
-    updateDensityIcon();
-    densityBtn.addEventListener("click", () => {
+    const setDensity = (density: "cozy" | "compact") => {
       void (async () => {
-      this.settings.density =
-        this.settings.density === "compact" ? "cozy" : "compact";
-      await this.plugin.saveSettings();
-      updateDensityIcon();
-      // 切密度需要重渲染所有卡片（紧凑模式会截短正文）
-      this.mdCache.clear();
-      this.renderList();
+        this.settings.density = density;
+        await this.plugin.saveSettings();
+        this.mdCache.clear();
+        this.renderList();
       })().catch((err) => {
-        console.error("[Memoria] Failed to toggle density:", err);
+        console.error("[Memoria] Failed to change density:", err);
       });
-    });
+    };
 
-    // v2.0.0: 导出按钮 —— 点击弹 Menu 选格式
-    const exportBtn = tools.createEl("button", {
+    const openYearPanorama = () => {
+      void (async () => {
+        const existing = this.app.workspace.getLeavesOfType(
+          VIEW_TYPE_MEMORIA_YEAR
+        );
+        if (existing.length) {
+          await this.app.workspace.revealLeaf(existing[0]);
+          return;
+        }
+        const leaf = createMainLeaf(this.app);
+        await leaf.setViewState({
+          type: VIEW_TYPE_MEMORIA_YEAR,
+          active: true,
+        });
+        await this.app.workspace.revealLeaf(leaf);
+      })().catch((err) => {
+        console.error("[Memoria] Failed to open year panorama:", err);
+      });
+    };
+
+    const openStatsReport = () => {
+      void (async () => {
+        const existing = this.app.workspace.getLeavesOfType(
+          VIEW_TYPE_MEMORIA_STATS
+        );
+        if (existing.length) {
+          await this.app.workspace.revealLeaf(existing[0]);
+          return;
+        }
+        const leaf = createMainLeaf(this.app);
+        await leaf.setViewState({
+          type: VIEW_TYPE_MEMORIA_STATS,
+          active: true,
+        });
+        await this.app.workspace.revealLeaf(leaf);
+      })().catch((err) => {
+        console.error("[Memoria] Failed to open stats view:", err);
+      });
+    };
+
+    const yearBtn = tools.createEl("button", {
       cls: "memoria-icon-btn",
-      attr: { "aria-label": t("card.exportTooltip") },
+      attr: {
+        "aria-label": t("toolbar.yearPanorama"),
+        title: t("toolbar.yearPanorama"),
+      },
     });
-    setIcon(exportBtn, "download");
-    exportBtn.addEventListener("click", (evt) => {
+    setIcon(yearBtn, "calendar-days");
+    yearBtn.addEventListener("click", () => openYearPanorama());
+
+    const statsBtn = tools.createEl("button", {
+      cls: "memoria-icon-btn",
+      attr: {
+        "aria-label": t("toolbar.statsReport"),
+        title: t("toolbar.statsReport"),
+      },
+    });
+    setIcon(statsBtn, "bar-chart-3");
+    statsBtn.addEventListener("click", () => openStatsReport());
+
+    const moreBtn = tools.createEl("button", {
+      cls: "memoria-icon-btn",
+      attr: {
+        "aria-label": t("toolbar.more"),
+        title: t("toolbar.more"),
+      },
+    });
+    setIcon(moreBtn, "more-horizontal");
+    moreBtn.addEventListener("click", (evt) => {
       const menu = new Menu();
       menu.addItem((item) =>
         item
+          .setTitle(t("density.cozy"))
+          .setChecked(this.settings.density === "cozy")
+          .onClick(() => setDensity("cozy"))
+      );
+      menu.addItem((item) =>
+        item
+          .setTitle(t("density.compact"))
+          .setChecked(this.settings.density === "compact")
+          .onClick(() => setDensity("compact"))
+      );
+      menu.addSeparator();
+      menu.addItem((item) =>
+        item
           .setTitle(t("card.exportMd"))
-          .setIcon("file-text")
           .onClick(() => this.doExport("md"))
       );
       menu.addItem((item) =>
         item
           .setTitle(t("card.exportHtml"))
-          .setIcon("globe")
           .onClick(() => this.doExport("html"))
       );
       menu.addItem((item) =>
         item
           .setTitle(t("card.exportJson"))
-          .setIcon("braces")
           .onClick(() => this.doExport("json"))
       );
       menu.showAtMouseEvent(evt);
-    });
-
-    const yearBtn = tools.createEl("button", {
-      cls: "memoria-icon-btn",
-      attr: { "aria-label": t("toolbar.yearPanorama") },
-    });
-    setIcon(yearBtn, "calendar-days");
-    yearBtn.addEventListener("click", () => {
-      void (async () => {
-      const existing = this.app.workspace.getLeavesOfType(
-        VIEW_TYPE_MEMORIA_YEAR
-      );
-      if (existing.length) {
-        await this.app.workspace.revealLeaf(existing[0]);
-        return;
-      }
-      const leaf = createMainLeaf(this.app);
-      await leaf.setViewState({
-        type: VIEW_TYPE_MEMORIA_YEAR,
-        active: true,
-      });
-      await this.app.workspace.revealLeaf(leaf);
-      })().catch((err) => {
-        console.error("[Memoria] Failed to open year panorama:", err);
-      });
-    });
-
-    const statsBtn = tools.createEl("button", {
-      cls: "memoria-icon-btn",
-      attr: { "aria-label": t("toolbar.statsReport") },
-    });
-    setIcon(statsBtn, "bar-chart-3");
-    statsBtn.addEventListener("click", () => {
-      void (async () => {
-      // 在新标签页打开数据报告视图
-      const existing = this.app.workspace.getLeavesOfType(
-        VIEW_TYPE_MEMORIA_STATS
-      );
-      if (existing.length) {
-        await this.app.workspace.revealLeaf(existing[0]);
-        return;
-      }
-      const leaf = createMainLeaf(this.app);
-      await leaf.setViewState({
-        type: VIEW_TYPE_MEMORIA_STATS,
-        active: true,
-      });
-      await this.app.workspace.revealLeaf(leaf);
-      })().catch((err) => {
-        console.error("[Memoria] Failed to open stats view:", err);
-      });
     });
 
     // 侧栏切换按钮：桌面端收起侧栏，移动端打开抽屉
@@ -1406,7 +1409,7 @@ export class MemoriaView extends ItemView {
       } else {
         this.insertAtCursor(ref + "\n");
       }
-      new Notice(`图片已保存: ${fileName}`);
+      new Notice(t("notice.imageSaved", { name: fileName }));
     } catch (e) {
       console.error(e);
       new Notice(t("notice.imageFailed", { msg: (e as Error).message }));
@@ -1699,7 +1702,8 @@ export class MemoriaView extends ItemView {
     if (this.filter.year) parts.push(t("export.desc.year", { year: this.filter.year }));
     if (this.filter.date) parts.push(this.filter.date);
     if (this.filter.keyword) parts.push(`"${this.filter.keyword}"`);
-    return parts.length === 0 ? t("export.desc.all") : parts.join(" · ");
+    const separator = getCurrentLocale() === "en-US" ? ", " : "，";
+    return parts.length === 0 ? t("export.desc.all") : parts.join(separator);
   }
 
   /**
@@ -2310,13 +2314,13 @@ export class MemoriaView extends ItemView {
   }
 
   /**
-   * v1.4.0 → v1.4.1: 每日打卡进度条 + 右侧靶心 + 视图切换按钮
+   * 每日进度条 + 右侧概览切换按钮。
    *
-   * 布局（参考 Thino）：
-   *   [═══════ 进度条 ═══════]  ⊙  📅
-   *   └── 点击跳"今天"  hover tooltip  切换热力图↔月历
+   * 布局：
+   *   [═══════ 进度条 ═══════]  [概览]
+   *   └── 点击跳"今天"  hover tooltip  打开视图菜单直接选择
    *
-   * 达成目标首次 Notice："今日打卡完成 🎉"（同一天只弹一次）
+   * 达成目标首次 Notice（同一天只弹一次）。
    */
   private renderDailyGoal(parent: HTMLElement, memos: Memo[]): void {
     const goal = Math.max(1, this.settings.dailyGoal || 5);
@@ -2342,7 +2346,7 @@ export class MemoriaView extends ItemView {
       this.dailyGoalNoticedDate = null;
     }
 
-    // v1.4.2: 进度条和靶心共用同一条 tooltip 文案
+    // 进度条和概览按钮共用同一条 tooltip 文案
     const goalTooltip = isDone
       ? t("list.dailyGoalExceed", {
           goal,
@@ -2375,52 +2379,30 @@ export class MemoriaView extends ItemView {
     const fill = bar.createDiv({ cls: "memoria-daily-goal-fill" });
     fill.style.width = `${pct}%`;
 
-    // 右侧图标组
     const actions = row.createDiv({ cls: "memoria-daily-goal-actions" });
-
-    // v1.4.2: 图标从 target（圆形甜甜圈）换成 crosshair（十字准星，辨识度更高且不像甜甜圈）
-    const targetBtn = actions.createEl("button", {
-      cls: "memoria-icon-btn memoria-daily-goal-target",
-      attr: {
-        "aria-label": goalTooltip,
-      },
-    });
-    setIcon(targetBtn, "crosshair");
-    targetBtn.addEventListener("click", (e) => e.preventDefault());
-
-    // 视图切换（热力图 → 月历 → 宠物 → 热力图 ... 三态循环）
-    // v2.1.0: 加入 buddy 第三态。按钮 icon 显示"下一个状态"的 icon，aria-label 描述将切到的目标
-    const nextMode: "heatmap" | "calendar" | "buddy" =
-      this.overviewMode === "heatmap"
-        ? "calendar"
-        : this.overviewMode === "calendar"
-        ? "buddy"
-        : "heatmap";
-    const nextIcon =
-      nextMode === "calendar"
-        ? "calendar"
-        : nextMode === "buddy"
-        ? "paw-print"
-        : "activity";
-    const nextLabelKey =
-      nextMode === "calendar"
-        ? "toolbar.toCalendar"
-        : nextMode === "buddy"
-        ? "toolbar.toBuddy"
-        : "toolbar.toHeatmap";
-
-    const switchBtn = actions.createEl("button", {
+    const overviewBtn = actions.createEl("button", {
       cls: "memoria-icon-btn memoria-daily-goal-switch",
       attr: {
-        "aria-label": t(nextLabelKey),
+        "aria-label": t("toolbar.changeOverview"),
+        title: t("toolbar.changeOverview"),
       },
     });
-    setIcon(switchBtn, nextIcon);
-    switchBtn.addEventListener("click", () => {
-      this.overviewMode = nextMode;
-      // v2.0.20: 标记用户已手动切换过 → 当前会话锁定，不再跟随设置默认值
-      this.overviewModeOverridden = true;
-      this.renderSidebar();
+    setIcon(overviewBtn, "layout-grid");
+    overviewBtn.addEventListener("click", (evt) => {
+      const menu = new Menu();
+      for (const mode of ["heatmap", "calendar", "buddy"] as const) {
+        menu.addItem((item) =>
+          item
+            .setTitle(t(`overview.${mode}`))
+            .setChecked(this.overviewMode === mode)
+            .onClick(() => {
+              this.overviewMode = mode;
+              this.overviewModeOverridden = true;
+              this.renderSidebar();
+            })
+        );
+      }
+      menu.showAtMouseEvent(evt);
     });
   }
 
@@ -2476,7 +2458,7 @@ export class MemoriaView extends ItemView {
         } else {
           cell.setAttr(
             "title",
-            `${key}  ${t("list.totalCount", { n: count })}`
+            `${key} ${t("list.totalCount", { n: count })}`
           );
         }
       }
@@ -2904,25 +2886,46 @@ export class MemoriaView extends ItemView {
     const meta = this.listEl.createDiv({ cls: "memoria-list-meta" });
     meta.createDiv({
       cls: "memoria-list-meta-left",
-      text: this.describeFilter(memos.length),
+      text: this.describeFilter(),
     });
 
-    // v1.1.19: 回顾页面的辅助按钮
-    //   - "on-this-day" 且有结果：显示主副标题说明
-    //   - "random" 模式：显示"换一批"
-    //   - "on-this-day" 且 empty 时，在 empty state 里给"随机 5 条"跳转
-    if (this.filter.preset === "random" || this.filter.preset === "on-this-day") {
-      meta.createDiv({
-        cls: "memoria-list-meta-right",
+    const metaRight = meta.createDiv({ cls: "memoria-list-meta-right" });
+    const isReview =
+      this.filter.preset === "random" || this.filter.preset === "on-this-day";
+    if (isReview) {
+      metaRight.createSpan({
         text: t("review.poolCount", { n: this.getReviewFilterPoolCount() }),
       });
+      const hasActiveFilters =
+        this.reviewFilters.year !== "" ||
+        this.reviewFilters.tag !== "" ||
+        this.reviewFilters.type !== "all" ||
+        this.reviewFilters.keyword !== "";
+      const filtersBtn = metaRight.createEl("button", {
+        cls:
+          "memoria-meta-btn memoria-review-toggle" +
+          (hasActiveFilters ? " is-active" : ""),
+        attr: {
+          "aria-expanded": String(this.reviewFiltersOpen),
+          "aria-label": t("review.filters"),
+        },
+      });
+      setIcon(filtersBtn.createSpan(), "sliders-horizontal");
+      filtersBtn.createSpan({ text: t("review.filtersToggle") });
+      filtersBtn.addEventListener("click", () => {
+        this.reviewFiltersOpen = !this.reviewFiltersOpen;
+        this.renderList();
+      });
+    } else {
+      metaRight.createSpan({ text: t("list.totalCount", { n: memos.length }) });
+    }
+    if (isReview && this.reviewFiltersOpen) {
       this.renderReviewToolbar(this.listEl);
     }
     if (memos.length === 0) {
       const empty = this.listEl.createDiv({ cls: "memoria-empty" });
       // v1.1.19: 在"回顾-每日"模式下给随机 5 条的跳转，避免死页面
       if (this.filter.preset === "on-this-day") {
-        empty.createDiv({ cls: "memoria-empty-emoji", text: "🕰️" });
         empty.createDiv({
           cls: "memoria-empty-text",
           text: t("empty.onThisDay"),
@@ -2945,7 +2948,6 @@ export class MemoriaView extends ItemView {
       }
       // v1.5.0: "待办"视图的友好 empty state —— 所有待办都已勾完才是最棒的结局
       if (this.filter.preset === "todo") {
-        empty.createDiv({ cls: "memoria-empty-emoji", text: "🎉" });
         empty.createDiv({
           cls: "memoria-empty-text",
           text: t("empty.todo"),
@@ -2956,7 +2958,6 @@ export class MemoriaView extends ItemView {
         });
         return;
       }
-      empty.createDiv({ cls: "memoria-empty-emoji", text: "📭" });
       empty.createDiv({
         cls: "memoria-empty-text",
         text: t("empty.default"),
@@ -3010,9 +3011,9 @@ export class MemoriaView extends ItemView {
       const head = group.createDiv({ cls: "memoria-day-head" });
       const d = new Date(date + "T00:00:00");
       const wd = t(`weekday.${d.getDay()}`);
-      let label = `${date}  ${wd}`;
-      if (date === todayStr) label = `${t("date.today")}  ${wd}`;
-      else if (date === yesterdayStr) label = `${t("date.yesterday")}  ${wd}`;
+      let label = `${date} ${wd}`;
+      if (date === todayStr) label = `${t("date.today")} ${wd}`;
+      else if (date === yesterdayStr) label = `${t("date.yesterday")} ${wd}`;
       head.setText(label);
       for (const m of list) this.renderMemoCard(group, m);
     }
@@ -3090,9 +3091,9 @@ export class MemoriaView extends ItemView {
         const head = group.createDiv({ cls: "memoria-day-head" });
         const d = new Date(date + "T00:00:00");
         const wd = t(`weekday.${d.getDay()}`);
-        let label = `${date}  ${wd}`;
-        if (date === todayStr) label = `${t("date.today")}  ${wd}`;
-        else if (date === yesterdayStr) label = `${t("date.yesterday")}  ${wd}`;
+        let label = `${date} ${wd}`;
+        if (date === todayStr) label = `${t("date.today")} ${wd}`;
+        else if (date === yesterdayStr) label = `${t("date.yesterday")} ${wd}`;
         head.setText(label);
         for (const m of list) this.renderMemoCard(group, m);
       }
@@ -3106,51 +3107,36 @@ export class MemoriaView extends ItemView {
     }
   }
 
-  private describeFilter(n: number): string {
+  private describeFilter(): string {
     const parts: string[] = [];
-    // v2.0.17-iter17: 给右侧顶部所有 preset 都补上 emoji 前缀（之前只有
-    //   pinned / starred / on-this-day / random 4 项有 —— 它们是从
-    //   list.preset* 的 i18n key 里自带带的）。其余 today / week / todo /
-    //   noTag / withImage / withLink 直接读 sidebar.* 文案，是纯文字，看上去
-    //   "光秃秃"。这里在拼标题时手动补 emoji，让头部视觉风格统一。
-    //   故意不写到 i18n 文案里 —— 侧栏继续保持 lucide 图标 + 纯文字的极简风，
-    //   emoji 只用在右侧"当前筛选状态"的醒目标题上。
     const presetMap: Record<string, string> = {
-      today: `☀️ ${t("sidebar.today")}`,
-      week: `🗓️ ${t("sidebar.week")}`,
-      // v1.1.19: 两个"回顾"合并为一个入口，但内部仍有两种视图（每日/随机）
+      today: t("sidebar.today"),
+      week: t("sidebar.week"),
       random: t("list.presetRandom"),
       "on-this-day": t("list.presetOnThisDay"),
-      "no-tag": `🏷️ ${t("sidebar.noTag")}`,
-      "with-image": `🖼️ ${t("sidebar.withImage")}`,
-      "with-link": `🔗 ${t("sidebar.withLink")}`,
+      "no-tag": t("sidebar.noTag"),
+      "with-image": t("sidebar.withImage"),
+      "with-link": t("sidebar.withLink"),
       pinned: t("list.presetPinned"),
       starred: t("list.presetStarred"),
-      todo: `✅ ${t("sidebar.todo")}`,
+      todo: t("sidebar.todo"),
     };
     if (this.filter.preset !== "all") parts.push(presetMap[this.filter.preset]);
     if (this.filter.year) parts.push(this.filter.year);
-    if (this.filter.date) parts.push(`📅 ${this.filter.date}`);
+    if (this.filter.date) parts.push(this.filter.date);
     if (this.filter.tag) parts.push(`#${this.filter.tag}`);
     if (this.filter.keyword) parts.push(`「${this.filter.keyword}」`);
-    const prefix = parts.length ? parts.join(" · ") + " · " : "";
-    return `${prefix}${t("list.totalCount", { n })}`;
+    const separator = getCurrentLocale() === "en-US" ? ", " : "，";
+    return parts.length ? parts.join(separator) : t("export.desc.all");
   }
 
   private renderMemoCard(parent: HTMLElement, memo: Memo): void {
-    // v2.0.0: 如果开了情感色彩，给卡片加 mood class（卡片左边色条由 CSS 处理）
-    let moodCls = "";
-    if (this.settings.enableMoodColoring) {
-      const mood = detectMood(memo.content);
-      if (mood !== "neutral") moodCls = " " + moodClass(mood);
-    }
     const card = parent.createDiv({
       cls:
         "memoria-card" +
         (memo.isPinned ? " is-pinned" : "") +
         (memo.isStarred ? " is-starred" : "") +
-        (this.editingMemo === memo ? " is-editing" : "") +
-        moodCls,
+        (this.editingMemo === memo ? " is-editing" : ""),
     });
     // Desktop drag selects text; double-click still edits. Mobile keeps native selection.
     card.addEventListener("dblclick", (e) => {
@@ -3708,7 +3694,11 @@ export class MemoriaView extends ItemView {
           // 使用自定义确认浮层（替代浏览器原生 confirm()）
           // 原因：原生 confirm() 是 modal blocking 弹窗，关闭后会把焦点还给
           //       activeDocument.body，导致输入框 textarea 需要再点击一次才能获得光标。
-          const ok = await this.confirmAsync(t("notice.confirmDelete"));
+          const ok = await this.confirmAsync(
+            this.settings.useTrash
+              ? t("notice.confirmDeleteTrash")
+              : t("notice.confirmDeletePermanent")
+          );
           if (!ok) return;
           try {
             await this.store.deleteMemo(memo);
@@ -4763,7 +4753,7 @@ export class MemoriaView extends ItemView {
     try {
       const pngBlob = await this.svgToPngBlob(svg, WIDTH, HEIGHT, 2);
       this.downloadBlob(pngBlob, `${baseName}.png`);
-      new Notice(`✓ 已保存 ${baseName}.png`);
+      new Notice(t("notice.cardImageSaved", { name: `${baseName}.png` }));
       return;
     } catch (err) {
       console.warn("[Memoria] PNG 导出失败，降级为 SVG：", err);
@@ -4772,7 +4762,7 @@ export class MemoriaView extends ItemView {
     // 万一仍然失败，降级保存 SVG
     const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
     this.downloadBlob(svgBlob, `${baseName}.svg`);
-    new Notice(`✓ 已保存 ${baseName}.svg（PNG 导出被拦截，已降级）`);
+    new Notice(t("notice.cardImageSvgFallback", { name: `${baseName}.svg` }));
   }
 
   /** SVG 字符串 → PNG Blob（可能因 tainted canvas 抛错） */

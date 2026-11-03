@@ -33,6 +33,7 @@ test("menu write failures show a notice without reporting success", async () => 
   });
   const view = Object.create(module.exports.MemoriaView.prototype);
   const reject = async () => {throw new Error("fixture conflict");};
+  view.settings = {useTrash:true};
   view.store = {togglePinned:reject,toggleStarred:reject,deleteMemo:reject};
   view.confirmAsync = async () => true;
   view.showMemoMenu({},{});

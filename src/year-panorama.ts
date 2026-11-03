@@ -191,7 +191,6 @@ export class YearPanoramaView extends ItemView {
       cls: "memoria-year-foot-item",
       text: t("year.yearSum", { year: this.displayYear, n: yearCount }),
     });
-    foot.createSpan({ cls: "memoria-year-foot-sep", text: "·" });
     foot.createSpan({
       cls: "memoria-year-foot-item",
       text: t("year.activeDays", { n: activeDays }),

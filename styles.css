@@ -36,12 +36,236 @@
 .memoria-root,
 .memoria-container,
 .memoria-stats-view,
-.memoria-year-view {
+.memoria-year-view,
+.memoria-modal,
+.memoria-modal-backdrop,
+.memoria-lightbox,
+.memoria-tag-suggest,
+.memoria-heatmap-tooltip,
+.memoria-table-picker {
   --memoria-radius-control: 6px;
   --memoria-radius-card: 10px;
   --memoria-radius-panel: 12px;
   --memoria-radius-pill: 999px;
   --memoria-feed-max-width: 980px;
+
+  --memoria-font-xs: 12px;
+  --memoria-font-body: 14px;
+  --memoria-font-title: 20px;
+
+  /* Radix 色阶用途：背景 1-2，交互底色 3-5，边界 6-8，实色操作 9-10，
+   * 文字 11-12；危险/警示只使用 Red / Amber 语义色。
+   * 以下映射只作用于插件内部，不改 Obsidian 全局变量。 */
+  --memoria-surface-1: var(--memoria-slate-1);
+  --memoria-surface-2: var(--memoria-slate-2);
+  --memoria-surface-3: var(--memoria-slate-3);
+  --memoria-surface-4: var(--memoria-slate-4);
+  --memoria-surface-5: var(--memoria-slate-5);
+  --memoria-border-subtle: var(--memoria-slate-6);
+  --memoria-border: var(--memoria-slate-7);
+  --memoria-border-strong: var(--memoria-slate-8);
+  --memoria-text-1: var(--memoria-slate-12);
+  --memoria-text-2: var(--memoria-slate-11);
+  --memoria-text-3: var(--memoria-slate-10);
+
+  --memoria-accent-subtle: var(--memoria-green-3);
+  --memoria-accent-muted: var(--memoria-green-5);
+  --memoria-accent-border: var(--memoria-green-7);
+  --memoria-accent-strong: var(--memoria-green-9);
+  --memoria-accent-text: var(--memoria-green-11);
+  --memoria-accent-deep: var(--memoria-green-12);
+
+  --memoria-danger-subtle: var(--memoria-red-3);
+  --memoria-danger-border: var(--memoria-red-7);
+  --memoria-danger-solid: var(--memoria-red-9);
+  --memoria-danger-text: var(--memoria-red-11);
+  --memoria-warning-subtle: var(--memoria-amber-3);
+  --memoria-warning-border: var(--memoria-amber-7);
+  --memoria-warning-solid: var(--memoria-amber-9);
+  --memoria-warning-text: var(--memoria-amber-11);
+}
+
+/* 明暗主题分别映射（Radix Slate / Green / Red / Amber） */
+.theme-light .memoria-root,
+.theme-light .memoria-container,
+.theme-light .memoria-stats-view,
+.theme-light .memoria-year-view,
+.theme-light .workspace-leaf-content[data-type^="memoria"] .view-content,
+.theme-light .memoria-modal,
+.theme-light .memoria-modal-backdrop,
+.theme-light .memoria-tag-suggest,
+.theme-light .memoria-heatmap-tooltip,
+.theme-light .memoria-table-picker {
+  --memoria-slate-1: #fcfcfd;
+  --memoria-slate-2: #f9f9fb;
+  --memoria-slate-3: #f0f0f3;
+  --memoria-slate-4: #e8e8ec;
+  --memoria-slate-5: #e0e1e6;
+  --memoria-slate-6: #d9d9e0;
+  --memoria-slate-7: #cdced6;
+  --memoria-slate-8: #b9bbc6;
+  --memoria-slate-9: #8b8d98;
+  --memoria-slate-10: #80838d;
+  --memoria-slate-11: #60646c;
+  --memoria-slate-12: #1c2024;
+
+  --memoria-green-1: #fbfefc;
+  --memoria-green-2: #f4fbf6;
+  --memoria-green-3: #e6f6eb;
+  --memoria-green-4: #d6f1df;
+  --memoria-green-5: #c4e8d1;
+  --memoria-green-6: #adddc0;
+  --memoria-green-7: #8eceaa;
+  --memoria-green-8: #5bb98b;
+  --memoria-green-9: #30a46c;
+  --memoria-green-10: #2b9a66;
+  --memoria-green-11: #218358;
+  --memoria-green-12: #193b2d;
+
+  --memoria-red-1: #fffcfc;
+  --memoria-red-2: #fff7f7;
+  --memoria-red-3: #feebec;
+  --memoria-red-4: #ffdbdc;
+  --memoria-red-5: #ffcdce;
+  --memoria-red-6: #fdbdbe;
+  --memoria-red-7: #f4a9aa;
+  --memoria-red-8: #eb8e90;
+  --memoria-red-9: #e5484d;
+  --memoria-red-10: #dc3e42;
+  --memoria-red-11: #ce2c31;
+  --memoria-red-12: #641723;
+
+  --memoria-amber-1: #fefdfb;
+  --memoria-amber-2: #fefbe9;
+  --memoria-amber-3: #fff7c2;
+  --memoria-amber-4: #ffee9c;
+  --memoria-amber-5: #fbe577;
+  --memoria-amber-6: #f3d673;
+  --memoria-amber-7: #e9c162;
+  --memoria-amber-8: #e2a336;
+  --memoria-amber-9: #ffc53d;
+  --memoria-amber-10: #ffba18;
+  --memoria-amber-11: #ab6400;
+  --memoria-amber-12: #4f3422;
+
+  /* 实色操作使用 step 11，保证白字正文对比度 > 4.5:1 */
+  --memoria-accent-solid: var(--memoria-green-11);
+  --memoria-accent-solid-hover: var(--memoria-green-12);
+  --memoria-accent-contrast: #ffffff;
+  --memoria-overlay: rgba(0, 0, 0, 0.4);
+
+  --interactive-accent: var(--memoria-accent-solid);
+  --interactive-accent-hover: var(--memoria-accent-solid-hover);
+  --text-on-accent: var(--memoria-accent-contrast);
+  --text-accent: var(--memoria-accent-text);
+  --text-error: var(--memoria-danger-text);
+  --text-warning: var(--memoria-warning-text);
+  --text-success: var(--memoria-accent-text);
+  --background-modifier-error: var(--memoria-danger-subtle);
+  --background-modifier-warning: var(--memoria-warning-subtle);
+  --background-primary: var(--memoria-surface-1);
+  --background-primary-alt: var(--memoria-surface-2);
+  --background-secondary: var(--memoria-surface-2);
+  --background-secondary-alt: var(--memoria-surface-1);
+  --background-modifier-border: var(--memoria-border);
+  --background-modifier-border-hover: var(--memoria-border-strong);
+  --background-modifier-form-field: var(--memoria-surface-3);
+  --background-modifier-hover: var(--memoria-surface-4);
+  --background-modifier-cover: var(--memoria-overlay);
+  --text-normal: var(--memoria-text-1);
+  --text-muted: var(--memoria-text-2);
+  --text-faint: var(--memoria-text-3);
+}
+
+.theme-dark .memoria-root,
+.theme-dark .memoria-container,
+.theme-dark .memoria-stats-view,
+.theme-dark .memoria-year-view,
+.theme-dark .workspace-leaf-content[data-type^="memoria"] .view-content,
+.theme-dark .memoria-modal,
+.theme-dark .memoria-modal-backdrop,
+.theme-dark .memoria-tag-suggest,
+.theme-dark .memoria-heatmap-tooltip,
+.theme-dark .memoria-table-picker {
+  --memoria-slate-1: #111113;
+  --memoria-slate-2: #18191b;
+  --memoria-slate-3: #212225;
+  --memoria-slate-4: #272a2d;
+  --memoria-slate-5: #2e3135;
+  --memoria-slate-6: #363a3f;
+  --memoria-slate-7: #43484e;
+  --memoria-slate-8: #5a6169;
+  --memoria-slate-9: #696e77;
+  --memoria-slate-10: #777b84;
+  --memoria-slate-11: #b0b4ba;
+  --memoria-slate-12: #edeef0;
+
+  --memoria-green-1: #0e1512;
+  --memoria-green-2: #121b17;
+  --memoria-green-3: #132d21;
+  --memoria-green-4: #113b29;
+  --memoria-green-5: #174933;
+  --memoria-green-6: #20573e;
+  --memoria-green-7: #28684a;
+  --memoria-green-8: #2f7c57;
+  --memoria-green-9: #30a46c;
+  --memoria-green-10: #33b074;
+  --memoria-green-11: #3dd68c;
+  --memoria-green-12: #b1f1cb;
+
+  --memoria-red-1: #191111;
+  --memoria-red-2: #201314;
+  --memoria-red-3: #3b1219;
+  --memoria-red-4: #500f1c;
+  --memoria-red-5: #611623;
+  --memoria-red-6: #72232d;
+  --memoria-red-7: #8c333a;
+  --memoria-red-8: #b54548;
+  --memoria-red-9: #e5484d;
+  --memoria-red-10: #ec5d5e;
+  --memoria-red-11: #ff9592;
+  --memoria-red-12: #ffd1d9;
+
+  --memoria-amber-1: #16120c;
+  --memoria-amber-2: #1d180f;
+  --memoria-amber-3: #302008;
+  --memoria-amber-4: #3f2700;
+  --memoria-amber-5: #4d3000;
+  --memoria-amber-6: #5c3d05;
+  --memoria-amber-7: #714f19;
+  --memoria-amber-8: #8f6424;
+  --memoria-amber-9: #ffc53d;
+  --memoria-amber-10: #ffd60a;
+  --memoria-amber-11: #ffca16;
+  --memoria-amber-12: #ffe7b3;
+
+  /* 暗色下实色操作使用亮绿 + 深色前景，避免白字对比不足 */
+  --memoria-accent-solid: var(--memoria-green-11);
+  --memoria-accent-solid-hover: var(--memoria-green-12);
+  --memoria-accent-contrast: var(--memoria-green-1);
+  --memoria-overlay: rgba(0, 0, 0, 0.65);
+
+  --interactive-accent: var(--memoria-accent-solid);
+  --interactive-accent-hover: var(--memoria-accent-solid-hover);
+  --text-on-accent: var(--memoria-accent-contrast);
+  --text-accent: var(--memoria-accent-text);
+  --text-error: var(--memoria-danger-text);
+  --text-warning: var(--memoria-warning-text);
+  --text-success: var(--memoria-accent-text);
+  --background-modifier-error: var(--memoria-danger-subtle);
+  --background-modifier-warning: var(--memoria-warning-subtle);
+  --background-primary: var(--memoria-surface-1);
+  --background-primary-alt: var(--memoria-surface-2);
+  --background-secondary: var(--memoria-surface-2);
+  --background-secondary-alt: var(--memoria-surface-1);
+  --background-modifier-border: var(--memoria-border);
+  --background-modifier-border-hover: var(--memoria-border-strong);
+  --background-modifier-form-field: var(--memoria-surface-3);
+  --background-modifier-hover: var(--memoria-surface-4);
+  --background-modifier-cover: var(--memoria-overlay);
+  --text-normal: var(--memoria-text-1);
+  --text-muted: var(--memoria-text-2);
+  --text-faint: var(--memoria-text-3);
 }
 
 .memoria-root,
@@ -68,13 +292,13 @@
   flex-shrink: 0;
   overflow-y: auto;
   padding: 16px 10px 24px;
-  border-right: 1px solid var(--background-modifier-border);
+  border-right: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   transition:
-    width 0.18s ease,
-    padding 0.18s ease,
-    border-color 0.18s ease,
-    opacity 0.16s ease;
+    width 250ms ease-out,
+    padding 250ms ease-out,
+    border-color 250ms ease-out,
+    opacity 250ms ease-out;
 }
 
 @media (min-width: 681px) {
@@ -102,14 +326,14 @@
   flex: 1;
 }
 .memoria-stat-num {
-  font-size: 22px;
+  font-size: var(--memoria-font-title);
   font-weight: 700;
   color: var(--text-normal);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
 .memoria-stat-label {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
   margin-top: 4px;
   letter-spacing: 0.4px;
@@ -146,10 +370,6 @@
   border-radius: 2px;
   background: var(--background-modifier-border);
   min-height: 8px;
-  transition: transform 0.08s;
-}
-.memoria-heatmap-cell:hover {
-  transform: scale(1.35);
 }
 .memoria-heatmap-cell.level-0 {
   background: var(--background-modifier-border);
@@ -178,7 +398,7 @@
 /* 侧栏分区标题 */
 .memoria-sidebar-section {
   padding: 14px 12px 6px;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   font-weight: 600;
   color: var(--text-faint);
   letter-spacing: 0.6px;
@@ -189,7 +409,7 @@
   user-select: none;
   display: flex;
   align-items: center;
-  transition: color 0.12s;
+  transition: color 250ms ease-out;
 }
 .memoria-section-collapsible:hover {
   color: var(--text-muted);
@@ -197,7 +417,7 @@
 .memoria-section-arrow {
   display: inline-block;
   width: 12px;
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   margin-right: 2px;
 }
 
@@ -207,7 +427,7 @@
   padding: 10px 12px;
   background: var(--background-modifier-hover);
   border-radius: 6px;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   line-height: 1.55;
   color: var(--text-faint);
 }
@@ -215,7 +435,7 @@
   padding: 1px 5px;
   background: var(--background-primary);
   border-radius: 3px;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-accent);
 }
 .memoria-sidebar-hint b {
@@ -230,12 +450,12 @@
   padding: 7px 12px;
   margin: 1px 2px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
-  transition: background 0.12s, color 0.12s;
+  transition: background 250ms ease-out, color 250ms ease-out;
 }
 .memoria-nav-item:hover {
   background: var(--background-modifier-hover);
@@ -270,7 +490,7 @@
   text-overflow: ellipsis;
 }
 .memoria-nav-count {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -300,7 +520,7 @@
    */
   gap: 8px;
   padding: 12px 24px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: 0.5px solid var(--background-modifier-border);
   flex-shrink: 0;
   background: var(--background-primary);
 }
@@ -335,10 +555,10 @@
   align-items: center;
   gap: 4px;
   background: var(--background-modifier-form-field);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-pill);
   padding: 0 8px 0 12px;
-  transition: border-color 0.15s;
+  transition: border-color 250ms ease-out;
 }
 .memoria-search-wrap:focus-within {
   border-color: var(--interactive-accent);
@@ -359,7 +579,7 @@
   background: transparent;
   box-shadow: none;
   color: var(--text-normal);
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   outline: none;
 }
 .memoria-search:focus,
@@ -382,7 +602,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.12s, color 0.12s;
+  transition: background 250ms ease-out, color 250ms ease-out;
   box-shadow: none;
 }
 .memoria-root button.memoria-icon-btn:hover {
@@ -413,11 +633,10 @@
 .memoria-input-card {
   margin: 16px 24px 0;
   padding: 14px 16px 10px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-panel);
   background: var(--background-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 250ms ease-out;
   flex-shrink: 0;
   /* v1.4.4: 输入卡建立独立的层叠上下文，并抬高到 z-index:2。
    *   原因：:focus-within 激活后的 3px accent 光晕 box-shadow 会向外扩散，
@@ -455,16 +674,10 @@
  *
  * 展开态：所有规则恢复正常值（即原 v2.0.16 及之前的视觉表现）
  *
- * transition 时长 0.7s + Material Design 标准缓动曲线 cubic-bezier(0.4, 0, 0.2, 1)，
- *   兼顾"看得出动画"和"不拖沓"。
+ * transition 时长 250ms ease-out，只作用于高度、透明度等真正变化的属性。
  *   配合 JS 的 150ms 鼠标驻留检测（防快速掠过误触发）和帧间 class 切换
  *   （绕过 Chromium 对 textarea :hover 伪类的 transition 短路 bug）。
  */
-.memoria-input-card {
-  transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
 .memoria-root textarea.memoria-input {
   /* v2.0.17: 渐进式披露 —— 收起态 40px ↔ 展开态 96px 的过渡。
    *   使用 Material Design 标准缓动曲线，前段稍慢、后段顺滑收尾，丝滑悠闲感。
@@ -480,14 +693,14 @@
    *     `body.theme-light textarea` 这种链式选择器，权重 0,0,1,1 > 0,0,1,0）。
    *     不加 时 getComputedStyle 显示 transition 变成主题的
    *     `box-shadow, border 0.15s`，min-height 0s 就触发瞬时跳变。
-   *   v2.0.17-iter13: 时长 1.1s → 0.7s，看得出动画但不拖沓。
+   *   v2.0.17-iter13: 时长 1.1s → 0.7s，v2.4 进一步收敛为 250ms。
    */
   transition:
-    min-height 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height 250ms ease-out,
+    height 250ms ease-out;
 }
 /* v2.0.17: 输入时（input 事件触发 autoResizeInput）临时禁用动画，
- *   避免 textarea 随内容长高时被 0.7s 慢动画拖住手感。
+ *   避免 textarea 随内容长高时被过渡拖住手感。
  *   JS 会在设 inline height 前加这个 class，一帧后移除。 */
 .memoria-root textarea.memoria-input.memoria-no-transition {
   transition: none;
@@ -495,15 +708,15 @@
 .memoria-input-toolbar {
   /* v2.0.17: 工具栏整体淡入淡出 */
   transition:
-    opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-    border-top-color 0.7s ease;
+    opacity 250ms ease-out,
+    border-top-color 250ms ease-out;
 }
 .memoria-root button.memoria-submit-btn {
   /* v2.0.17: 发送按钮饱和度淡入 */
   transition:
-    background 0.12s,
-    filter 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    background 250ms ease-out,
+    filter 250ms ease-out,
+    opacity 250ms ease-out;
 }
 
 /* 收起态（默认）—— textarea 收矮 + 工具栏淡化 + 发送按钮褪色
@@ -514,7 +727,7 @@
  *
  *   不用 :focus-within 伪类的原因：Chromium 对 textarea 在伪类驱动下的
  *   transition 有 bug（动画只跑 30% 路程就跳到终点），换成 JS class
- *   .is-focused（focus/blur 事件触发）能让 0.7s transition 完整走完。
+ *   .is-focused（focus/blur 事件触发）能让 250ms transition 完整走完。
  */
 .memoria-input-card:not(.is-focused):not(.has-content):not(.is-editing):not(.dragging) .memoria-input {
   min-height: 40px;
@@ -592,7 +805,7 @@
   justify-content: space-between;
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: 0.5px solid var(--background-modifier-border);
 }
 .memoria-input-tools {
   display: flex;
@@ -609,7 +822,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.12s, color 0.12s;
+  transition: background 250ms ease-out, color 250ms ease-out;
   box-shadow: none;
 }
 .memoria-root button.memoria-tool-btn:hover {
@@ -622,7 +835,7 @@
 }
 .memoria-input-hint {
   margin-left: 6px;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
 }
 .memoria-root button.memoria-submit-btn {
@@ -638,7 +851,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.12s, filter 0.12s;
+  transition: background 250ms ease-out, filter 250ms ease-out;
   box-shadow: none;
 }
 .memoria-root button.memoria-submit-btn .svg-icon {
@@ -663,26 +876,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 0 4px 14px;
-  color: color-mix(
-    in srgb,
-    var(--text-muted) 78%,
-    var(--interactive-accent)
-  );
-  font-size: 12px;
+  color: var(--text-muted);
+  font-size: var(--memoria-font-xs);
 }
 .memoria-root button.memoria-meta-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 30px;
+  min-height: 32px;
   padding: 4px 12px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-pill);
   background: var(--background-modifier-form-field);
   color: var(--text-muted);
   box-shadow: none;
-  font-size: var(--font-ui-small);
+  font-size: var(--memoria-font-xs);
   line-height: 1;
 }
 .memoria-root button.memoria-meta-btn:hover,
@@ -696,16 +906,16 @@
 }
 
 
+/* 回顾筛选：按需展开后直接作为结果区顶部的一行控件，不再套外框卡片 */
 .memoria-review-toolbar {
   display: flex;
-  align-items: end;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin: -4px 4px 14px;
-  padding: 10px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--memoria-radius-card);
-  background: var(--background-primary-alt, var(--background-secondary));
+  margin: 0 4px 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
 }
 
 .memoria-review-control {
@@ -722,9 +932,13 @@
 
 .memoria-review-select {
   width: 100%;
-  min-height: var(--input-height);
-  padding-right: 30px;
-  font-size: var(--font-ui-small);
+  min-height: 32px;
+  padding: 4px 30px 4px 12px;
+  border: 0.5px solid var(--background-modifier-border);
+  border-radius: var(--memoria-radius-pill);
+  background: var(--background-modifier-form-field);
+  color: var(--text-normal);
+  font-size: var(--memoria-font-xs);
   appearance: none;
   -webkit-appearance: none;
 }
@@ -756,12 +970,12 @@
   align-items: center;
   width: 100%;
   gap: 4px;
-  min-height: var(--input-height);
+  min-height: 32px;
   padding: 0 8px 0 12px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-pill);
   background: var(--background-modifier-form-field);
-  transition: border-color 0.15s;
+  transition: border-color 250ms ease-out;
 }
 .memoria-review-search-wrap:focus-within {
   border-color: var(--interactive-accent);
@@ -777,14 +991,14 @@
 }
 .memoria-review-input {
   width: 100%;
-  min-height: var(--input-height);
-  padding: 6px 4px;
+  min-height: 30px;
+  padding: 4px;
   border: none;
   border-radius: var(--memoria-radius-pill);
   background: transparent;
   color: var(--text-normal);
   box-shadow: none;
-  font-size: var(--font-ui-small);
+  font-size: var(--memoria-font-xs);
   outline: none;
 }
 .memoria-review-input:hover,
@@ -825,12 +1039,8 @@
   text-align: center;
   color: var(--text-faint);
 }
-.memoria-empty-emoji {
-  font-size: 40px;
-  margin-bottom: 12px;
-}
 .memoria-empty-text {
-  font-size: 15px;
+  font-size: var(--memoria-font-body);
   color: var(--text-muted);
   margin-bottom: 4px;
 }
@@ -851,28 +1061,22 @@
   letter-spacing: 0.3px;
 }
 
-/* 置顶专属分组 */
+/* 置顶分组：与普通日期分组同样的节奏，不再套第二层圆角边框 */
 .memoria-pin-group {
-  padding: 8px 12px 14px;
-  margin-bottom: 24px;
-  background: color-mix(
-    in srgb,
-    var(--interactive-accent) 5%,
-    var(--background-secondary)
-  );
-  border: 1px dashed
-    color-mix(in srgb, var(--interactive-accent) 40%, transparent);
-  border-radius: var(--memoria-radius-card);
+  padding: 0;
+  margin-bottom: 28px;
+  background: transparent;
+  border: none;
 }
 .memoria-pin-head {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 2px 10px;
-  color: var(--interactive-accent);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
+  padding: 6px 4px 12px;
+  color: var(--text-accent);
+  font-size: var(--memoria-font-xs);
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 .memoria-pin-head-icon {
   display: inline-flex;
@@ -882,24 +1086,17 @@
   width: 13px;
   height: 13px;
 }
-/* 置顶分组内的卡片：去掉原本置顶卡片的背景色，因为整个组已经有背景了 */
-.memoria-pin-group .memoria-card.is-pinned {
-  background: var(--background-primary-alt, var(--background-secondary));
-  border-color: var(--background-modifier-border);
-}
-
 /* 卡片 */
 .memoria-card {
   padding: 14px 18px;
   margin-bottom: 12px;
   background: var(--background-primary-alt, var(--background-secondary));
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-card);
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  transition: border-color 250ms ease-out;
 }
 .memoria-card:hover {
   border-color: var(--background-modifier-border-hover);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 .memoria-card-head {
   display: flex;
@@ -927,23 +1124,14 @@
   color: var(--interactive-accent);
 }
 .memoria-card-star {
-  color: #e8b84a;
+  color: var(--text-accent);
 }
 .memoria-card.is-pinned {
-  border-color: var(--interactive-accent);
-  background: color-mix(
-    in srgb,
-    var(--interactive-accent) 4%,
-    var(--background-primary-alt, var(--background-secondary))
-  );
+  border-color: var(--memoria-accent-border);
 }
 .memoria-card-time {
-  font-size: 12px;
-  color: color-mix(
-    in srgb,
-    var(--text-muted) 80%,
-    var(--interactive-accent)
-  );
+  font-size: var(--memoria-font-xs);
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.2px;
 }
@@ -951,7 +1139,7 @@
   display: flex;
   gap: 2px;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 250ms ease-out;
 }
 .memoria-card:hover .memoria-card-actions {
   opacity: 1;
@@ -1010,7 +1198,7 @@
   margin: 8px 0;
   padding: 10px 12px;
   background: var(--code-background, var(--background-secondary));
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 6px;
   overflow-x: auto;
   font-size: 13px;
@@ -1039,14 +1227,14 @@
   bottom: auto;
   margin: 0;
   padding: 4px 8px;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
   background: color-mix(in srgb, var(--background-modifier-hover) 80%, transparent);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 4px;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.12s ease;
+  transition: opacity 250ms ease-out;
 }
 .memoria-card-body pre:hover .copy-code-button,
 .memoria-card-body pre:hover > button,
@@ -1113,7 +1301,7 @@
   border-radius: 6px;
   background: var(--background-modifier-hover);
   cursor: zoom-in;
-  transition: opacity 0.15s;
+  transition: opacity 250ms ease-out;
 }
 .memoria-img-cell:hover {
   opacity: 0.92;
@@ -1138,7 +1326,7 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
-  font-size: 22px;
+  font-size: var(--memoria-font-title);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -1180,7 +1368,7 @@
   left: 50%;
   transform: translateX(-50%);
   color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
+  font-size: var(--memoria-font-xs);
   font-variant-numeric: tabular-nums;
   background: rgba(0, 0, 0, 0.5);
   padding: 4px 12px;
@@ -1199,7 +1387,7 @@
   font-size: 22px;
   cursor: pointer;
   line-height: 1;
-  transition: background 0.15s;
+  transition: background 250ms ease-out;
 }
 .memoria-lightbox-close:hover {
   background: rgba(255, 255, 255, 0.3);
@@ -1217,7 +1405,7 @@
   cursor: pointer;
   line-height: 1;
   border-radius: 6px;
-  transition: background 0.15s;
+  transition: background 250ms ease-out;
 }
 .memoria-lightbox-nav:hover {
   background: rgba(255, 255, 255, 0.25);
@@ -1250,22 +1438,16 @@
   background: var(--background-modifier-hover);
   color: var(--text-accent);
   border-radius: var(--memoria-radius-pill);
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 250ms ease-out, color 250ms ease-out;
   user-select: none;
 }
-.memoria-tag-pill:hover {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
 .memoria-load-more {
   padding: 20px;
   text-align: center;
   color: var(--text-faint);
-  font-size: 12px;
-  border-top: 1px dashed var(--background-modifier-border);
+  font-size: var(--memoria-font-xs);
   margin-top: 10px;
 }
 
@@ -1273,7 +1455,7 @@
 .memoria-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--memoria-overlay, rgba(0, 0, 0, 0.45));
   z-index: 10000;
   display: flex;
   align-items: center;
@@ -1282,8 +1464,8 @@
 .memoria-modal {
   width: min(560px, 90vw);
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 12px;
+  border: 0.5px solid var(--background-modifier-border);
+  border-radius: var(--memoria-radius-panel);
   padding: 20px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   display: flex;
@@ -1291,7 +1473,7 @@
   gap: 12px;
 }
 .memoria-modal-title {
-  font-size: 14px;
+  font-size: var(--memoria-font-body);
   font-weight: 600;
   color: var(--text-normal);
 }
@@ -1302,17 +1484,17 @@
      避免拖拽手柄时松手落在 backdrop 导致弹窗关闭的 bug */
   max-height: 60vh;
   padding: 10px 12px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border: 0.5px solid var(--background-modifier-border);
+  border-radius: var(--memoria-radius-control);
   background: var(--background-primary);
   color: var(--text-normal);
   font-family: var(--font-text);
-  font-size: 14px;
+  font-size: var(--memoria-font-body);
   line-height: 1.6;
   resize: none;
   overflow-y: auto;
   outline: none;
-  transition: height 0.08s ease;
+  transition: height 250ms ease-out;
 }
 .memoria-modal-textarea:focus {
   border-color: var(--interactive-accent);
@@ -1324,13 +1506,13 @@
 }
 .memoria-modal .memoria-modal-btns button {
   padding: 6px 16px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   background: var(--background-secondary);
   color: var(--text-normal);
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
   cursor: pointer;
-  font-size: 13px;
-  transition: background 0.12s;
+  font-size: var(--memoria-font-xs);
+  transition: background 250ms ease-out;
 }
 .memoria-modal .memoria-modal-btns button:hover {
   background: var(--background-modifier-hover);
@@ -1360,7 +1542,7 @@
   min-height: 20px;
 }
 .memoria-overview-label {
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   font-weight: 600;
   color: var(--text-faint);
   letter-spacing: 0.5px;
@@ -1422,7 +1604,7 @@
   cursor: pointer;
   padding: 3px 8px;
   border-radius: 4px;
-  transition: background 0.12s;
+  transition: background 250ms ease-out;
 }
 .memoria-cal-title:hover {
   background: var(--background-modifier-hover);
@@ -1431,7 +1613,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   padding: 2px 0 4px;
   letter-spacing: 0.3px;
@@ -1447,7 +1629,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
   border-radius: 4px;
   cursor: default;
@@ -1541,7 +1723,7 @@
  */
 .memoria-edit-datetime {
   padding: 4px 8px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
   font-size: 12px;
@@ -1549,7 +1731,7 @@
   border-radius: 6px;
   outline: none;
   cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
+  transition: border-color 250ms ease-out, color 250ms ease-out;
 }
 .memoria-edit-datetime:hover,
 .memoria-edit-datetime:focus {
@@ -1559,13 +1741,13 @@
 
 .memoria-cancel-btn {
   padding: 5px 14px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: var(--memoria-font-xs);
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 250ms ease-out, color 250ms ease-out;
   box-shadow: none;
 }
 .memoria-cancel-btn:hover {
@@ -1604,7 +1786,7 @@
     flex-basis: 100%;
     order: -1;
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: var(--memoria-font-xs);
     min-height: 32px;
   }
 }
@@ -1621,14 +1803,14 @@
   position: fixed;
   z-index: 10001;
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 8px;
   padding: 4px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
   max-height: 280px;
   overflow-y: auto;
   min-width: 180px;
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
 }
 .memoria-tag-suggest-item {
   display: flex;
@@ -1639,7 +1821,7 @@
   cursor: pointer;
   color: var(--text-normal);
   user-select: none;
-  transition: background 0.08s;
+  transition: background 250ms ease-out;
 }
 .memoria-tag-suggest-item:hover,
 .memoria-tag-suggest-item.active {
@@ -1748,14 +1930,14 @@
     max-height: none;
     z-index: 5;
     transform: translateX(-100%);
-    transition: transform 0.25s ease;
+    transition: transform 250ms ease-out;
     /* v1.1.18: 阴影只在打开时显示
      *   关闭态 translateX(-100%) 虽然侧栏本体移到视口外，但 box-shadow
      *   `4 0 18 0.25` 的 18px 扩散会泄到视口左侧，轻微压在输入卡片左缘上，
      *   部分 iOS / Android WebView 下甚至会发生"此字左半被遮"的观感。
      */
     box-shadow: none;
-    border-right: 1px solid var(--background-modifier-border);
+    border-right: 0.5px solid var(--background-modifier-border);
     border-bottom: none;
     overflow-y: auto;
   }
@@ -1770,7 +1952,7 @@
     inset: 0;
     background: rgba(0, 0, 0, 0);
     pointer-events: none;
-    transition: background 0.25s;
+    transition: background 250ms ease-out;
     z-index: 4;
   }
   .memoria-root.memoria-sidebar-open .memoria-sidebar-overlay {
@@ -1981,10 +2163,10 @@
 .memoria-stats-view .mstat-section + .mstat-section {
   margin-top: 8px;
   padding-top: 36px;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: 0.5px solid var(--background-modifier-border);
 }
 .memoria-stats-view .mstat-title {
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 14px;
@@ -2002,7 +2184,7 @@
   margin-bottom: 0;
 }
 .memoria-stats-view .mstat-subtitle {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
@@ -2021,33 +2203,19 @@
 .memoria-stats-view .mstat-bignum {
   padding: 22px 10px;
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-panel);
   text-align: center;
-  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
-}
-.memoria-stats-view .mstat-bignum:hover {
-  border-color: color-mix(in srgb, var(--interactive-accent) 50%, var(--background-modifier-border));
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px -6px color-mix(in srgb, var(--interactive-accent) 40%, transparent);
 }
 .memoria-stats-view .mstat-bignum-num {
-  /* v1.1.5: 桌面 40px，视觉分量更足 */
-  font-size: 36px;
+  font-size: var(--memoria-font-title);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  line-height: 1.05;
-  background: linear-gradient(
-    135deg,
-    var(--text-normal),
-    color-mix(in srgb, var(--interactive-accent) 70%, var(--text-normal))
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  line-height: 1.2;
+  color: var(--text-normal);
 }
 .memoria-stats-view .mstat-bignum-label {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   margin-top: 8px;
   letter-spacing: 0.5px;
@@ -2074,7 +2242,7 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
   border-radius: 999px;
@@ -2083,7 +2251,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: none;
-  transition: background 0.12s, color 0.12s;
+  transition: background 250ms ease-out, color 250ms ease-out;
 }
 .memoria-stats-view button.mstat-yh-year-arrow:hover {
   background: var(--background-modifier-hover);
@@ -2096,7 +2264,7 @@
 }
 .memoria-stats-view button.mstat-yh-year-btn {
   padding: 4px 14px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
   border-radius: 999px;
@@ -2117,7 +2285,7 @@
 .memoria-stats-view .mstat-year-metric {
   min-width: 112px;
   padding: 0 24px;
-  border-left: 1px solid var(--background-modifier-border);
+  border-left: 0.5px solid var(--background-modifier-border);
 }
 .memoria-stats-view .mstat-year-metric:first-child {
   padding-left: 0;
@@ -2133,7 +2301,7 @@
 .memoria-stats-view .mstat-year-metric-label {
   margin-top: 4px;
   color: var(--text-faint);
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
 }
 .memoria-stats-view .mstat-yh-wrap {
   display: flex;
@@ -2175,7 +2343,7 @@
 }
 .memoria-stats-view .mstat-yh-cell.is-clickable {
   cursor: pointer;
-  transition: box-shadow 0.15s ease, opacity 0.15s ease;
+  transition: box-shadow 250ms ease-out, opacity 250ms ease-out;
 }
 .memoria-stats-view .mstat-yh-cell.is-clickable:hover,
 .memoria-stats-view .mstat-yh-cell.is-clickable:focus-visible {
@@ -2193,7 +2361,7 @@
   position: relative;
   height: 16px;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
 }
 .memoria-stats-view .mstat-yh-mlabel {
@@ -2206,7 +2374,7 @@
   align-items: center;
   gap: 3px;
   margin-top: 8px;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
 }
 .memoria-stats-view .mstat-yh-legend .mstat-yh-cell {
@@ -2284,26 +2452,16 @@
 }
 .memoria-stats-view .mstat-bar {
   width: clamp(16px, 42%, 34px);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--interactive-accent) 92%, var(--text-normal)),
-    color-mix(in srgb, var(--interactive-accent) 62%, transparent)
-  );
+  background: var(--interactive-accent);
   opacity: 0.72;
   border-radius: 6px 6px 2px 2px;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--background-primary) 26%, transparent);
   min-height: 2px;
-  transition: opacity 0.15s, filter 0.15s;
 }
 .memoria-stats-view .mstat-bar.is-max {
   opacity: 1;
 }
-.memoria-stats-view .mstat-bar-col:hover .mstat-bar {
-  opacity: 0.96;
-  filter: brightness(1.06);
-}
 .memoria-stats-view .mstat-bar-num {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
   height: 14px;
@@ -2314,13 +2472,13 @@
   opacity: 0.35;
 }
 .memoria-stats-view .mstat-bar-label {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   height: 14px;
   line-height: 14px;
 }
 .memoria-stats-view .mstat-bar-chart-hour .mstat-bar-label {
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
 }
 
 /* 写作节律：有序小时数据用细线表达，星期分布用面积诚实编码的圆点。 */
@@ -2333,13 +2491,13 @@
 .memoria-stats-view .mstat-rhythm-week {
   margin-top: 32px;
   padding-top: 28px;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: 0.5px solid var(--background-modifier-border);
 }
 .memoria-stats-view .mstat-rhythm-heading {
   min-height: 20px;
   margin-bottom: 12px;
   color: var(--text-normal);
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   font-weight: 600;
 }
 .memoria-stats-view .mstat-rhythm-scroll {
@@ -2357,7 +2515,7 @@
 .memoria-stats-view .mstat-rhythm-metric {
   min-width: 116px;
   padding: 0 28px;
-  border-left: 1px solid var(--background-modifier-border);
+  border-left: 0.5px solid var(--background-modifier-border);
 }
 .memoria-stats-view .mstat-rhythm-metric:first-child {
   padding-left: 0;
@@ -2373,7 +2531,7 @@
 .memoria-stats-view .mstat-rhythm-metric-label {
   margin-top: 3px;
   color: var(--text-faint);
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
 }
 .memoria-stats-view .mstat-rhythm-chart-shell {
   display: grid;
@@ -2387,7 +2545,7 @@
   justify-content: space-between;
   padding: 3px 10px 31px 0;
   color: var(--text-faint);
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -2448,13 +2606,13 @@
   justify-content: space-between;
   margin-top: 4px;
   color: var(--text-faint);
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   font-variant-numeric: tabular-nums;
 }
 .memoria-stats-view .mstat-rhythm-axis-caption {
   margin-top: 6px;
   color: var(--text-faint);
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   text-align: center;
 }
 
@@ -2463,7 +2621,7 @@
   display: none;
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: 0.5px solid var(--background-modifier-border);
 }
 .memoria-stats-view .mstat-drilldown.is-visible {
   display: block;
@@ -2526,7 +2684,7 @@
   display: flex;
   gap: 8px;
   color: var(--text-faint);
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -2547,7 +2705,7 @@
 .memoria-stats-view .mstat-drilldown-more {
   padding: 6px 9px 0;
   color: var(--text-faint);
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
 }
 .memoria-stats-view .mstat-weekday-dots {
   display: grid;
@@ -2571,19 +2729,21 @@
 }
 .memoria-stats-view .mstat-weekday-dot {
   display: block;
+  width: 24px;
+  height: 24px;
   border-radius: var(--memoria-radius-pill);
-  background: color-mix(in srgb, var(--interactive-accent) 82%, var(--text-normal));
-  transition: transform 0.15s, opacity 0.15s;
-}
-.memoria-stats-view .mstat-weekday-item:hover .mstat-weekday-dot {
-  transform: scale(1.08);
+  background: var(--interactive-accent);
+  opacity: 0.55;
 }
 .memoria-stats-view .mstat-weekday-dot.is-peak {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-accent) 16%, transparent);
+  opacity: 1;
+}
+.memoria-stats-view .mstat-weekday-dot.is-empty {
+  opacity: 0.18;
 }
 .memoria-stats-view .mstat-weekday-label,
 .memoria-stats-view .mstat-weekday-count {
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   font-variant-numeric: tabular-nums;
 }
 .memoria-stats-view .mstat-weekday-label {
@@ -2593,26 +2753,23 @@
   color: var(--text-faint);
 }
 
-/* 标签云 */
+/* 标签云：固定字号列表，不再按出现次数缩放 */
 .memoria-stats-view .mstat-cloud {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 14px;
+  gap: 8px 10px;
   padding: 16px 12px;
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 8px;
-  line-height: 1.7;
-  align-items: baseline;
+  align-items: center;
 }
 .memoria-stats-view .mstat-cloud-tag {
-  color: var(--interactive-accent);
-  cursor: default;
-  transition: opacity 0.12s, transform 0.12s;
-}
-.memoria-stats-view .mstat-cloud-tag:hover {
-  opacity: 1;
-  transform: scale(1.05);
+  padding: 2px 10px;
+  border-radius: var(--memoria-radius-pill);
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+  font-size: var(--memoria-font-xs);
 }
 
 /* Top 榜 */
@@ -2634,34 +2791,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   font-weight: 600;
   color: var(--text-faint);
   background: var(--background-secondary);
 }
-/* v1.1.5: 金银铜改用更有辨识度的饱和色 + 细微内阴影增加质感 */
-.memoria-stats-view .mstat-hbar-rank.rank-1 {
-  background: linear-gradient(135deg, #f4c430, #d79820);
-  color: #fff;
-  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(212, 152, 32, 0.3);
-}
-.memoria-stats-view .mstat-hbar-rank.rank-2 {
-  background: linear-gradient(135deg, #c8c8cc, #9a9aa0);
-  color: #fff;
-  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.15);
-}
-.memoria-stats-view .mstat-hbar-rank.rank-3 {
-  background: linear-gradient(135deg, #cd7f32, #a0602a);
-  color: #fff;
-  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.15);
-}
-/* rank-4 及之后：保持淡灰，把视觉焦点留给前三 */
-.memoria-stats-view .mstat-hbar-rank.rank-4 {
-  background: var(--background-secondary);
-  color: var(--text-faint);
-}
 .memoria-stats-view .mstat-hbar-label {
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -2675,16 +2811,12 @@
 }
 .memoria-stats-view .mstat-hbar {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--interactive-accent) 70%, transparent),
-    var(--interactive-accent)
-  );
+  background: var(--interactive-accent);
   border-radius: 8px;
-  transition: width 0.3s;
+  transition: width 250ms ease-out;
 }
 .memoria-stats-view .mstat-hbar-num {
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -2696,46 +2828,14 @@
   padding: 10px 14px;
   background: var(--background-modifier-hover);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   color: var(--text-muted);
 }
 
-/* 有趣的发现 */
-.memoria-stats-view .mstat-fact-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.memoria-stats-view .mstat-fact {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 16px;
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  font-size: 14px;
-  color: var(--text-normal);
-  line-height: 1.55;
-  border-left: 3px solid
-    color-mix(in srgb, var(--interactive-accent) 60%, transparent);
-  /* v1.1.5: hover 时略抬升 + 左边框变深，让每条发现更像"卡片" */
-  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
-}
-.memoria-stats-view .mstat-fact:hover {
-  transform: translateX(2px);
-  border-left-color: var(--interactive-accent);
-  box-shadow: 0 2px 8px -4px color-mix(in srgb, var(--interactive-accent) 40%, transparent);
-}
-.memoria-stats-view .mstat-fact-icon {
-  flex-shrink: 0;
-  font-size: 18px;
-  line-height: 1.4;
-}
 .memoria-stats-view .mstat-empty {
   padding: 16px;
   color: var(--text-faint);
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   text-align: center;
   background: var(--background-secondary);
   border-radius: 6px;
@@ -2791,7 +2891,7 @@
     padding: 18px 8px;
   }
   .memoria-stats-view .mstat-bignum-num {
-    font-size: 28px;
+    font-size: var(--memoria-font-title);
   }
   .memoria-stats-view .mstat-year-summary {
     justify-content: space-between;
@@ -2803,7 +2903,7 @@
     padding: 0 12px;
   }
   .memoria-stats-view .mstat-year-metric-value {
-    font-size: 18px;
+    font-size: var(--memoria-font-title);
   }
   /* Top 10 标签奖牌行：奖牌 + 标签 + 进度条 + 数字 四列 */
   .memoria-stats-view .mstat-hbar-row {
@@ -2819,7 +2919,7 @@
     margin-bottom: 24px;
   }
   .mstat-pagetitle-text {
-    font-size: 18px;
+    font-size: var(--memoria-font-title);
   }
   /* v1.1.17: 标题 + 副标题在窄屏改为纵向堆叠，副标题不挤压标题 */
   .memoria-stats-view .mstat-title-row {
@@ -2864,11 +2964,6 @@
   .memoria-stats-view .mstat-weekday-dots {
     grid-template-columns: repeat(4, minmax(48px, 1fr));
     min-height: 0;
-  }
-  /* 有趣发现卡片：padding 收紧 */
-  .memoria-stats-view .mstat-fact {
-    padding: 10px 12px;
-    font-size: 13px;
   }
   /* 结论文字 */
   .memoria-stats-view .mstat-desc {
@@ -2915,7 +3010,7 @@
   margin-bottom: 24px;
 }
 .memoria-stats-modal .mstat-title {
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 12px;
@@ -2930,35 +3025,20 @@
 }
 .memoria-stats-modal .mstat-bignum {
   padding: 14px 6px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--interactive-accent) 8%, var(--background-secondary)),
-    var(--background-secondary)
-  );
-  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 10px;
   text-align: center;
 }
 .memoria-stats-modal .mstat-bignum-num {
-  font-size: 24px;
+  font-size: var(--memoria-font-title);
   font-weight: 700;
   color: var(--text-normal);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
-@supports (background-clip: text) {
-  .memoria-stats-modal .mstat-bignum-num {
-    background: linear-gradient(
-      135deg,
-      var(--text-normal),
-      color-mix(in srgb, var(--interactive-accent) 70%, var(--text-normal))
-    );
-    background-clip: text;
-    color: transparent;
-  }
-}
 .memoria-stats-modal .mstat-bignum-label {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   margin-top: 4px;
 }
@@ -2975,11 +3055,11 @@
 }
 .memoria-stats-modal .mstat-yh-year-btn {
   padding: 3px 12px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   cursor: pointer;
   font-variant-numeric: tabular-nums;
   box-shadow: none;
@@ -3043,7 +3123,7 @@
   position: relative;
   height: 14px;
   margin-top: 4px;
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
 }
 .memoria-stats-modal .mstat-yh-mlabel {
@@ -3056,7 +3136,7 @@
   align-items: center;
   gap: 3px;
   margin-top: 8px;
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
 }
 .memoria-stats-modal .mstat-yh-legend .mstat-yh-cell {
@@ -3096,35 +3176,30 @@
 }
 .memoria-stats-modal .mstat-bar {
   width: 100%;
-  background: linear-gradient(
-    180deg,
-    var(--interactive-accent),
-    color-mix(in srgb, var(--interactive-accent) 60%, transparent)
-  );
-  opacity: 0.85;
+  background: var(--interactive-accent);
+  opacity: 0.55;
   border-radius: 3px 3px 0 0;
   min-height: 2px;
-  transition: opacity 0.15s, transform 0.15s;
+  transition: opacity 250ms ease-out;
 }
 .memoria-stats-modal .mstat-bar.is-max {
   opacity: 1;
 }
 .memoria-stats-modal .mstat-bar-col:hover .mstat-bar {
   opacity: 1;
-  transform: scaleY(1.02);
 }
 .memoria-stats-modal .mstat-bar-num {
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
-  height: 12px;
+  height: 14px;
 }
 .memoria-stats-modal .mstat-bar-label {
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
 }
 .memoria-stats-modal .mstat-bar-chart-hour .mstat-bar-label {
-  font-size: 9px;
+  font-size: var(--memoria-font-xs);
 }
 
 /* 标签云 */
@@ -3141,11 +3216,6 @@
 .memoria-stats-modal .mstat-cloud-tag {
   color: var(--interactive-accent);
   cursor: default;
-  transition: opacity 0.12s, transform 0.12s;
-}
-.memoria-stats-modal .mstat-cloud-tag:hover {
-  opacity: 1;
-  transform: scale(1.05);
 }
 
 /* 横向柱状图（带排名） */
@@ -3167,22 +3237,10 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   font-weight: 600;
   color: var(--text-faint);
   background: var(--background-secondary);
-}
-.memoria-stats-modal .mstat-hbar-rank.rank-1 {
-  background: linear-gradient(135deg, #ffd700, #ffaa00);
-  color: #fff;
-}
-.memoria-stats-modal .mstat-hbar-rank.rank-2 {
-  background: linear-gradient(135deg, #d0d0d0, #a0a0a0);
-  color: #fff;
-}
-.memoria-stats-modal .mstat-hbar-rank.rank-3 {
-  background: linear-gradient(135deg, #d49060, #b86b30);
-  color: #fff;
 }
 .memoria-stats-modal .mstat-hbar-label {
   font-size: 12px;
@@ -3199,16 +3257,12 @@
 }
 .memoria-stats-modal .mstat-hbar {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--interactive-accent) 70%, transparent),
-    var(--interactive-accent)
-  );
+  background: var(--interactive-accent);
   border-radius: 7px;
-  transition: width 0.3s;
+  transition: width 250ms ease-out;
 }
 .memoria-stats-modal .mstat-hbar-num {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -3224,30 +3278,6 @@
   color: var(--text-muted);
 }
 
-/* 有趣的发现 */
-.memoria-stats-modal .mstat-fact-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.memoria-stats-modal .mstat-fact {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--background-secondary);
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--text-normal);
-  line-height: 1.5;
-  border-left: 3px solid
-    color-mix(in srgb, var(--interactive-accent) 60%, transparent);
-}
-.memoria-stats-modal .mstat-fact-icon {
-  flex-shrink: 0;
-  font-size: 16px;
-  line-height: 1.4;
-}
 .memoria-stats-modal .mstat-empty {
   padding: 16px;
   color: var(--text-faint);
@@ -3286,7 +3316,7 @@
 .memoria-card-body .memoria-table-wrap th,
 .memoria-card-body .memoria-table-wrap td {
   padding: 6px 10px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   white-space: nowrap;
 }
 .memoria-card-body .memoria-table-wrap th {
@@ -3302,7 +3332,7 @@
   position: fixed;
   z-index: 999;
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
   padding: 10px;
@@ -3326,10 +3356,10 @@
   width: 22px;
   height: 22px;
   background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 3px;
   cursor: pointer;
-  transition: background 0.08s ease, border-color 0.08s ease;
+  transition: background 250ms ease-out, border-color 250ms ease-out;
 }
 .memoria-table-picker-cell:hover {
   border-color: var(--interactive-accent);
@@ -3363,7 +3393,7 @@
   border-radius: 5px;
 }
 .memoria-table-picker.is-mobile .memoria-table-picker-cell-text {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
   pointer-events: none; /* 点击直接穿透到 cell */
@@ -3373,7 +3403,7 @@
   border-color: var(--interactive-accent);
 }
 .memoria-table-picker.is-mobile .memoria-table-picker-label {
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   margin-bottom: 12px;
   color: var(--text-normal);
   font-weight: 500;
@@ -3397,7 +3427,7 @@
 /* —— 卡片 hover 引用按钮（次级可见，从 ⋯ 菜单提到表面） —— */
 .memoria-card-quote {
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 250ms ease-out;
 }
 .memoria-card:hover .memoria-card-quote {
   opacity: 0.7;
@@ -3417,7 +3447,7 @@
   }
 }
 
-/* —— empty 状态跳转按钮（回顾空态的"随机 5 条"）—— */
+/* —— empty 状态跳转按钮（回顾空态）—— */
 .memoria-empty-btn {
   margin-top: 16px;
   padding: 8px 18px;
@@ -3428,17 +3458,14 @@
   color: var(--text-on-accent);
   border: none;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   font-weight: 500;
   cursor: pointer;
   box-shadow: none;
-  transition: transform 0.12s, filter 0.12s, box-shadow 0.12s;
+  transition: background 250ms ease-out;
 }
 .memoria-empty-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-  box-shadow: 0 4px 12px -4px
-    color-mix(in srgb, var(--interactive-accent) 60%, transparent);
+  background: var(--interactive-accent-hover);
 }
 .memoria-empty-btn .svg-icon {
   width: 14px;
@@ -3450,60 +3477,17 @@
   gap: 10px;
 }
 
-/* —— 数据报告：今日彩蛋 fact 的特殊样式 —— */
-.memoria-stats-view .mstat-fact.is-egg {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--interactive-accent) 10%, var(--background-primary)),
-    color-mix(in srgb, var(--interactive-accent) 3%, var(--background-primary))
-  );
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--interactive-accent) 32%,
-      var(--background-modifier-border)
-    );
-  border-left: 3px solid var(--interactive-accent);
-  font-size: 14.5px;
-  font-weight: 500;
-  color: var(--text-normal);
-  position: relative;
-  overflow: hidden;
-}
-.memoria-stats-view .mstat-fact.is-egg::after {
-  /* 右上角藏一个非常淡的星光装饰 */
-  content: "✦";
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  font-size: 14px;
-  color: var(--interactive-accent);
-  opacity: 0.25;
-  pointer-events: none;
-}
-.memoria-stats-view .mstat-fact.is-egg .mstat-fact-icon {
-  font-size: 20px;
-}
-
 /* —— 视觉微调（第四类建议）—— */
 
-/* #17 统计条数字字号略收，label 略放 */
+/* 统计条数字字号略收，label 略放 */
 .memoria-stat-num {
-  font-size: 20px; /* 22px → 20px */
+  font-size: var(--memoria-font-title);
 }
 .memoria-stat-label {
-  font-size: 12px; /* 11px → 12px */
+  font-size: var(--memoria-font-xs);
 }
 
-/* #16 桌面 logo 文字不再那么粗 */
-.memoria-topbar-title {
-  font-size: 18px; /* 20px → 18px */
-}
-
-/* #18 标签胶囊加 hover 反馈 */
-.memoria-tag-pill {
-  transition: background 0.12s, color 0.12s, transform 0.08s;
-}
+/* #18 标签胶囊 hover 反馈 */
 .memoria-tag-pill:hover {
   background: color-mix(
     in srgb,
@@ -3511,7 +3495,6 @@
     transparent
   );
   color: var(--interactive-accent);
-  transform: translateY(-1px);
 }
 
 /* #19 月历今日格子字体加粗、颜色更醒目 */
@@ -3548,7 +3531,7 @@
   padding: 4px 4px;
   cursor: pointer;
   border-radius: 4px;
-  transition: background 140ms ease;
+  transition: background 250ms ease-out;
 }
 .memoria-daily-goal:hover {
   background: var(--background-modifier-hover);
@@ -3563,14 +3546,9 @@
 .memoria-daily-goal-fill {
   height: 100%;
   width: 0%;
-  /* v1.4.1: 颜色跟随主题 accent，自动适配深浅/用户自定义主题 */
   background: var(--interactive-accent);
   border-radius: 2px;
-  transition: width 320ms ease, box-shadow 220ms ease;
-}
-/* 已完成（≥目标）：细微发光，暗示"达成" */
-.memoria-daily-goal-row.is-done .memoria-daily-goal-fill {
-  box-shadow: 0 0 6px color-mix(in srgb, var(--interactive-accent) 45%, transparent);
+  transition: width 250ms ease-out;
 }
 
 /* 右侧图标组 */
@@ -3580,24 +3558,17 @@
   gap: 2px;
   flex-shrink: 0;
 }
-.memoria-daily-goal-target,
 .memoria-daily-goal-switch {
   padding: 3px 4px;
   color: var(--text-faint);
   cursor: pointer;
 }
-.memoria-daily-goal-target:hover,
 .memoria-daily-goal-switch:hover {
   color: var(--interactive-accent);
 }
-.memoria-daily-goal-target .svg-icon,
 .memoria-daily-goal-switch .svg-icon {
   width: 15px;
   height: 15px;
-}
-/* 已完成时靶心图标变 accent 色，给一点"鼓励感" */
-.memoria-daily-goal-row.is-done .memoria-daily-goal-target {
-  color: var(--interactive-accent);
 }
 
 /* v1.3.0 → v1.3.3: 长笔记折叠
@@ -3613,7 +3584,7 @@
   max-height: var(--memoria-collapse-max, 240px);
   overflow: hidden;
   position: relative;
-  transition: max-height 180ms ease;
+  transition: max-height 250ms ease-out;
   /* v2.1.3-iter3: 扩展 overflow 的左裁切边界，给 task-list 复选框的负 margin 让出空间
    *
    * 问题：折叠态下 task-list 复选框 □ 左侧方框被裁掉一竖。
@@ -3694,10 +3665,10 @@
   box-shadow: none;
   border-radius: 4px;
   color: var(--text-faint);
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   line-height: 1.4;
   cursor: pointer;
-  transition: color 140ms ease;
+  transition: color 250ms ease-out;
   letter-spacing: 0.2px;
   font-family: inherit;
   /* margin-left:auto 在 flex 容器（tagRow）里把按钮推到最右
@@ -3804,7 +3775,7 @@
   margin-bottom: 40px;
 }
 .memoria-year-title {
-  font-size: 36px;
+  font-size: var(--memoria-font-title);
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(--text-normal);
@@ -3814,7 +3785,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-pill);
   padding: 3px;
   background: var(--background-secondary);
@@ -3829,7 +3800,7 @@
   color: var(--text-muted);
   cursor: pointer;
   box-shadow: none;
-  transition: background 0.12s, color 0.12s;
+  transition: background 250ms ease-out, color 250ms ease-out;
 }
 .memoria-year-view button.memoria-year-nav-btn {
   width: 28px;
@@ -3840,7 +3811,7 @@
 .memoria-year-view button.memoria-year-today-btn {
   padding: 4px 14px;
   border-radius: var(--memoria-radius-pill);
-  font-size: 13px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
 }
 .memoria-year-view button.memoria-year-nav-btn:hover,
@@ -3866,25 +3837,23 @@
  */
 .memoria-year-month {
   background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-panel);
   padding: 18px 16px 14px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 250ms ease-out;
 }
 .memoria-year-month:hover {
   border-color: var(--background-modifier-border-hover);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-/* 月份英文缩写标签 + 下方细分隔线 */
+/* 月份英文缩写标签 */
 .memoria-year-month-label {
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--text-muted);
   padding-bottom: 10px;
   margin-bottom: 10px;
-  border-bottom: 1px dashed var(--background-modifier-border);
 }
 
 /* 星期头（日一二三四五六） */
@@ -3896,7 +3865,7 @@
 }
 .memoria-year-wday {
   text-align: center;
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   font-weight: 500;
   letter-spacing: 0.5px;
@@ -3924,11 +3893,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-normal);
   border-radius: 50%;
   cursor: default;
-  transition: background 0.12s, color 0.12s, box-shadow 0.14s;
+  transition: background 250ms ease-out, color 250ms ease-out, box-shadow 250ms ease-out;
   user-select: none;
 }
 
@@ -3993,7 +3962,7 @@
   align-items: center;
   gap: 10px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: var(--memoria-font-xs);
   justify-content: center;
 }
 .memoria-year-foot-item {
@@ -4023,7 +3992,7 @@
     padding: 40px 32px 56px;
   }
   .memoria-year-title {
-    font-size: 28px;
+    font-size: var(--memoria-font-title);
   }
 }
 @media (max-width: 560px) {
@@ -4038,7 +4007,7 @@
     margin-bottom: 24px;
   }
   .memoria-year-title {
-    font-size: 24px;
+    font-size: var(--memoria-font-title);
   }
   .memoria-year-day {
     /* 手机单列时容器更宽，圆点也相应放大一点，配合手指触控 */
@@ -4063,33 +4032,6 @@
   padding: 0 1px;
   border-radius: 2px;
 }
-
-/* 鎯呮劅鑹插僵鍙鍖栵細鍗＄墖宸﹁竟鑹叉潯
-   color-coding 鏄惎鍙戝紡鍒ゆ柇锛岄粯璁ゅ叧闂紝寮€鍚悗鑹叉潯鍙湪鍛戒腑鍏抽敭璇嶆椂鍑虹幇 */
-.memoria-card.memoria-mood-happy {
-  box-shadow: inset 3px 0 0 0 #f5c76a;
-}
-.memoria-card.memoria-mood-touched {
-  box-shadow: inset 3px 0 0 0 #e88eb4;
-}
-/* v2.0.2: 新增 inspired（鼓励/励志/加油） */
-.memoria-card.memoria-mood-inspired {
-  box-shadow: inset 3px 0 0 0 #e89a5c;
-}
-.memoria-card.memoria-mood-sad {
-  box-shadow: inset 3px 0 0 0 #7a93b0;
-}
-.memoria-card.memoria-mood-angry {
-  box-shadow: inset 3px 0 0 0 #c77764;
-}
-/* v2.0.1: 新增 fear（暗紫）和 tired（浅灰棕）两个维度 */
-.memoria-card.memoria-mood-fear {
-  box-shadow: inset 3px 0 0 0 #6e5a8f;
-}
-.memoria-card.memoria-mood-tired {
-  box-shadow: inset 3px 0 0 0 #a89684;
-}
-/* 缃《 / 鏀惰棌宸茬粡鏈?box-shadow锛屽拰 mood 鍙兘鍐茬獊銆俶ood 鐢?left-inset锛?   缃《鐢?border-top锛屼笉鍐茬獊锛涘拰 is-pinned 骞跺垪鏃朵紭鍏?mood 鐨勫乏鑹叉潯銆?*/
 
 /* 绱у噾瑙嗗浘妯″紡锛氶檺鍒舵瘡寮犲崱姝ｆ枃楂樺害 + 鍥剧墖缂╁皬 */
 .memoria-list.is-compact .memoria-card-body {
@@ -4131,27 +4073,26 @@
 .memoria-card.is-vim-selected {
   outline: 2px solid var(--interactive-accent);
   outline-offset: -2px;
-  transform: translateX(2px);
-  transition: transform 0.08s, outline 0.1s;
+  transition: outline 250ms ease-out;
 }
 
 /* 鐑姏鍥惧寮?tooltip */
 .memoria-heatmap-tooltip {
   background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 8px;
   padding: 8px 12px;
   min-width: 180px;
   max-width: 280px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-normal);
   pointer-events: none;
-  animation: memoria-tip-in 0.12s ease;
+  animation: memoria-tip-in 250ms ease-out;
 }
 @keyframes memoria-tip-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .memoria-heatmap-tooltip-head {
   display: flex;
@@ -4159,10 +4100,10 @@
   align-items: baseline;
   margin-bottom: 6px;
   padding-bottom: 4px;
-  border-bottom: 1px dashed var(--background-modifier-border);
+  border-bottom: 0.5px solid var(--background-modifier-border);
 }
 .memoria-heatmap-tooltip-count {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
 }
 .memoria-heatmap-tooltip-row {
@@ -4175,7 +4116,7 @@
   flex-shrink: 0;
   color: var(--text-muted);
   font-family: "SF Mono", Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
 }
 .memoria-heatmap-tooltip-text {
   color: var(--text-normal);
@@ -4186,7 +4127,7 @@
   -webkit-box-orient: vertical;
 }
 .memoria-heatmap-tooltip-more {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
   text-align: center;
   margin-top: 6px;
@@ -4195,13 +4136,7 @@
 
 /* 鐑姏鍥炬牸瀛?hover 鏀惧ぇ鏁堟灉 */
 .memoria-heatmap-cell {
-  transition: transform 0.08s, filter 0.1s;
-}
-.memoria-heatmap-cell:hover {
-  transform: scale(1.35);
-  filter: brightness(1.15);
-  z-index: 2;
-  position: relative;
+  cursor: default;
 }
 
 
@@ -4255,7 +4190,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   white-space: nowrap;
   /* 绝对定位，脱离布局流（不占高度）
    * v2.1.0-iter18: top 改为负值，让 hover 时顶栏浮在卡片上方边界外，
@@ -4267,7 +4202,7 @@
   /* 默认隐藏 */
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.25s ease, visibility 0.25s;
+  transition: opacity 250ms ease-out, visibility 250ms;
   pointer-events: none;
 }
 .memoria-buddy:hover .memoria-buddy-topbar {
@@ -4309,17 +4244,9 @@
   color: var(--text-muted);
   letter-spacing: 0.5px;
 }
-.memoria-buddy-shiny-tag {
-  color: #e8b64a;
-  animation: memoria-buddy-shiny-blink 1.6s ease-in-out infinite;
-}
-@keyframes memoria-buddy-shiny-blink {
-  0%, 100% { opacity: 0.6; }
-  50%      { opacity: 1; }
-}
 /* 陪伴天数 —— 弱化（更小字号 + 更淡颜色），它是"情感数据"不是"信息" */
 .memoria-buddy-days {
-  font-size: 9.5px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   letter-spacing: 0.2px;
   white-space: nowrap;
@@ -4354,20 +4281,17 @@
 .memoria-buddy-epic      .memoria-buddy-sprite { color: var(--text-normal); }
 .memoria-buddy-legendary .memoria-buddy-sprite {
   color: var(--text-normal);
-  text-shadow: 0 0 6px rgba(232, 182, 74, 0.25);
-  animation: memoria-buddy-legendary-pulse 3s ease-in-out infinite;
-}
-@keyframes memoria-buddy-legendary-pulse {
-  0%, 100% { text-shadow: 0 0 6px rgba(232, 182, 74, 0.20); }
-  50%      { text-shadow: 0 0 10px rgba(232, 182, 74, 0.40); }
 }
 
 /* ========== 名字行：名字 · 物种 ========== */
 /* v2.1.0-iter15: 移除阶段标签（移到顶栏）+ 移除 Motto 独立行
  *   名字行下方需要补一点间距，让它和 stats 之间有视觉断隔（之前 Motto 担任了"分隔"角色）*/
 .memoria-buddy-name-row {
-  text-align: center;
-  font-size: 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-normal);
   margin-top: 4px;
   margin-bottom: 14px;
@@ -4381,22 +4305,22 @@
   cursor: pointer;
   border-radius: 3px;
   padding: 0 2px;
-  transition: background 0.15s;
+  transition: background 250ms ease-out;
 }
 .memoria-buddy-name.is-clickable:hover {
   background: var(--background-modifier-hover);
 }
 .memoria-buddy-species {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
 }
 .memoria-buddy-stage {
-  font-size: 10.5px;
+  font-size: var(--memoria-font-xs);
   letter-spacing: 0.3px;
 }
 .memoria-buddy-stage-tag-baby  { color: var(--text-faint); }
-.memoria-buddy-stage-tag-teen  { color: #82c590; }
-.memoria-buddy-stage-tag-adult { color: #d4a85a; }
+.memoria-buddy-stage-tag-teen  { color: var(--text-muted); }
+.memoria-buddy-stage-tag-adult { color: var(--text-muted); }
 
 /* v2.1.0-iter15: Motto 改为收进物种 hover title，不再独占一行 */
 
@@ -4415,7 +4339,7 @@
   grid-template-columns: minmax(58px, max-content) minmax(66px, 1fr) 22px;
   align-items: center;
   gap: 8px;
-  font-size: 10px;
+  font-size: var(--memoria-font-xs);
   white-space: nowrap;
   font-family: var(--font-monospace);
 }
@@ -4491,7 +4415,7 @@
 }
 .memoria-buddy-stat-val {
   color: var(--text-faint);
-  font-size: 9.5px;
+  font-size: var(--memoria-font-xs);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -4500,7 +4424,7 @@
 .memoria-buddy-bubble {
   margin: 14px 4px 0;
   text-align: center;
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
   line-height: 1.4;
   /* v2.1.0-iter15: 用中文「」包裹，更贴合中文语境 */
@@ -4519,41 +4443,6 @@
 }
 .memoria-buddy-bubble-text {
   display: inline;
-}
-
-/* ========== 阶段气场（少年 / 成年）========== */
-.memoria-buddy-aura {
-  font-family: var(--font-monospace);
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--text-faint);
-  user-select: none;
-  pointer-events: none;
-  text-align: center;
-}
-.memoria-buddy-aura-top {
-  animation: memoria-buddy-aura-float 3s ease-in-out infinite;
-}
-@keyframes memoria-buddy-aura-float {
-  0%, 100% { transform: translateY(0); opacity: 0.55; }
-  50%      { transform: translateY(-1px); opacity: 0.85; }
-}
-.memoria-buddy-aura-bottom {
-  animation: memoria-buddy-aura-pulse 3s ease-in-out infinite;
-  letter-spacing: 1px;
-}
-@keyframes memoria-buddy-aura-pulse {
-  0%, 100% { opacity: 0.3; transform: scaleX(0.92); }
-  50%      { opacity: 0.7; transform: scaleX(1); }
-}
-.memoria-buddy-stage-teen .memoria-buddy-aura {
-  color: #82c590;
-}
-.memoria-buddy-stage-adult .memoria-buddy-aura {
-  color: #d4a85a;
-}
-.memoria-buddy-stage-adult .memoria-buddy-sprite {
-  text-shadow: 0 0 4px rgba(212, 168, 90, 0.18);
 }
 
 /* ========== 孵化破壳动画（仅刚孵化时播一次）========== */
@@ -4579,34 +4468,28 @@
 .memoria-buddy-egg .memoria-buddy-sprite {
   font-size: 14px;
   color: var(--text-muted);
-  animation: memoria-buddy-egg-wobble 2.4s ease-in-out infinite;
 }
 .memoria-buddy-egg.is-ready .memoria-buddy-sprite {
-  color: #e8b64a;
-  animation: memoria-buddy-egg-wobble 0.9s ease-in-out infinite;
-}
-@keyframes memoria-buddy-egg-wobble {
-  0%, 100% { transform: rotate(-2deg); }
-  50%      { transform: rotate(2deg); }
+  color: var(--text-accent);
 }
 .memoria-buddy-egg-title {
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-normal);
   margin-top: 4px;
 }
 .memoria-buddy-egg-desc {
-  font-size: 11px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
 }
 .memoria-buddy-egg-input {
   width: 100%;
   padding: 5px 8px;
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 4px;
   color: var(--text-normal);
-  transition: border 0.15s;
+  transition: border-color 250ms ease-out;
 }
 .memoria-buddy-egg-input:focus {
   border-color: var(--interactive-accent);
@@ -4623,13 +4506,13 @@
 }
 .memoria-buddy-egg-btn {
   padding: 5px 14px;
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   background: var(--interactive-accent);
   color: var(--text-on-accent);
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity 250ms ease-out;
 }
 .memoria-buddy-egg-btn:hover {
   opacity: 0.9;
@@ -4702,7 +4585,7 @@
     /* 出现/消失动画 */
     transform: scale(1);
     opacity: 1;
-    transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.18s ease;
+    transition: transform 250ms ease-out, opacity 250ms ease-out, box-shadow 250ms ease-out;
     /* 防 iOS Safari 给原生 button 套灰边 */
     -webkit-appearance: none;
     appearance: none;
@@ -4740,8 +4623,8 @@
     pointer-events: none;
     /* 防止子元素的 box-shadow 溢出 */
     box-shadow: none;
-    transition: max-height 0.22s ease, opacity 0.18s ease,
-      padding 0.22s ease, margin 0.22s ease;
+    transition: max-height 250ms ease-out, opacity 250ms ease-out,
+      padding 250ms ease-out, margin 250ms ease-out;
   }
   .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input-card {
     /* v2.3.3: 展开态改为 position: fixed 贴屏幕底部固定。
@@ -4768,7 +4651,7 @@
     opacity: 1;
     z-index: 50;
     background: var(--background-primary);
-    transition: opacity 0.2s ease;
+    transition: opacity 250ms ease-out;
   }
 
   /* 已展开时 FAB 自身淡出 + 缩小消失（不是直接 display: none，留过渡感）*/
@@ -4804,7 +4687,7 @@
     box-shadow: none;
     z-index: 2;
     -webkit-tap-highlight-color: transparent;
-    transition: background 0.12s ease, color 0.12s ease;
+    transition: background 250ms ease-out, color 250ms ease-out;
   }
   .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input-close:active {
     background: var(--background-modifier-active-hover, var(--interactive-accent));
@@ -4899,7 +4782,6 @@
   .memoria-stats-view .mstat-cloud-tag,
   .memoria-stats-view .mstat-hbar,
   .memoria-stats-view .mstat-weekday-dot,
-  .memoria-stats-view .mstat-fact,
   .memoria-year-view .memoria-year-month,
   .memoria-year-view .memoria-year-day,
   .memoria-year-view button.memoria-year-nav-btn,
@@ -4910,12 +4792,7 @@
 
   .memoria-root button.memoria-icon-btn.is-spinning .svg-icon,
   .memoria-root .memoria-heatmap-tooltip,
-  .memoria-root .memoria-buddy-shiny-tag,
-  .memoria-root .memoria-buddy-legendary .memoria-buddy-sprite,
-  .memoria-root .memoria-buddy-aura-top,
-  .memoria-root .memoria-buddy-aura-bottom,
   .memoria-root .memoria-buddy.is-just-hatched,
-  .memoria-root .memoria-buddy-egg .memoria-buddy-sprite,
   .memoria-root .memoria-buddy-egg-input.is-error {
     animation: none;
   }
@@ -5015,10 +4892,10 @@
   width: min(280px, 88%);
   max-height: none;
   padding: 16px 10px 24px;
-  border-right: 1px solid var(--background-modifier-border);
+  border-right: 0.5px solid var(--background-modifier-border);
   opacity: 1;
   transform: translateX(-100%);
-  transition: transform 0.2s ease;
+  transition: transform 250ms ease-out;
   z-index: 5;
   box-shadow: none;
   overflow-y: auto;
@@ -5164,7 +5041,6 @@ body.sc-style-context-background-image .memoria-review-toolbar,
 body.sc-style-context-background-image .memoria-pin-group,
 body.sc-style-context-background-image .memoria-stats-view .mstat-bignum,
 body.sc-style-context-background-image .memoria-stats-view .mstat-cloud,
-body.sc-style-context-background-image .memoria-stats-view .mstat-fact,
 body.sc-style-context-background-image .memoria-year-nav,
 body.sc-style-context-background-image .memoria-year-month {
   background: transparent;
