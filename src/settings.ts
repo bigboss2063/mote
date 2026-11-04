@@ -393,7 +393,7 @@ export class MemoriaSettingTab extends PluginSettingTab {
           .setCta()
           .onClick(() => {
             window.open(
-              "https://github.com/i-iooi-i/obsidian-memoria",
+              "https://github.com/bigboss2063/mote",
               "_blank"
             );
           })

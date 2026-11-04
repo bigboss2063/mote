@@ -557,7 +557,7 @@ body {
   // footer
   parts.push('<footer class="footer">');
   parts.push(
-    `<a href="https://github.com/i-iooi-i/obsidian-memoria" target="_blank" rel="noopener">${t("export.footer")}</a>`
+    `<a href="https://github.com/bigboss2063/mote" target="_blank" rel="noopener">${t("export.footer")}</a>`
   );
   parts.push("</footer>");
 
