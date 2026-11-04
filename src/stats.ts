@@ -86,7 +86,7 @@ export class StatsView extends ItemView {
     try {
       renderSection();
     } catch (error) {
-      console.error(`[Memoria] Failed to render stats section: ${name}`, error);
+      console.error(`[Mote] Failed to render stats section: ${name}`, error);
     }
   }
 

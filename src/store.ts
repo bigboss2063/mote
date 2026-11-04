@@ -354,7 +354,7 @@ export class MemoStore {
       try {
         await this.appendToTrash(memo);
       } catch (err) {
-        console.error("[Memoria] 写入回收站失败（将继续执行删除）:", err);
+        console.error("[Mote] 写入回收站失败（将继续执行删除）:", err);
       }
       raw = await this.app.vault.read(file);
     }
@@ -417,9 +417,9 @@ export class MemoStore {
       | null;
     if (!existing) {
       const header =
-        `# Memoria 回收站\n\n` +
+        `# Mote 回收站\n\n` +
         `> 这里保存被删除的笔记。停用插件后依然可读，可手动恢复或清空。\n` +
-        `> 该文件不会被 Memoria 主视图识别为普通笔记。\n`;
+        `> 该文件不会被 Mote 主视图识别为普通笔记。\n`;
       await this.app.vault.create(trashPath, header + block);
     } else {
       const old = await this.app.vault.read(existing);
@@ -545,7 +545,7 @@ export class MemoStore {
 
   /**
    * 保存二进制图片到附件目录
-   * 文件名：memoria-YYYYMMDD-HHmmss-随机.<ext>
+   * 文件名：mote-YYYYMMDD-HHmmss-随机.<ext>
    */
   async saveImageAttachment(
     bytes: ArrayBuffer,
@@ -564,7 +564,7 @@ export class MemoStore {
       pad(now.getSeconds());
     const rand = Math.random().toString(36).slice(2, 6);
     const ext = (extension || "png").replace(/^\./, "").toLowerCase();
-    const path = `${folder}/memoria-${stamp}-${rand}.${ext}`;
+    const path = `${folder}/mote-${stamp}-${rand}.${ext}`;
     await this.app.vault.createBinary(path, bytes);
     return path;
   }

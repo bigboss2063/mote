@@ -78,7 +78,7 @@ async function fixture(files = [], ready = false) {
 }
 
 test("3000 startup attachment events cause no text reads or refreshes", async () => {
-  const images = Array.from({length: 3000}, (_, i) => new TFile(`Memoria/attachments/${i}.jpg`));
+  const images = Array.from({length: 3000}, (_, i) => new TFile(`Mote/attachments/${i}.jpg`));
   const f = await fixture(images);
   for (const image of images) f.emit("create", image);
   await flush();
@@ -97,16 +97,16 @@ test("3000 startup attachment events cause no text reads or refreshes", async ()
   assert.equal(f.notifications, 1);
 });
 
-test("startup scans existing Markdown once even without a Memoria view", async () => {
-  const files = [new TFile("Memoria/2026.md", memo("first")), new TFile("Memoria/archive/2025.MD", memo("second")),
-    new TFile("Memoria/_trash.md", memo("trash")), new TFile("Memoria-copy/2026.md", memo("outside")),
-    new TFile("Memoria/attachments/file.pdf"), new TFile("Memoria/attachments/photo.webp")];
+test("startup scans existing Markdown once even without a Mote view", async () => {
+  const files = [new TFile("Mote/2026.md", memo("first")), new TFile("Mote/archive/2025.MD", memo("second")),
+    new TFile("Mote/_trash.md", memo("trash")), new TFile("Mote-copy/2026.md", memo("outside")),
+    new TFile("Mote/attachments/file.pdf"), new TFile("Mote/attachments/photo.webp")];
   const f = await fixture(files);
   files.forEach(file => f.emit("create", file));
   await flush();
   assert.equal(f.reads.length, 0);
   await f.finishStartup();
-  assert.deepEqual(f.reads.sort(), ["Memoria/2026.md", "Memoria/archive/2025.MD"]);
+  assert.deepEqual(f.reads.sort(), ["Mote/2026.md", "Mote/archive/2025.MD"]);
   assert.equal(f.plugin.store.getAll().length, 2);
   assert.equal(f.notifications, 1);
 });
@@ -114,7 +114,7 @@ test("startup scans existing Markdown once even without a Memoria view", async (
 test("post-startup create, modify, rename and delete still update notes", async () => {
   const f = await fixture();
   await f.finishStartup();
-  const file = new TFile("Memoria/2026.md", memo("created"));
+  const file = new TFile("Mote/2026.md", memo("created"));
   f.byPath.set(file.path, file);
   f.emit("create", file);
   await flush();
@@ -123,7 +123,7 @@ test("post-startup create, modify, rename and delete still update notes", async 
   f.emit("modify", file);
   await flush();
   assert.equal(f.plugin.store.getAll()[0].content, "modified");
-  const renamed = new TFile("Memoria/archive/2026.md", file.content);
+  const renamed = new TFile("Mote/archive/2026.md", file.content);
   f.byPath.delete(file.path);
   f.byPath.set(renamed.path, renamed);
   f.emit("rename", renamed, file.path);
@@ -136,8 +136,8 @@ test("post-startup create, modify, rename and delete still update notes", async 
 });
 
 test("moving a note outside the folder or renaming to non-Markdown removes it", async () => {
-  for (const path of ["Elsewhere/2026.md", "Memoria/2026.txt"]) {
-    const file = new TFile("Memoria/2026.md", memo("old"));
+  for (const path of ["Elsewhere/2026.md", "Mote/2026.txt"]) {
+    const file = new TFile("Mote/2026.md", memo("old"));
     const f = await fixture([file]);
     await f.finishStartup();
     f.byPath.delete(file.path);
@@ -151,14 +151,14 @@ test("moving a note outside the folder or renaming to non-Markdown removes it", 
 });
 
 test("enabling after layout is ready still loads existing notes", async () => {
-  const f = await fixture([new TFile("Memoria/2026.md", memo("existing"))], true);
+  const f = await fixture([new TFile("Mote/2026.md", memo("existing"))], true);
   await flush();
   assert.equal(f.plugin.store.getAll().length, 1);
   assert.equal(f.scans, 1);
 });
 
 test("unloading before layout is ready cancels deferred initialization", async () => {
-  const f = await fixture([new TFile("Memoria/2026.md", memo("existing"))]);
+  const f = await fixture([new TFile("Mote/2026.md", memo("existing"))]);
   f.plugin.onunload();
   await f.finishStartup();
   assert.equal(f.scans, 0);
@@ -168,7 +168,7 @@ test("unloading before layout is ready cancels deferred initialization", async (
 test("failed event reads are handled and later updates can recover", async () => {
   const f = await fixture();
   await f.finishStartup();
-  const file = new TFile("Memoria/2026.md", memo("recovered"));
+  const file = new TFile("Mote/2026.md", memo("recovered"));
   f.byPath.set(file.path, file);
   const read = f.app.vault.read;
   f.app.vault.read = async () => { throw new Error("read failure"); };
@@ -196,7 +196,7 @@ test("saving an image still writes binary data without triggering memo parsing",
   const bytes = new Uint8Array([137, 80, 78, 71]).buffer;
   const path = await f.plugin.store.saveImageAttachment(bytes, "png");
   await flush();
-  assert.match(path, /^Memoria\/attachments\/memoria-.*\.png$/);
+  assert.match(path, /^Mote\/attachments\/mote-.*\.png$/);
   assert.equal(writes.length, 1);
   assert.equal(writes[0].bytes, bytes);
   assert.equal(f.reads.length, 0);

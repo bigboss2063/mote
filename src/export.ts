@@ -8,7 +8,7 @@
  *
  * 导出范围：
  *   - 按当前筛选（复用 filter query），零重复代码
- *   - 批量数据，全部保存到 vault 里的 Memoria/exports/ 目录（方便用户从 Obsidian 右键复制路径）
+ *   - 批量数据，全部保存到 vault 里的 Mote/exports/ 目录（方便用户从 Obsidian 右键复制路径）
  *
  * 注意：
  *   - 不打包图片（图片链接保持原样，是 vault 内相对路径或外链）
@@ -28,7 +28,7 @@ export interface ExportOptions {
   memos: Memo[];
   /** 可读的筛选描述（比如 "本周" / "#工作 且 AI" / "全部"） */
   filterDesc: string;
-  /** 导出目录（相对 vault 根），默认 "Memoria/exports" */
+  /** 导出目录（相对 vault 根），默认 "Mote/exports" */
   exportFolder: string;
 }
 
@@ -84,7 +84,7 @@ function renderMarkdown(memos: Memo[], filterDesc: string): string {
   const now = new Date();
   const fm = [
     "---",
-    `exported_by: Memoria`,
+    `exported_by: Mote`,
     `exported_at: ${now.toISOString()}`,
     `count: ${memos.length}`,
     `filter: ${escapeYaml(filterDesc)}`,
@@ -136,7 +136,7 @@ function escapeYaml(s: string): string {
  * 设计理念：
  *   - 像一份"数字纪念册"而不是"数据导出"
  *   - 时间线感：日期作为大分组，笔记卡片垂直流动
- *   - 布局像 Memoria 主视图的"精简版"，用户一看就熟悉
+ *   - 布局像 Mote 主视图的"精简版"，用户一看就熟悉
  *   - 深浅自适应 + 优雅字体栈 + 克制的配色
  *   - 不依赖外部 CDN，自包含单文件可离线看、可发邮件、可打印
  */
@@ -493,7 +493,7 @@ body {
   parts.push(
     '<meta name="viewport" content="width=device-width, initial-scale=1">'
   );
-  parts.push(`<title>Memoria - ${escapeHtml(filterDesc)}</title>`);
+  parts.push(`<title>Mote - ${escapeHtml(filterDesc)}</title>`);
   parts.push("<style>" + css + "</style>");
   parts.push("</head>");
   parts.push("<body>");
@@ -530,7 +530,7 @@ body {
         `<span class="day-head-count">${t("list.totalCount", { n: (byDate.get(date) ?? []).length })}</span></div>`
     );
     const items = byDate.get(date) ?? [];
-    items.sort((a, b) => a.time.localeCompare(b.time)); // 同日内早的在前（与 Memoria 文件规范一致）
+    items.sort((a, b) => a.time.localeCompare(b.time)); // 同日内早的在前（与 Mote 文件规范一致）
     for (const m of items) {
       parts.push('<article class="memo">');
       parts.push(`<div class="memo-time">${m.time}</div>`);
@@ -733,7 +733,7 @@ function escapeHtml(s: string): string {
 /** JSON 导出：结构化数据 */
 function renderJson(memos: Memo[], filterDesc: string): string {
   const data = {
-    exported_by: "Memoria",
+    exported_by: "Mote",
     exported_at: new Date().toISOString(),
     filter: filterDesc,
     count: memos.length,

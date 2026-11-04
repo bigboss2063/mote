@@ -34,7 +34,7 @@ for (const [name, content, tags] of cases) {
   test(`tag extraction: ${name}`, () => {
     assert.deepEqual([...extractTags(content)], tags);
     const raw = "## 2026-10-21 Wednesday\n" + renderMemo("10:00", content);
-    const [memo] = parseFile("Memoria/2026.md", raw);
+    const [memo] = parseFile("Mote/2026.md", raw);
     assert.deepEqual([...memo.tags], tags);
     assert.equal(memo.content, content);
   });

@@ -177,7 +177,7 @@ export class MemoriaView extends ItemView {
     return VIEW_TYPE_MEMORIA;
   }
   getDisplayText(): string {
-    return "Memoria";
+    return "Mote";
   }
   getIcon(): string {
     return "feather";
@@ -219,7 +219,7 @@ export class MemoriaView extends ItemView {
     try {
       await this.store.reloadAll();
     } catch (err) {
-      console.error("[Memoria] reloadAll failed:", err);
+      console.error("[Mote] reloadAll failed:", err);
     }
     // v1.1.7: 恢复上次未发送的草稿
     const draft = this.loadDraft();
@@ -265,7 +265,7 @@ export class MemoriaView extends ItemView {
     const titleWrap = topBar.createDiv({ cls: "memoria-topbar-title" });
     const logoEl = titleWrap.createSpan({ cls: "memoria-logo" });
     setIcon(logoEl, "feather");
-    titleWrap.createSpan({ cls: "memoria-brand", text: "Memoria" });
+    titleWrap.createSpan({ cls: "memoria-brand", text: "Mote" });
 
     const searchWrap = topBar.createDiv({ cls: "memoria-search-wrap" });
     const searchIcon = searchWrap.createDiv({ cls: "memoria-search-icon" });
@@ -305,7 +305,7 @@ export class MemoriaView extends ItemView {
         this.mdCache.clear();
         this.renderList();
       })().catch((err) => {
-        console.error("[Memoria] Failed to change density:", err);
+        console.error("[Mote] Failed to change density:", err);
       });
     };
 
@@ -325,7 +325,7 @@ export class MemoriaView extends ItemView {
         });
         await this.app.workspace.revealLeaf(leaf);
       })().catch((err) => {
-        console.error("[Memoria] Failed to open year panorama:", err);
+        console.error("[Mote] Failed to open year panorama:", err);
       });
     };
 
@@ -345,7 +345,7 @@ export class MemoriaView extends ItemView {
         });
         await this.app.workspace.revealLeaf(leaf);
       })().catch((err) => {
-        console.error("[Memoria] Failed to open stats view:", err);
+        console.error("[Mote] Failed to open stats view:", err);
       });
     };
 
@@ -723,7 +723,7 @@ export class MemoriaView extends ItemView {
       }
       // 否则走默认（浏览器自己处理纯文本粘贴）
       })().catch((err) => {
-        console.error("[Memoria] Failed to handle paste:", err);
+        console.error("[Mote] Failed to handle paste:", err);
       });
     });
     // 拖拽图片
@@ -745,7 +745,7 @@ export class MemoriaView extends ItemView {
         }
       }
       })().catch((err) => {
-        console.error("[Memoria] Failed to handle dropped image:", err);
+        console.error("[Mote] Failed to handle dropped image:", err);
       });
     });
 
@@ -1369,7 +1369,7 @@ export class MemoriaView extends ItemView {
       const files = Array.from(inp.files ?? []);
       this.disposeImagePicker(inp);
       void this.importSelectedImages(files).catch((err: unknown) => {
-        console.error("[Memoria] Failed to import selected image:", err);
+        console.error("[Mote] Failed to import selected image:", err);
       });
     }, { once: true });
     inp.addEventListener("cancel", () => {
@@ -1643,7 +1643,7 @@ export class MemoriaView extends ItemView {
     this.syncSidebarControls();
     if (Platform.isMobile) return;
     void this.plugin.saveSettings().catch((error: unknown) => {
-      console.error("[Memoria] Failed to save sidebar state:", error);
+      console.error("[Mote] Failed to save sidebar state:", error);
     });
   }
 
@@ -2189,7 +2189,7 @@ export class MemoriaView extends ItemView {
         this.buddyJustHatched = true;
         this.renderSidebar();
         })().catch((err) => {
-          console.error("[Memoria] Failed to hatch buddy:", err);
+          console.error("[Mote] Failed to hatch buddy:", err);
         });
       });
       return;
@@ -2222,7 +2222,7 @@ export class MemoriaView extends ItemView {
     renderBuddy(parent, buddy, memos, this.buddyQuipCache, {
       onRename: () => {
         void this.openBuddyRename(buddy.name).catch((err) => {
-          console.error("[Memoria] Failed to rename buddy:", err);
+          console.error("[Mote] Failed to rename buddy:", err);
         });
       },
       justHatched,
@@ -3238,7 +3238,7 @@ export class MemoriaView extends ItemView {
             if (!first.done) this.mdCache.delete(first.value);
           }
         }).catch((err) => {
-          console.error("[Memoria] Failed to render markdown:", err);
+          console.error("[Mote] Failed to render markdown:", err);
         });
       }
       // 给任务列表复选框接入点击 → 修改原 md
@@ -3351,7 +3351,7 @@ export class MemoriaView extends ItemView {
         try {
           await this.store.editMemo(memo, newContent);
         } catch (err) {
-          console.error("[Memoria] 任务勾选失败:", err);
+          console.error("[Mote] 任务勾选失败:", err);
           new Notice(t("notice.checkFailed", { msg: (err as Error).message }));
         }
         })();
@@ -3614,7 +3614,7 @@ export class MemoriaView extends ItemView {
   }
 
   private reportMemoActionError(error: unknown): void {
-    console.error("[Memoria] Memo operation failed:", error);
+    console.error("[Mote] Memo operation failed:", error);
     new Notice(t("notice.actionFailed", { msg: error instanceof Error ? error.message : String(error) }));
   }
 
@@ -3680,7 +3680,7 @@ export class MemoriaView extends ItemView {
           try {
             await this.exportMemoAsPng(memo);
           } catch (err) {
-            console.error("[Memoria] 导出图片失败:", err);
+            console.error("[Mote] 导出图片失败:", err);
             new Notice(t("notice.exportFailed", { msg: (err as Error).message }));
           }
         })
@@ -4756,7 +4756,7 @@ export class MemoriaView extends ItemView {
       new Notice(t("notice.cardImageSaved", { name: `${baseName}.png` }));
       return;
     } catch (err) {
-      console.warn("[Memoria] PNG 导出失败，降级为 SVG：", err);
+      console.warn("[Mote] PNG 导出失败，降级为 SVG：", err);
     }
 
     // 万一仍然失败，降级保存 SVG

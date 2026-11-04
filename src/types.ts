@@ -109,8 +109,8 @@ export interface BuddyData {
 }
 
 export const DEFAULT_SETTINGS: MemoriaSettings = {
-  folder: "Memoria",
-  attachmentFolder: "Memoria/attachments",
+  folder: "Mote",
+  attachmentFolder: "Mote/attachments",
   clearAfterSave: true,
   pageSize: 50,
   showSidebarTags: false,

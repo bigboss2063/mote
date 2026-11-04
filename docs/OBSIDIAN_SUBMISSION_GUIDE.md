@@ -147,7 +147,7 @@ Link to my plugin: https://github.com/i-iooi-i/obsidian-memoria
 
 合并到商店后，**下次发新版只需**：
 
-1. 源码改 → `publish.ps1` 一键发版 → GitHub Release 三件套
+1. 源码改 → 打 tag 触发 GitHub Actions 发版 → 确认 draft Release 的三件套后发布
 2. **Obsidian 会自动检测到**新 Release（对比 manifest.json 的 version）
 3. 用户的 Obsidian "设置 → 社区插件 → 检查更新" 就能看到并点"更新"
 4. **完全不需要再向 obsidian-releases 提 PR**

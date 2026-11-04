@@ -97,14 +97,14 @@ const zhCN: Dict = {
 
   // 导出 HTML 页面
   "export.exportedAt": "{date} 导出",
-  "export.footer": "由 Memoria（Obsidian 插件）导出",
+  "export.footer": "由 Mote（Obsidian 插件）导出",
   "export.dateFull": "{y}年{m}月{d}日 {wd} {hh}:{mm}",
   "export.noticeDone": "已导出 {n} 条到 {path}",
-  "export.mdTitle": "Memoria 导出：{desc}",
+  "export.mdTitle": "Mote 导出：{desc}",
   "export.mdSummary": "导出于 {date}，{count}",
 
   // 数据报告
-  "stats.title": "Memoria 数据报告",
+  "stats.title": "Mote 数据报告",
   "stats.empty": "暂无笔记",
   "stats.label.memos": "条笔记",
   "stats.label.words": "字",
@@ -153,7 +153,7 @@ const zhCN: Dict = {
 
   // 年度全景
   "year.title": "年度全景",
-  "year.viewTitle": "Memoria 年度全景",
+  "year.viewTitle": "Mote 年度全景",
   "year.subtitle": "{year} 年，回顾你一整年的想法",
   "year.empty": "{year} 年还没有笔记",
   "year.thisYear": "今年",
@@ -203,17 +203,17 @@ const zhCN: Dict = {
   "notice.normalizeFailed": "规范化失败：{msg}",
   "notice.protocolCaptureSaved": "已通过快捷指令保存",
   "notice.protocolCaptureFailed": "快捷指令保存失败：{msg}",
-  "notice.normalizeConfirm": "将重写所有 Memoria 笔记的 md 格式以修复渲染问题。\n建议先备份 Memoria 文件夹。\n\n确定继续吗？",
+  "notice.normalizeConfirm": "将重写所有 Mote 笔记的 md 格式以修复渲染问题。\n建议先备份 Mote 文件夹。\n\n确定继续吗？",
   "error.fileChanged": "文件内容已变更，找不到原笔记位置，请关闭编辑后点刷新重试",
   "error.originNotFound": "找不到原笔记文件",
   "error.emptyContent": "内容不能为空",
   "error.unknown": "未知错误",
-  "command.openMemoria": "打开 Memoria 面板",
+  "command.openMote": "打开 Mote 面板",
   "command.openStats": "打开数据报告",
   "command.openYear": "打开年度全景图",
   "command.quickCapture": "快速记录（弹窗）",
   "command.normalizeAll": "规范化所有笔记格式（修复 md 渲染）",
-  "ribbon.openMemoria": "打开 Memoria",
+  "ribbon.openMote": "打开 Mote",
   "quickCapture.title": "此刻想到了什么？",
   "quickCapture.placeholder": "Ctrl+Enter 发送，Esc 关闭",
   "quickCapture.cancel": "取消",
@@ -286,9 +286,9 @@ const zhCN: Dict = {
   "overview.buddy": "宠物",
 
   // 设置页（v2.0.1 新补）
-  "settings.title": "Memoria 设置",
+  "settings.title": "Mote 设置",
   "settings.folder.name": "笔记文件夹",
-  "settings.folder.desc": "Memoria 在此文件夹下读写 YYYY.md 文件（相对 vault 根目录）",
+  "settings.folder.desc": "Mote 在此文件夹下读写 YYYY.md 文件（相对 vault 根目录）",
   "settings.attachFolder.name": "图片附件文件夹",
   "settings.attachFolder.desc": "粘贴/拖拽/选择的图片会保存到此目录（相对 vault 根目录）",
   "settings.sidebarTags.name": "在侧边栏显示标签树",
@@ -348,7 +348,7 @@ const zhCN: Dict = {
   "settings.smartReview.name": "启用智能回顾",
   "settings.smartReview.desc": "「随机 5 条」改用加权算法挑选：越久没翻过的越优先，和今天标签呼应的加分",
   "settings.language.name": "语言",
-  "settings.language.desc": "auto 会跟随 Obsidian 语言；手动切换即时生效（需重开 Memoria 视图）",
+  "settings.language.desc": "auto 会跟随 Obsidian 语言；手动切换即时生效（需重开 Mote 视图）",
   "settings.language.auto": "自动（跟随 Obsidian）",
   "settings.language.zh": "简体中文",
   "settings.language.en": "English",
@@ -362,7 +362,7 @@ const zhCN: Dict = {
   "settings.mobileInputStyle.alwaysVisible": "常驻底部",
   "fab.aria": "新建笔记",
   "fab.close": "收起输入框",
-  "settings.about.p1": "Memoria — 浮墨式碎片笔记插件。所有笔记以纯 Markdown 格式存储（",
+  "settings.about.p1": "Mote — 浮墨式碎片笔记插件。所有笔记以纯 Markdown 格式存储（",
   "settings.about.p2": "），停用插件后你的笔记依然完整可读。",
   "settings.repo.name": "GitHub 仓库",
   "settings.repo.desc": "查看源码、反馈问题、提出建议，都在这里见",
@@ -409,17 +409,17 @@ const zhCN: Dict = {
 
   // v2.0.20: 侧栏默认视图设置
   "settings.defaultOverview.name": "侧栏默认视图",
-  "settings.defaultOverview.desc": "打开 Memoria 面板时侧栏顶部默认显示哪个视图。可以在概览右上角随时切换。",
+  "settings.defaultOverview.desc": "打开 Mote 面板时侧栏顶部默认显示哪个视图。可以在概览右上角随时切换。",
   "settings.defaultOverview.heatmap": "热力图（默认）",
   "settings.defaultOverview.calendar": "月历",
   "settings.defaultOverview.buddy": "宠物",
-  "settings.openOnStartup.name": "启动时打开 Memoria",
+  "settings.openOnStartup.name": "启动时打开 Mote",
   "settings.openLocation.name": "默认打开位置",
-  "settings.openLocation.desc": "桌面端新开 Memoria 时使用的位置。已有页面会在原处打开，手机端仍在主窗口打开。",
+  "settings.openLocation.desc": "桌面端新开 Mote 时使用的位置。已有页面会在原处打开，手机端仍在主窗口打开。",
   "settings.openLocation.main": "主窗口",
   "settings.openLocation.left": "左侧栏",
   "settings.openLocation.right": "右侧栏",
-  "settings.openOnStartup.desc": "Obsidian 恢复完工作区后，自动打开或切换到 Memoria。不会关闭已有标签页。",
+  "settings.openOnStartup.desc": "Obsidian 恢复完工作区后，自动打开或切换到 Mote。不会关闭已有标签页。",
 
   // v2.1.0: 宠物系统  // 稀有度
   "buddy.rarity.common": "普通",
@@ -432,7 +432,7 @@ const zhCN: Dict = {
   "buddy.stage.baby": "幼年",
   "buddy.stage.teen": "少年",
   "buddy.stage.adult": "成年",
-  // 5 维属性（中文走 Memoria 风格的本地化）
+  // 5 维属性（中文走 Mote 风格的本地化）
   "buddy.stat.debugging": "打磨力",
   "buddy.stat.patience": "耐心值",
   "buddy.stat.chaos": "混沌气",
@@ -624,14 +624,14 @@ const enUS: Dict = {
 
   // Export HTML page
   "export.exportedAt": "Exported {date}",
-  "export.footer": "Exported by Memoria (Obsidian plugin)",
+  "export.footer": "Exported by Mote (Obsidian plugin)",
   "export.dateFull": "{wd}, {m}/{d}/{y} {hh}:{mm}",
   "export.noticeDone": "Exported {n} memos to {path}",
-  "export.mdTitle": "Memoria Export: {desc}",
+  "export.mdTitle": "Mote Export: {desc}",
   "export.mdSummary": "Exported {date}, {count}",
 
   // Stats report
-  "stats.title": "Memoria Stats",
+  "stats.title": "Mote Stats",
   "stats.empty": "No memos yet",
   "stats.label.memos": "memos",
   "stats.label.words": "words",
@@ -680,7 +680,7 @@ const enUS: Dict = {
 
   // Year panorama
   "year.title": "Year panorama",
-  "year.viewTitle": "Memoria Year Panorama",
+  "year.viewTitle": "Mote Year Panorama",
   "year.subtitle": "Review your year of thoughts in {year}",
   "year.empty": "No memos in {year}",
   "year.thisYear": "This year",
@@ -730,17 +730,17 @@ const enUS: Dict = {
   "notice.normalizeFailed": "Normalize failed: {msg}",
   "notice.protocolCaptureSaved": "Saved from Shortcuts",
   "notice.protocolCaptureFailed": "Shortcut capture failed: {msg}",
-  "notice.normalizeConfirm": "This will rewrite the md format of all Memoria notes to fix render issues.\nPlease back up your Memoria folder first.\n\nContinue?",
+  "notice.normalizeConfirm": "This will rewrite the md format of all Mote notes to fix render issues.\nPlease back up your Mote folder first.\n\nContinue?",
   "error.fileChanged": "File has changed, origin location not found. Please close the editor, refresh and retry.",
   "error.originNotFound": "Origin note file not found",
   "error.emptyContent": "Content cannot be empty",
   "error.unknown": "Unknown error",
-  "command.openMemoria": "Open Memoria panel",
+  "command.openMote": "Open Mote panel",
   "command.openStats": "Open stats",
   "command.openYear": "Open year panorama",
   "command.quickCapture": "Quick capture (popup)",
   "command.normalizeAll": "Normalize all memos (fix md rendering)",
-  "ribbon.openMemoria": "Open Memoria",
+  "ribbon.openMote": "Open Mote",
   "quickCapture.title": "What's on your mind?",
   "quickCapture.placeholder": "Ctrl+Enter to send, Esc to close",
   "quickCapture.cancel": "Cancel",
@@ -813,9 +813,9 @@ const enUS: Dict = {
   "overview.buddy": "Buddy",
 
   // Settings page
-  "settings.title": "Memoria Settings",
+  "settings.title": "Mote Settings",
   "settings.folder.name": "Memo folder",
-  "settings.folder.desc": "Memoria reads/writes YYYY.md files under this folder (relative to vault root)",
+  "settings.folder.desc": "Mote reads/writes YYYY.md files under this folder (relative to vault root)",
   "settings.attachFolder.name": "Image attachment folder",
   "settings.attachFolder.desc": "Pasted/dragged/picked images are saved here (relative to vault root)",
   "settings.sidebarTags.name": "Show tag tree in sidebar",
@@ -875,7 +875,7 @@ const enUS: Dict = {
   "settings.smartReview.name": "Enable smart review",
   "settings.smartReview.desc": "\"Random 5\" uses weighted picking: older memos get priority, tag echoes with today get a boost",
   "settings.language.name": "Language",
-  "settings.language.desc": "Auto follows Obsidian's locale; manual switch takes effect after reopening Memoria view",
+  "settings.language.desc": "Auto follows Obsidian's locale; manual switch takes effect after reopening Mote view",
   "settings.language.auto": "Auto (follow Obsidian)",
   "settings.language.zh": "简体中文",
   "settings.language.en": "English",
@@ -889,7 +889,7 @@ const enUS: Dict = {
   "settings.mobileInputStyle.alwaysVisible": "Always visible at bottom",
   "fab.aria": "New memo",
   "fab.close": "Collapse input",
-  "settings.about.p1": "Memoria — a floating-memo plugin. All memos are stored as plain Markdown (",
+  "settings.about.p1": "Mote — a floating-memo plugin. All memos are stored as plain Markdown (",
   "settings.about.p2": "), so your notes stay fully readable even if you disable the plugin.",
   "settings.repo.name": "GitHub repository",
   "settings.repo.desc": "Source code, issues and feature requests — all here",
@@ -936,17 +936,17 @@ const enUS: Dict = {
 
   // v2.0.20: Sidebar default overview setting
   "settings.defaultOverview.name": "Sidebar default view",
-  "settings.defaultOverview.desc": "Which overview to show on top of the sidebar when Memoria opens. You can switch at any time from the overview header.",
+  "settings.defaultOverview.desc": "Which overview to show on top of the sidebar when Mote opens. You can switch at any time from the overview header.",
   "settings.defaultOverview.heatmap": "Heatmap (default)",
   "settings.defaultOverview.calendar": "Calendar",
   "settings.defaultOverview.buddy": "Buddy",
-  "settings.openOnStartup.name": "Open Memoria on startup",
+  "settings.openOnStartup.name": "Open Mote on startup",
   "settings.openLocation.name": "Default opening location",
-  "settings.openLocation.desc": "Where to open a new Memoria view on desktop. Existing views keep their position; mobile opens in the main area.",
+  "settings.openLocation.desc": "Where to open a new Mote view on desktop. Existing views keep their position; mobile opens in the main area.",
   "settings.openLocation.main": "Main area",
   "settings.openLocation.left": "Left sidebar",
   "settings.openLocation.right": "Right sidebar",
-  "settings.openOnStartup.desc": "Open or reveal Memoria after Obsidian restores the workspace. Existing tabs remain open.",
+  "settings.openOnStartup.desc": "Open or reveal Mote after Obsidian restores the workspace. Existing tabs remain open.",
 
   // v2.1.0: Buddy companion system  "buddy.rarity.common": "Common",
   "buddy.rarity.uncommon": "Uncommon",
@@ -1102,7 +1102,7 @@ function resolveLocale(setting: LocaleKey): "zh-CN" | "en-US" {
   } catch {
     /* activeDocument 不可用 */
   }
-  // 默认中文（因为 Memoria 最初是中文插件，保持兼容）
+  // 默认中文（因为 Mote 最初是中文插件，保持兼容）
   return "zh-CN";
 }
 

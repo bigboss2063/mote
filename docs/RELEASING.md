@@ -1,4 +1,4 @@
-# Memoria Release Checklist
+# Mote Release Checklist
 
 The Git checkout is the release source of truth. Do not overwrite it from a stale local mirror.
 
@@ -9,10 +9,10 @@ The Git checkout is the release source of truth. Do not overwrite it from a stal
 5. Back up the active vault's plugin installation before local testing. Determine the current vault path from the running Obsidian app; never assume an old NAS or sync path is still active. Copy only `main.js`, `manifest.json`, and `styles.css`, preserving `data.json` and all notes.
 6. Test in Obsidian: new capture, edit/cancel, text selection, sidebar locations and reopening, search/review, report/calendar navigation, and URL tags. Test destructive operations using an isolated in-memory vault. Native iOS/Android behavior is separate from desktop or simulated tests.
 7. Confirm repeated production builds give the same `main.js` SHA-256. Stage only reviewed source, tests, documentation, metadata, and the three plugin assets.
-8. Commit, create an annotated tag matching the manifest **without a `v` prefix**, and push the tag. Create a **draft** GitHub release with that exact tag and upload all three assets before publishing it. Include a manual-install ZIP if desired; it must not contain user data.
+8. Commit, create an annotated tag matching the manifest **without a `v` prefix**, and push the tag. The GitHub Actions release workflow verifies lint, types, and tests, builds the plugin, checks that the tag matches the manifest, attests the artifacts, and opens a **draft** release with all three assets. Review the draft before publishing it. Include a manual-install ZIP if desired; it must not contain user data.
 9. Download the draft assets and compare SHA-256 with the local files. Publish the release, then push `main` to the same commit so the default-branch manifest cannot point to a missing release.
 10. Verify the published release is not a draft or prerelease, its tag and `main` identify the same commit, and its manifest matches the tag. Download published assets again and compare hashes. Only then report success.
 
 For a beta, use a separate branch and prerelease tag. Do not change the stable default-branch manifest to a prerelease version. Preserve previous releases for rollback.
 
-`publish.ps1` is a legacy source-mirror workflow. Inspect its configured paths and behavior before use; it is not the guarded draft-first process above. Local `.tmp/` artifacts and `RELEASE_NOTES_*.md` are intentionally ignored by Git.
+Releases are produced by `.github/workflows/release.yml` when a tag is pushed. Local `.tmp/` artifacts and `RELEASE_NOTES_*.md` are intentionally ignored by Git.

@@ -24,10 +24,10 @@ export class MemoriaSettingTab extends PluginSettingTab {
       .setDesc(t("settings.folder.desc"))
       .addText((tx) =>
         tx
-          .setPlaceholder("Memoria")
+          .setPlaceholder("Mote")
           .setValue(this.plugin.settings.folder)
           .onChange(async (v) => {
-            this.plugin.settings.folder = v.trim() || "Memoria";
+            this.plugin.settings.folder = v.trim() || "Mote";
             await this.plugin.saveSettings();
             await this.plugin.store.reloadAll();
           })
@@ -38,11 +38,11 @@ export class MemoriaSettingTab extends PluginSettingTab {
       .setDesc(t("settings.attachFolder.desc"))
       .addText((tx) =>
         tx
-          .setPlaceholder("Memoria/attachments")
+          .setPlaceholder("Mote/attachments")
           .setValue(this.plugin.settings.attachmentFolder)
           .onChange(async (v) => {
             this.plugin.settings.attachmentFolder =
-              v.trim() || "Memoria/attachments";
+              v.trim() || "Mote/attachments";
             await this.plugin.saveSettings();
           })
       );
@@ -119,7 +119,7 @@ export class MemoriaSettingTab extends PluginSettingTab {
                 new Notice(t("settings.shortcut.copied"));
               })
               .catch((error: unknown) => {
-                console.error("[Memoria] Failed to copy capture URI:", error);
+                console.error("[Mote] Failed to copy capture URI:", error);
                 new Notice(t("settings.shortcut.copyFailed"));
               });
           })

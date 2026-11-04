@@ -53,14 +53,14 @@ export default class MemoriaPlugin extends Plugin {
     );
 
     // Ribbon 按钮
-    this.addRibbonIcon("feather", t("ribbon.openMemoria"), () => {
+    this.addRibbonIcon("feather", t("ribbon.openMote"), () => {
       void this.activateView();
     });
 
     // 命令
     this.addCommand({
       id: "open-memoria",
-      name: t("command.openMemoria"),
+      name: t("command.openMote"),
       callback: () => {
         void this.activateView();
       },
@@ -113,7 +113,7 @@ export default class MemoriaPlugin extends Plugin {
       this.app.vault.on("modify", (f) => {
         if (f instanceof TFile && this.store.isInFolder(f)) {
           void this.store.reloadFile(f).catch((err: unknown) => {
-            console.error("[Memoria] Failed to reload modified note:", err);
+            console.error("[Mote] Failed to reload modified note:", err);
           });
         }
       })
@@ -129,7 +129,7 @@ export default class MemoriaPlugin extends Plugin {
         if (!this.app.workspace.layoutReady) return;
         if (f instanceof TFile && this.store.isInFolder(f)) {
           void this.store.reloadFile(f).catch((err: unknown) => {
-            console.error("[Memoria] Failed to load created note:", err);
+            console.error("[Mote] Failed to load created note:", err);
           });
         }
       })
@@ -139,7 +139,7 @@ export default class MemoriaPlugin extends Plugin {
         this.store.removeFile(old);
         if (f instanceof TFile && this.store.isInFolder(f)) {
           void this.store.reloadFile(f).catch((err: unknown) => {
-            console.error("[Memoria] Failed to reload renamed note:", err);
+            console.error("[Mote] Failed to reload renamed note:", err);
           });
         }
       })
@@ -151,11 +151,11 @@ export default class MemoriaPlugin extends Plugin {
       if (this.unloaded) return;
       // One Markdown-only scan also populates restored statistics/calendar views.
       void this.store.reloadAll().catch((err: unknown) => {
-        console.error("[Memoria] Failed to load notes after startup:", err);
+        console.error("[Mote] Failed to load notes after startup:", err);
       });
       if (!this.settings.openOnStartup) return;
       void this.activateView().catch((err: unknown) => {
-        console.error("[Memoria] Failed to open on startup:", err);
+        console.error("[Mote] Failed to open on startup:", err);
       });
     });
   }
@@ -478,7 +478,7 @@ export default class MemoriaPlugin extends Plugin {
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : t("error.unknown");
-      console.error("[Memoria] URI capture failed:", error);
+      console.error("[Mote] URI capture failed:", error);
       new Notice(t("notice.protocolCaptureFailed", { msg: message }));
     }
   }

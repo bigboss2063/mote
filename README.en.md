@@ -1,13 +1,13 @@
 <div align="center">
 
-# Memoria 🪶
+# Mote 🪶
 
 **A flomo-style fleeting-thoughts plugin for Obsidian**
 
 > Your data stays as plain Markdown. Freedom belongs to you.
 
-[![release](https://img.shields.io/github/v/release/i-iooi-i/obsidian-memoria?include_prereleases&label=release)](https://github.com/i-iooi-i/obsidian-memoria/releases)
-[![downloads](https://img.shields.io/github/downloads/i-iooi-i/obsidian-memoria/total)](https://github.com/i-iooi-i/obsidian-memoria/releases)
+[![release](https://img.shields.io/github/v/release/bigboss2063/mote?include_prereleases&label=release)](https://github.com/bigboss2063/mote/releases)
+[![downloads](https://img.shields.io/github/downloads/bigboss2063/mote/total)](https://github.com/bigboss2063/mote/releases)
 [![license](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 [![obsidian](https://img.shields.io/badge/Obsidian-1.7.2%2B-purple)](https://obsidian.md)
 
@@ -17,11 +17,15 @@
 
 ---
 
+> **Mote** is a personal fork of [Memoria](https://github.com/i-iooi-i/obsidian-memoria) by [i-iooi-i](https://github.com/i-iooi-i). The original project and most of the code belong to its author; this fork focuses on UI and interaction changes.
+
+---
+
 ## 📸 What it looks like
 
 **Main view** (waterfall feed + heatmap sidebar + pinned memos)
 
-![Memoria main view](./docs/screenshots/main.png)
+![Mote main view](./docs/screenshots/main.png)
 
 **Stats report** (365-day heatmap, monthly bars, Top 10 tags, 24-hour distribution, insights)
 
@@ -41,7 +45,7 @@ No complex backlinks, no knowledge graph, and no agonizing over "which folder do
 
 But I also wanted: **these thoughts must stay as plain markdown files I can grep anytime**. The day I stop using this plugin, or Obsidian, or even a GUI on my computer — those notes still sit on my disk, readable in any text editor, searchable with a simple grep.
 
-Memoria is exactly that: a flomo-style quick-capture experience inside Obsidian, with data living in your own vault as the most ordinary `YYYY.md` files.
+Mote is exactly that: a flomo-style quick-capture experience inside Obsidian, with data living in your own vault as the most ordinary `YYYY.md` files.
 
 ---
 
@@ -82,7 +86,7 @@ Memoria is exactly that: a flomo-style quick-capture experience inside Obsidian,
 
 ## 📂 Storage format
 
-Memoria maintains `YYYY.md` files under the folder you specify, using a "time on its own line + content indented" layout:
+Mote maintains `YYYY.md` files under the folder you specify, using a "time on its own line + content indented" layout:
 
 ```markdown
 # 2026
@@ -106,7 +110,7 @@ Memoria maintains `YYYY.md` files under the folder you specify, using a "time on
 
 Each `- HH:MM` line starts a new memo. **The moment you disable the plugin, your notes remain fully readable markdown.**
 
-> Note: weekday names (e.g. "Sat" vs "周六") in stored files reflect the language at the time of writing. Memoria never rewrites existing history — the view layer adapts to your language setting while the md files preserve the original data.
+> Note: weekday names (e.g. "Sat" vs "周六") in stored files reflect the language at the time of writing. Mote never rewrites existing history — the view layer adapts to your language setting while the md files preserve the original data.
 
 ---
 
@@ -115,15 +119,17 @@ Each `- HH:MM` line starts a new memo. **The moment you disable the plugin, your
 Manual install for now. Download the three files from the latest [Release](../../releases/latest):
 
 ```
-<Your Vault>/.obsidian/plugins/memoria/
+<Your Vault>/.obsidian/plugins/mote/
 ├── main.js
 ├── manifest.json
 └── styles.css
 ```
 
-Then in Obsidian → Settings → Community plugins → enable **Memoria** → click 🪶 in the left Ribbon.
+Then in Obsidian → Settings → Community plugins → enable **Mote** → click 🪶 in the left Ribbon.
 
-> You can also use [BRAT](https://github.com/TfTHacker/obsidian42-brat) with `i-iooi-i/obsidian-memoria` for auto-install and auto-update.
+> You can also use [BRAT](https://github.com/TfTHacker/obsidian42-brat) with `bigboss2063/mote` for auto-install and auto-update.
+>
+> Migrating from Memoria: copy `data.json` from the old plugin folder into the new one to keep your settings. Your notes are unaffected.
 
 ---
 
@@ -141,12 +147,12 @@ Then in Obsidian → Settings → Community plugins → enable **Memoria** → c
 
 ## 📱 iOS Shortcuts
 
-Memoria can receive text from an iOS Shortcut and save it as a memo at the current time:
+Mote can receive text from an iOS Shortcut and save it as a memo at the current time:
 
-1. In Memoria settings, find “iOS Shortcuts” and select “Copy URI template”.
+1. In Mote settings, find “iOS Shortcuts” and select “Copy URI template”.
 2. Create a Shortcut with Ask for Input, URL Encode, URL, and Open URLs actions.
 3. Paste the copied URI template into the URL action, then append the URL Encode result.
-4. Run the Shortcut. Obsidian opens the target vault and Memoria confirms the saved memo.
+4. Run the Shortcut. Obsidian opens the target vault and Mote confirms the saved memo.
 
 You can add the Shortcut to the Home Screen or Siri, or configure it to receive text from the share sheet. Opening the URI without a `content` parameter reveals the same keyboard-safe input card as the mobile ➕ button; desktop keeps the quick-capture dialog.
 
@@ -164,6 +170,22 @@ npm run build   # production build
 
 ---
 
+## 📦 Releasing
+
+1. Update the version in `manifest.json`, `package.json`, and add the matching `minAppVersion` entry to `versions.json`.
+2. Commit, then push a tag that exactly matches the manifest version, without a `v` prefix:
+
+```bash
+git tag 2.5.0
+git push origin 2.5.0
+```
+
+3. GitHub Actions runs lint, type checks, tests, and the build, then creates a draft release with `main.js`, `manifest.json`, and `styles.css`. Review and publish it.
+
+See [docs/RELEASING.md](./docs/RELEASING.md) for details.
+
+---
+
 ## 📜 Changelog
 
 See [CHANGELOG.md](./CHANGELOG.md).
@@ -178,8 +200,8 @@ See [CHANGELOG.md](./CHANGELOG.md).
 
 <div align="center">
 
-**Memoria** means "memory".
+**Mote** means a speck of dust — small, floating thoughts that settle into your notes.
 
-May every memory of yours be gently kept.
+May every thought of yours land gently.
 
 </div>

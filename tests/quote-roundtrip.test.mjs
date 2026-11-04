@@ -23,7 +23,7 @@ for (const [name, content] of cases) {
   test(`quote follow-up survives serialization: ${name}`, () => {
     const raw = "## 2026-10-21 Wednesday\n\n" + renderMemo("10:00", content) +
       "\n\n" + renderMemo("11:00", "Separate note");
-    const parsed = parseFile("Memoria/2026.md", raw);
+    const parsed = parseFile("Mote/2026.md", raw);
     assert.equal(parsed.length, 2);
     assert.equal(parsed[0].content, content);
     assert.equal(parsed[1].content, "Separate note");
@@ -35,5 +35,5 @@ test("legacy inline timestamp retains quote follow-up after consecutive blank li
   const [first, ...rest] = content.split("\n");
   const raw = "## 2026-10-21 Wednesday\n- 10:00 " + first + "\n" +
     rest.map(line => line ? "  " + line : "").join("\n");
-  assert.equal(parseFile("Memoria/2026.md", raw)[0].content, content);
+  assert.equal(parseFile("Mote/2026.md", raw)[0].content, content);
 });

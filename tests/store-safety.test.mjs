@@ -36,11 +36,11 @@ async function fixture() {
     module, exports: module.exports,
     require: () => ({TFile, normalizePath: p => p}),
   });
-  const store = new module.exports.MemoStore({vault}, {folder:"Memoria",useTrash:false});
+  const store = new module.exports.MemoStore({vault}, {folder:"Mote",useTrash:false});
   await store.addMemo("first", new Date(2026,9,21,10,0));
   await store.addMemo("second", new Date(2026,9,21,10,0));
   const stale = store.getAll().find(m => m.content === "second");
-  return {store, stale, files, writes, vault, file: files.get("Memoria/2026.md")};
+  return {store, stale, files, writes, vault, file: files.get("Mote/2026.md")};
 }
 
 test("CRUD preserves adjacent same-minute notes and link fragments", async () => {
@@ -103,7 +103,7 @@ test("same-year date changes write the yearly file only once", async () => {
   const f = await fixture();
   f.writes.length = 0;
   await f.store.editMemoDateTime(f.stale, new Date(2026,9,20,9,0));
-  assert.deepEqual(f.writes, ["Memoria/2026.md"]);
+  assert.deepEqual(f.writes, ["Mote/2026.md"]);
 });
 
 test("cross-year moves preserve both years' neighboring notes", async () => {
@@ -112,7 +112,7 @@ test("cross-year moves preserve both years' neighboring notes", async () => {
   await f.store.editMemoDateTime(f.stale, new Date(2025,9,21,9,0));
   await f.store.reloadAll();
   assert.equal(f.store.getAll().length, 3);
-  assert.equal(f.store.getAll().find(m => m.content === "second").file, "Memoria/2025.md");
+  assert.equal(f.store.getAll().find(m => m.content === "second").file, "Mote/2025.md");
   assert.ok(f.store.getAll().some(m => m.content === "first"));
   assert.ok(f.store.getAll().some(m => m.content === "target neighbor"));
 });
@@ -123,7 +123,7 @@ test("source cleanup failure keeps a recoverable copy in both years", async () =
   f.vault.modify = async () => {throw new Error("source unavailable");};
   await assert.rejects(() => f.store.editMemoDateTime(f.stale, new Date(2025,9,21,9,0)));
   assert.equal(f.file.content, before);
-  assert.ok(f.files.get("Memoria/2025.md").content.includes("second"));
+  assert.ok(f.files.get("Mote/2025.md").content.includes("second"));
 });
 
 test("identical same-minute notes use the closest matching current range", async () => {
@@ -139,6 +139,6 @@ test("soft delete backs up the intended note and leaves other notes intact", asy
   const f = await fixture();
   f.store.settings.useTrash = true;
   await f.store.deleteMemo(f.stale);
-  assert.ok(f.files.get("Memoria/_trash.md").content.includes("second"));
+  assert.ok(f.files.get("Mote/_trash.md").content.includes("second"));
   assert.equal(f.store.getAll().map(m => m.content).join(), "first");
 });

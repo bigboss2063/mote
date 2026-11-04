@@ -1,12 +1,10 @@
 {
-  "id": "memoria",
-  "name": "Memoria",
-  "version": "2.4.2",
+  "id": "mote",
+  "name": "Mote",
+  "version": "2.5.0",
   "minAppVersion": "1.7.2",
-  "description": "Waterfall-style memo plugin for flomo-like fleeting thoughts, stored as plain Markdown.",
-  "author": "i-iooi-i",
-  "authorUrl": "https://github.com/i-iooi-i",
-  "fundingUrl": "https://github.com/i-iooi-i/obsidian-memoria",
+  "description": "Capture fleeting thoughts as plain Markdown, with quick capture, tag search, statistics, and a yearly panorama.",
+  "author": "bigboss2063",
+  "authorUrl": "https://github.com/bigboss2063",
   "isDesktopOnly": false
 }
-

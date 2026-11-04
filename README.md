@@ -1,13 +1,13 @@
 <div align="center">
 
-# Memoria 🪶
+# Mote 🪶
 
 **A flomo-style fleeting-thoughts plugin for Obsidian**
 
 > Your data stays as plain Markdown. Freedom belongs to you.
 
-[![release](https://img.shields.io/github/v/release/i-iooi-i/obsidian-memoria?include_prereleases&label=release)](https://github.com/i-iooi-i/obsidian-memoria/releases)
-[![downloads](https://img.shields.io/github/downloads/i-iooi-i/obsidian-memoria/total)](https://github.com/i-iooi-i/obsidian-memoria/releases)
+[![release](https://img.shields.io/github/v/release/bigboss2063/mote?include_prereleases&label=release)](https://github.com/bigboss2063/mote/releases)
+[![downloads](https://img.shields.io/github/downloads/bigboss2063/mote/total)](https://github.com/bigboss2063/mote/releases)
 [![license](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 [![obsidian](https://img.shields.io/badge/Obsidian-1.7.2%2B-purple)](https://obsidian.md)
 
@@ -17,11 +17,15 @@
 
 ---
 
+> **Mote** is a personal fork of [Memoria](https://github.com/i-iooi-i/obsidian-memoria) by [i-iooi-i](https://github.com/i-iooi-i). The original project and most of the code belong to its author; this fork focuses on UI and interaction changes.
+
+---
+
 ## English
 
-Memoria is a lightweight memo plugin for Obsidian. It gives you a quick-capture input box, a waterfall-style timeline, tag search, image paste and drag support, task checkbox writeback, pinning, starring, statistics, and a year panorama view.
+Mote is a lightweight memo plugin for Obsidian. It gives you a quick-capture input box, a waterfall-style timeline, tag search, image paste and drag support, task checkbox writeback, pinning, starring, statistics, and a year panorama view.
 
-All notes are stored as ordinary Markdown files in your vault. Memoria does not lock your data into a database or a proprietary format, so your memos remain readable and searchable even if you stop using the plugin.
+All notes are stored as ordinary Markdown files in your vault. Mote does not lock your data into a database or a proprietary format, so your memos remain readable and searchable even if you stop using the plugin.
 
 Main features:
 
@@ -40,11 +44,13 @@ See [README.en.md](./README.en.md) for the full English documentation.
 
 ## 简体中文
 
+> **Mote** 是 [Memoria](https://github.com/i-iooi-i/obsidian-memoria)（作者 [i-iooi-i](https://github.com/i-iooi-i)）的个人 fork，主要调整 UI 与交互；原始项目和大部分代码归原作者所有。
+
 ## 📸 看起来像什么样
 
 **主视图**（瀑布流 + 侧栏热力图 + 置顶笔记）
 
-![Memoria 主视图](./docs/screenshots/main.png)
+![Mote 主视图](./docs/screenshots/main.png)
 
 **数据报告**（365 天热力图、月度柱图、Top 10 标签、24 小时分布、有趣的发现）
 
@@ -64,7 +70,7 @@ See [README.en.md](./README.en.md) for the full English documentation.
 
 但我同时希望：**这些想法永远是我能随时 grep 的纯 markdown 文件**。哪一天我不再用这个插件，不再用 Obsidian，甚至不再用电脑的图形界面——那些笔记还躺在硬盘上，文本编辑器打开就能读，命令行 grep 就能搜。
 
-Memoria 就是这样一个插件：把"浮墨式的快速记录体验"搬进 Obsidian，数据落到你自己的 vault 里，存成最普通的 `YYYY.md` 文件。
+Mote 就是这样一个插件：把"浮墨式的快速记录体验"搬进 Obsidian，数据落到你自己的 vault 里，存成最普通的 `YYYY.md` 文件。
 
 ---
 
@@ -101,7 +107,7 @@ Memoria 就是这样一个插件：把"浮墨式的快速记录体验"搬进 Obs
 
 ## 📂 存储格式
 
-Memoria 在指定文件夹下维护 `YYYY.md` 文件，采用「时间独占一行 + 内容缩进」格式：
+Mote 在指定文件夹下维护 `YYYY.md` 文件，采用「时间独占一行 + 内容缩进」格式：
 
 ```markdown
 # 2026
@@ -132,15 +138,17 @@ Memoria 在指定文件夹下维护 `YYYY.md` 文件，采用「时间独占一�
 目前支持手动安装。从 [Releases](../../releases/latest) 下载最新版的三件套：
 
 ```
-<Your Vault>/.obsidian/plugins/memoria/
+<Your Vault>/.obsidian/plugins/mote/
 ├── main.js
 ├── manifest.json
 └── styles.css
 ```
 
-然后 Obsidian → 设置 → 第三方插件 → 启用 **Memoria** → 左侧 Ribbon 点 🪶 打开面板。
+然后 Obsidian → 设置 → 第三方插件 → 启用 **Mote** → 左侧 Ribbon 点 🪶 打开面板。
 
-> 也可以用 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 插件输入 `i-iooi-i/obsidian-memoria` 自动安装和更新。
+> 也可以用 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 插件输入 `bigboss2063/mote` 自动安装和更新。
+>
+> 从 Memoria 迁移：把旧插件目录里的 `data.json` 复制到新目录即可保留设置；笔记文件不受影响。
 
 ---
 
@@ -158,14 +166,14 @@ Memoria 在指定文件夹下维护 `YYYY.md` 文件，采用「时间独占一�
 
 ## 📱 iOS 快捷指令
 
-Memoria 支持通过 iOS 快捷指令输入文字并写入当前时间的笔记：
+Mote 支持通过 iOS 快捷指令输入文字并写入当前时间的笔记：
 
-1. 在 Memoria 设置页找到「iOS 快捷指令」，点击「复制 URI 模板」。
+1. 在 Mote 设置页找到「iOS 快捷指令」，点击「复制 URI 模板」。
 2. 新建快捷指令，依次添加「请求输入」「URL 编码」「URL」「打开 URL」。
 3. 将复制的 URI 模板粘贴到「URL」，并把「URL 编码」的结果追加到模板末尾。
-4. 运行快捷指令；Obsidian 会打开目标仓库，Memoria 保存后显示通知。
+4. 运行快捷指令；Obsidian 会打开目标仓库，Mote 保存后显示通知。
 
-也可以把快捷指令加入主屏幕、Siri，或设置为接收分享菜单中的文字。URI 不带 `content` 参数时，手机端会打开 Memoria 并展开与右下角 ➕ 相同的输入卡片；桌面端则打开快速记录弹窗。
+也可以把快捷指令加入主屏幕、Siri，或设置为接收分享菜单中的文字。URI 不带 `content` 参数时，手机端会打开 Mote 并展开与右下角 ➕ 相同的输入卡片；桌面端则打开快速记录弹窗。
 
 > iOS 会唤醒 Obsidian 后再运行社区插件，因此冷启动时需要等待目标仓库和插件加载。目前仅支持文字，不支持图片。
 
@@ -178,6 +186,22 @@ npm install
 npm run dev     # watch 模式
 npm run build   # 生产打包
 ```
+
+---
+
+## 📦 发布
+
+1. 同步更新 `manifest.json`、`package.json` 的版本号，并在 `versions.json` 补上新版本对应的 `minAppVersion`。
+2. 提交后推送与 manifest 完全一致、不带 `v` 前缀的 tag：
+
+```bash
+git tag 2.5.0
+git push origin 2.5.0
+```
+
+3. GitHub Actions 会运行 lint、类型检查、测试和构建，并创建 draft release（自动附带 `main.js`、`manifest.json`、`styles.css`）；确认后手动发布。
+
+详见 [docs/RELEASING.md](./docs/RELEASING.md)。
 
 ---
 
@@ -195,8 +219,8 @@ npm run build   # 生产打包
 
 <div align="center">
 
-**Memoria**，意思是「记忆」。
+**Mote**，意为「微尘」——一颗颗细小的念头落下来，就成了你的记录。
 
-祝你的每一份记忆，都被温柔保存。
+愿你的每一个念头，都被轻轻接住。
 
 </div>
