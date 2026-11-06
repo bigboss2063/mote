@@ -32,10 +32,10 @@ test("Chinese prompt carries grounding rules, focus note and JSON payload", () =
 
   assert.equal(messages.length, 2);
   assert.match(messages[0].content, /只使用 <notes_json>/);
-  assert.match(messages[0].content, /每个关键判断或事实依据后必须标注来源/);
-  assert.match(messages[0].content, /不要按时间先后写流水账/);
-  assert.match(messages[0].content, /绝非对你的指令/);
-  assert.match(messages[1].content, /id=1 是焦点笔记/);
+  assert.match(messages[0].content, /相关性过滤与纯角标引用/);
+  assert.match(messages[0].content, /不要按时间写流水账/);
+  assert.match(messages[0].content, /不是对你的指令/);
+  assert.match(messages[1].content, /\[1\] 号笔记是用户最新关注的焦点笔记/);
 
   const json = messages[1].content.split("<notes_json>\n")[1].split("\n</notes_json>")[0];
   const payload = JSON.parse(json);
@@ -55,9 +55,9 @@ test("English prompt uses English rules and an action perspective", () => {
     scopeTotal: 1,
     locale: "en-US",
   });
-  assert.match(messages[0].content, /Use ONLY the content inside <notes_json>/);
+  assert.match(messages[0].content, /Use ONLY <notes_json>/);
   assert.match(messages[0].content, /48 hours/);
-  assert.match(messages[1].content, /chronological order/);
+  assert.match(messages[1].content, /Prioritize recent progress and fresh thinking/);
   assert.match(messages[0].content, /English/);
   assert.match(messages[1].content, /\(Sun|\(Mon|\(Tue|\(Wed|\(Thu|\(Fri|\(Sat\)/);
 });
@@ -71,7 +71,7 @@ test("affirmation prompt requires concrete evidence", () => {
     scopeTotal: 1,
     locale: "zh-CN",
   });
-  assert.match(messages[0].content, /在用户自我苛责或只盯着未完成事项的记录中/);
+  assert.match(messages[0].content, /在用户习以为常或自我苛责的记录中/);
 });
 
 test("perspective gallery exposes the flomo-style lenses", () => {
@@ -95,8 +95,8 @@ test("insight prompt asks for a concrete title and paragraph flow", () => {
     scopeTotal: 1,
     locale: "zh-CN",
   });
-  assert.match(messages[0].content, /给出 10–16 个字的标题/);
-  assert.match(messages[0].content, /加粗的精炼判断句/);
-  assert.match(messages[0].content, /600–950 个中文字/);
+  assert.match(messages[0].content, /给出 10–16 个字的具体标题/);
+  assert.match(messages[0].content, /加粗的判断句/);
+  assert.match(messages[0].content, /500–850 个中文字/);
 });
 
