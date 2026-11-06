@@ -47,15 +47,11 @@ export function caretAnchor(textarea: HTMLTextAreaElement): CaretAnchor {
   const paddingRight = parseFloat(style.paddingRight) || 0;
 
   const mirror = activeDocument.createElement("div");
-  mirror.style.position = "absolute";
-  mirror.style.visibility = "hidden";
-  mirror.style.top = "0";
-  mirror.style.left = "-9999px";
-  mirror.style.boxSizing = "content-box";
-  mirror.style.whiteSpace = "pre-wrap";
-  mirror.style.overflowWrap = "break-word";
+  mirror.className = "memoria-caret-mirror";
   // 内容宽度要和 textarea 的可排版宽度一致，否则换行位置会差
-  mirror.style.width = `${Math.max(0, textarea.clientWidth - paddingLeft - paddingRight)}px`;
+  mirror.setCssProps({
+    "--memoria-mirror-width": `${Math.max(0, textarea.clientWidth - paddingLeft - paddingRight)}px`,
+  });
   for (const prop of MIRROR_PROPS) {
     const value = style.getPropertyValue(prop);
     if (value) mirror.style.setProperty(prop, value);

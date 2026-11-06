@@ -1889,6 +1889,19 @@
   text-overflow: ellipsis;
 }
 
+/* ================== 光标定位镜像 ==================
+   隐藏的 textarea 排版副本，只用来量光标坐标；宽度由 JS 写入 CSS 变量。 */
+.memoria-caret-mirror {
+  position: absolute;
+  visibility: hidden;
+  top: 0;
+  left: -9999px;
+  box-sizing: content-box;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  width: var(--memoria-mirror-width);
+}
+
 /* ================== 相关笔记弹窗 ================== */
 .memoria-related-list {
   display: flex;
