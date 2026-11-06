@@ -853,6 +853,12 @@
   width: 16px;
   height: 16px;
 }
+/* 引用按钮直接用 @ 字形，跟旁边的图标同一视觉尺寸 */
+.memoria-root button.memoria-quote-btn {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+}
 .memoria-input-hint {
   margin-left: 6px;
   font-size: var(--memoria-font-xs);
@@ -1851,6 +1857,33 @@
 }
 .memoria-tag-suggest-name {
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ================== 引用联想下拉框 ==================
+   复用标签联想浮层的底色/阴影/定位，只是候选改成两行（标题 + 摘要）。 */
+.memoria-quote-suggest {
+  min-width: 240px;
+  max-width: 360px;
+}
+.memoria-quote-item {
+  align-items: flex-start;
+}
+.memoria-quote-text {
+  flex: 1;
+  min-width: 0;
+}
+.memoria-quote-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.memoria-quote-snippet {
+  margin-top: 1px;
+  font-size: var(--memoria-font-xs);
+  opacity: 0.65;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

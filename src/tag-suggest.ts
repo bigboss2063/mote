@@ -5,6 +5,7 @@
 
 import { App, getAllTags, setIcon } from "obsidian";
 import { replaceTextareaRange } from "./textarea-utils";
+import { caretAnchor, placePopup } from "./caret-position";
 
 export class TagSuggest {
   private dropdown: HTMLElement | null = null;
@@ -46,6 +47,11 @@ export class TagSuggest {
       this.metaChangeRef = null;
     }
     this.close();
+  }
+
+  /** 下拉开着时，Enter 是"选候选"而不是发送。 */
+  isOpen(): boolean {
+    return this.dropdown !== null;
   }
 
   // -------- 事件 --------
@@ -231,16 +237,18 @@ export class TagSuggest {
     }
   }
 
-  /** 把下拉定位到 textarea 当前光标下方 */
+  /** 把下拉贴到光标行下方（输入框很高时，贴 textarea 底边会离光标很远） */
   private position(): void {
     if (!this.dropdown) return;
     const rect = this.textarea.getBoundingClientRect();
-    // 简化：定位到 textarea 左下，避免计算光标坐标
-    const top = rect.bottom + 4;
-    const left = rect.left + 4;
-    this.dropdown.style.top = `${top}px`;
-    this.dropdown.style.left = `${left}px`;
     this.dropdown.style.minWidth = `${Math.min(rect.width, 280)}px`;
+    const placement = placePopup(
+      caretAnchor(this.textarea),
+      { width: this.dropdown.offsetWidth, height: this.dropdown.offsetHeight },
+      { width: window.innerWidth, height: window.innerHeight }
+    );
+    this.dropdown.style.top = `${placement.top}px`;
+    this.dropdown.style.left = `${placement.left}px`;
   }
 
   private applySelected(): void {

@@ -17,6 +17,7 @@ import { MemoStore } from "./store";
 import { extractTags, stripMemoTags } from "./parser";
 import { createMainLeaf } from "./workspace";
 import { TagSuggest } from "./tag-suggest";
+import { QuoteSuggest, type QuoteCandidate } from "./quote-suggest";
 import { extractImages, renderImageGrid, openLightbox } from "./image-grid";
 import { renderCalendar } from "./calendar";
 import { parseSearchQuery, matchesQuery, SearchQuery, EMPTY_QUERY } from "./search";
@@ -34,6 +35,7 @@ import {
 } from "./textarea-utils";
 import { InsightModal } from "./ai/insight-modal";
 import { InsightHistoryModal } from "./ai/history-modal";
+import { loadInsightRecords, stripLeadingTitle } from "./ai/insight-file";
 import { decorateSourceLinks, dismissCitationPreview } from "./ai/citation-ui";
 import type { InsightScopeFilter, ScopeType } from "./ai/scope";
 
@@ -100,6 +102,7 @@ export class MemoriaView extends ItemView {
   private pageLimit: number;
   private tagsExpanded = false;
   private tagSuggest: TagSuggest | null = null;
+  private quoteSuggest: QuoteSuggest | null = null;
   /** 侧栏顶部视图：热力图 / 月历 / 宠物（v2.1.0 新增 buddy）
    *  v2.0.20: 初始值从 settings.defaultOverviewMode 读（老用户默认 heatmap 不变）
    *  在 constructor 里设置实际初值，这里只给类型 */
@@ -211,6 +214,8 @@ export class MemoriaView extends ItemView {
         const insideView =
           active instanceof HTMLElement && this.contentEl.contains(active);
         if (!insideView) return;
+        // 联想下拉开着时，Enter 是"选候选"，不是发送
+        if (this.tagSuggest?.isOpen() || this.quoteSuggest?.isOpen()) return;
         if (this.shouldSendOnKeydown(evt)) {
           evt.preventDefault();
           evt.stopPropagation();
@@ -248,6 +253,10 @@ export class MemoriaView extends ItemView {
     if (this.tagSuggest) {
       this.tagSuggest.destroy();
       this.tagSuggest = null;
+    }
+    if (this.quoteSuggest) {
+      this.quoteSuggest.destroy();
+      this.quoteSuggest = null;
     }
     this.childComponent.unload();
   }
@@ -651,6 +660,8 @@ export class MemoriaView extends ItemView {
     });
     // 标签联想
     this.tagSuggest = new TagSuggest(this.app, this.inputEl);
+    // 引用联想：打 @ 或点工具栏"引用"按钮，搜 memo / 洞察后插入紧凑双链
+    this.quoteSuggest = new QuoteSuggest(this.inputEl, () => this.collectQuoteCandidates());
     this.inputEl.addEventListener("keydown", (e) => {
       // v2.0.16: 发送快捷键按 sendHotkey 配置决定，含 IME 保护。
       //   前面 contentEl 的 capture 监听已经响应过了；这里是 bubble 阶段兜底
@@ -778,6 +789,17 @@ export class MemoriaView extends ItemView {
     });
     setIcon(addTagBtn, "hash");
     addTagBtn.addEventListener("click", () => this.insertAtCursor("#"));
+
+    // 引用：插入 @ 并立刻弹出候选（memo / 洞察）。按钮直接用 @ 字形，比 quote 图标直观
+    const quoteBtn = toolLeft.createEl("button", {
+      cls: "memoria-tool-btn memoria-quote-btn",
+      text: "@",
+      attr: { "aria-label": t("toolbar.quote") },
+    });
+    // 不抢 textarea 焦点，否则 blur 会先把候选浮层关掉
+    quoteBtn.addEventListener("mousedown", (e) => e.preventDefault());
+    // 插入的 @ 会触发 input 事件，联想浮层由 QuoteSuggest 自己打开
+    quoteBtn.addEventListener("click", () => this.insertAtCursor("@"));
 
     const addImageBtn = toolLeft.createEl("button", {
       cls: "memoria-tool-btn",
@@ -4027,6 +4049,34 @@ export class MemoriaView extends ItemView {
   /** Insert a compact source link; its preview reads the current source content. */
   private quoteMemo(memo: Memo): void {
     this.quoteSource(memo.file);
+  }
+
+  /** 引用联想的数据源：全部 memo + `_insights/` 下的洞察，按时间倒序。
+   *  snippet 传全文（而不是摘要），搜索才能命中文末的内容；显示时再截断。 */
+  private async collectQuoteCandidates(): Promise<QuoteCandidate[]> {
+    const memos: QuoteCandidate[] = this.store.getAll().map((memo) => ({
+      file: memo.file,
+      title: `${memo.date} ${memo.time}`,
+      snippet: memo.content,
+      kind: "memo",
+      time: memo.datetime.getTime(),
+    }));
+    let insights: QuoteCandidate[] = [];
+    try {
+      insights = (await loadInsightRecords(this.app, this.settings)).map(
+        (record) => ({
+          file: record.file,
+          title: record.title,
+          // 剥掉正文里的 `# 标题`，否则摘要一开头和标题重复
+          snippet: stripLeadingTitle(record.markdown),
+          kind: "insight" as const,
+          time: record.createdAt,
+        })
+      );
+    } catch (error) {
+      console.error("[Mote] Failed to load insights for quote suggest:", error);
+    }
+    return [...memos, ...insights].sort((a, b) => b.time - a.time);
   }
 
   private quoteSource(file: string): void {
