@@ -3,7 +3,7 @@
 // 用朋友圈/浮墨式九宫格布局单独渲染。
 // 同时返回剥离掉图片的文本，让 Markdown 渲染器只渲染文字。
 
-import { App, TFile } from "obsidian";
+import { App, TFile, setIcon } from "obsidian";
 import { t } from "./i18n";
 
 export interface ExtractResult {
@@ -141,20 +141,21 @@ export function openLightbox(images: ImageRef[], startIndex: number): void {
 
   const closeBtn = backdrop.createEl("button", {
     cls: "memoria-lightbox-close",
-    text: "×",
     attr: { "aria-label": t("lightbox.close") },
   });
+  setIcon(closeBtn, "x");
 
   const prevBtn = backdrop.createEl("button", {
     cls: "memoria-lightbox-nav memoria-lightbox-prev",
-    text: "‹",
     attr: { "aria-label": t("lightbox.prev") },
   });
+  setIcon(prevBtn, "chevron-left");
+
   const nextBtn = backdrop.createEl("button", {
     cls: "memoria-lightbox-nav memoria-lightbox-next",
-    text: "›",
     attr: { "aria-label": t("lightbox.next") },
   });
+  setIcon(nextBtn, "chevron-right");
 
   const update = () => {
     imgEl.src = images[cur].src;

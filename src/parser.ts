@@ -1,113 +1,87 @@
 // ================= Memo 解析器 =================
-// 负责把 YYYY.md 文件解析成 Memo[]，以及把 Memo 序列化回文件
+// 一条 memo 一个文件：文件名即日期时间，文件内容即正文。
+// 没有容器语法，没有 frontmatter —— 停用插件后这些文件仍然是普通 md。
 
 import { Memo, PIN_TAG, STAR_TAG } from "./types";
 
-const WEEKDAY_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+const WEEKDAY_NAMES = {
+  "zh-CN": ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
+  "en-US": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+} as const;
 
-/**
- * 解析一个 md 文件内容，抽出所有 memo。
- *
- * 识别规则：
- *   ## 2026-04-25 周六      <- 日期分组
- *   - 12:43 内容内容        <- 一条 memo
- *     (缩进 2 空格的后续行视作同一条 memo 的多行内容)
- */
-export function parseFile(filePath: string, raw: string): Memo[] {
-  const lines = raw.split(/\r?\n/);
-  const memos: Memo[] = [];
+/** 按 locale 取星期名（0 = 周日）。 */
+export function weekdayName(locale: "zh-CN" | "en-US", day: number): string {
+  return WEEKDAY_NAMES[locale][day];
+}
 
-  let currentDate = "";
-  let i = 0;
-  const dateHeaderRe = /^##\s+(\d{4}-\d{2}-\d{2})(?:\s+.+)?$/;
-  const memoStartRe = /^-\s+(\d{2}:\d{2})\s?(.*)$/;
+/** `2026-04-25 12.43.md`；同一分钟的第二条是 `... 12.43.01.md`。 */
+const MEMO_FILE_RE = /^(\d{4})-(\d{2})-(\d{2}) (\d{2})\.(\d{2})(?:\.(\d{2}))?\.md$/;
 
-  while (i < lines.length) {
-    const line = lines[i];
-    const dm = line.match(dateHeaderRe);
-    if (dm) {
-      currentDate = dm[1];
-      i++;
-      continue;
-    }
-    const mm = line.match(memoStartRe);
-    if (mm && currentDate) {
-      const time = mm[1];
-      const firstLine = mm[2] ?? "";
-      const startLine = i;
-      const bodyLines: string[] = [firstLine];
-      i++;
-      // 吸收缩进行（2 空格缩进 或 空行紧跟缩进行）
-      while (i < lines.length) {
-        const next = lines[i];
-        // 遇到下一条 memo 或下一个日期头，停止
-        if (memoStartRe.test(next) || dateHeaderRe.test(next)) break;
-        // 遇到年份大标题也停止
-        if (/^#\s+\d{4}\s*$/.test(next)) break;
-        // 缩进 2 空格的属于本条 memo
-        if (next.startsWith("  ")) {
-          bodyLines.push(next.slice(2));
-          i++;
-          continue;
-        }
-        // 空行：可能是 memo 内部的空行，也可能是 memo 之间的分隔。
-        //   v2.0.17-iter16 修复：原逻辑只 peek(i+1) 一行 —— 用户连续多个空行时
-        //   peek 还是空行，判定为 memo 结束，导致后续内容（即便有缩进）被丢失。
-        //   正确做法：跳过任意多个连续空行，看再之后第一行是否仍是本 memo 的
-        //   缩进行（不能撞到下条 memo / 日期头 / 年份头）。是的话把这些空行
-        //   都纳入 bodyLines；不是则结束。
-        if (next.trim() === "") {
-          let j = i + 1;
-          while (j < lines.length && lines[j].trim() === "") j++;
-          // 跳过所有空行后，j 指向首个非空行（或越界）
-          if (j >= lines.length) break;
-          const peek = lines[j];
-          if (memoStartRe.test(peek) || dateHeaderRe.test(peek)) break;
-          if (/^#\s+\d{4}\s*$/.test(peek)) break;
-          if (peek.startsWith("  ")) {
-            // 把 i..j-1 这段空行全部纳入 body，i 跳到 j
-            for (let k = i; k < j; k++) bodyLines.push("");
-            i = j;
-            continue;
-          }
-          break;
-        }
-        break;
-      }
-      const endLine = i - 1;
-      // 去掉前导/尾部空行（兼容 "- HH:MM" 后另起一行的格式）
-      while (bodyLines.length && bodyLines[0].trim() === "") bodyLines.shift();
-      while (bodyLines.length && bodyLines[bodyLines.length - 1].trim() === "")
-        bodyLines.pop();
-      const content = bodyLines.join("\n");
-      const datetime = parseLocalDateTime(currentDate, time);
-      const tags = extractTags(content);
-      const hasImage = detectImage(content);
-      const hasLink = detectLink(content);
-      const isPinned = tags.includes(PIN_TAG);
-      const isStarred = tags.includes(STAR_TAG);
-      // v1.5.0: 任务状态扫描（一次遍历同时得出 open/closed 两个）
-      const tasks = detectTasks(content);
-      memos.push({
-        file: filePath,
-        date: currentDate,
-        time,
-        datetime,
-        content,
-        tags,
-        hasImage,
-        hasLink,
-        isPinned,
-        isStarred,
-        hasOpenTask: tasks.open,
-        hasClosedTask: tasks.closed,
-        range: [startLine, endLine],
-      });
-      continue;
-    }
-    i++;
-  }
-  return memos;
+export interface MemoFileInfo {
+  /** yyyy-MM-dd */
+  date: string;
+  /** HH:mm */
+  time: string;
+}
+
+/** 从文件路径解析日期时间；不是 memo 文件则返回 null。 */
+export function memoFileInfo(filePath: string): MemoFileInfo | null {
+  const name = filePath.slice(filePath.lastIndexOf("/") + 1);
+  const m = name.match(MEMO_FILE_RE);
+  if (!m) return null;
+  return {
+    date: `${m[1]}-${m[2]}-${m[3]}`,
+    time: `${m[4]}:${m[5]}`,
+  };
+}
+
+/** 文件路径 → `[[wikilink]]` 目标名（不含目录与扩展名）。 */
+export function memoLinkName(filePath: string): string {
+  const name = filePath.slice(filePath.lastIndexOf("/") + 1);
+  return name.replace(/\.md$/, "");
+}
+
+/** 生成 memo 文件路径。index > 0 表示同一分钟的冲突序号（.01 / .02）。 */
+export function memoFilePath(
+  folder: string,
+  date: string,
+  time: string,
+  index = 0
+): string {
+  const [hour, minute] = time.split(":");
+  const suffix = index > 0 ? `.${index.toString().padStart(2, "0")}` : "";
+  return `${folder}/${date.slice(0, 4)}/${date} ${hour}.${minute}${suffix}.md`;
+}
+
+/** 去掉首尾空行，并把换行统一成 \n。 */
+export function normalizeMemoBody(content: string): string {
+  const lines = content.replace(/\r\n?/g, "\n").split("\n");
+  while (lines.length && lines[0].trim() === "") lines.shift();
+  while (lines.length && lines[lines.length - 1].trim() === "") lines.pop();
+  return lines.join("\n");
+}
+
+/** 解析一个 memo 文件；文件名不符合 `YYYY-MM-DD HH.mm.md` 时返回 null。 */
+export function parseMemoFile(filePath: string, raw: string): Memo | null {
+  const info = memoFileInfo(filePath);
+  if (!info) return null;
+  const content = normalizeMemoBody(raw);
+  const tags = extractTags(content);
+  const tasks = detectTasks(content);
+  return {
+    file: filePath,
+    date: info.date,
+    time: info.time,
+    datetime: parseLocalDateTime(info.date, info.time),
+    content,
+    tags,
+    hasImage: detectImage(content),
+    hasLink: detectLink(content),
+    isPinned: tags.includes(PIN_TAG),
+    isStarred: tags.includes(STAR_TAG),
+    hasOpenTask: tasks.open,
+    hasClosedTask: tasks.closed,
+  };
 }
 
 /** 把 "2026-04-25" + "12:43" 解析成本地 Date */
@@ -222,34 +196,5 @@ export function fmtTime(d: Date): string {
 
 /** 根据 Date 生成中文星期 */
 export function fmtWeekday(d: Date): string {
-  return WEEKDAY_CN[d.getDay()];
-}
-
-/** 生成一条 memo 的 md 文本（统一使用「时间独占一行 + 内容全部缩进 2 空格」格式）
- *
- * 为什么不再用紧凑的 `- HH:MM 内容` 单行格式？
- *   1. 统一结构更美观：日期（##）一行、时间（-）一行、内容缩进，md 源码阅读舒服
- *   2. 避免边缘情况：当内容以 `{` / `"key":` / `>` / task list 等开头时，紧凑格式
- *      会让后续行跳出列表，破坏 markdown 渲染
- *   3. 便于编辑：用 Obsidian 源码/其它编辑器直接修改时不易出错
- *
- * 插件解析器已经兼容新老两种格式，所以现有 md 无需强制重写也能正常工作。
- */
-export function renderMemo(time: string, content: string): string {
-  const raw = content.replace(/\r\n/g, "\n");
-  // 去掉首尾空行
-  const lines = raw.split("\n");
-  while (lines.length && lines[0].trim() === "") lines.shift();
-  while (lines.length && lines[lines.length - 1].trim() === "") lines.pop();
-
-  // 完全空内容：只写时间行
-  if (lines.length === 0) {
-    return `- ${time}`;
-  }
-
-  // 统一格式：时间独占一行，内容全部缩进 2 空格
-  const body = lines
-    .map((l) => (l.trim() === "" ? "" : `  ${l}`))
-    .join("\n");
-  return `- ${time}\n${body}`;
+  return weekdayName("zh-CN", d.getDay());
 }

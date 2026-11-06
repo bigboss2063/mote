@@ -1,9 +1,9 @@
 {
   "id": "mote",
   "name": "Mote",
-  "version": "2.5.0",
+  "version": "0.1.0",
   "minAppVersion": "1.7.2",
-  "description": "Capture fleeting thoughts as plain Markdown, with quick capture, tag search, statistics, and a yearly panorama.",
+  "description": "Capture fleeting thoughts as plain Markdown, with quick capture, tag search, statistics, a yearly panorama, and optional AI insight.",
   "author": "bigboss2063",
   "authorUrl": "https://github.com/bigboss2063",
   "isDesktopOnly": false

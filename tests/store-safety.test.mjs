@@ -8,137 +8,151 @@ const bundle = await build({
   platform: "node", format: "cjs", external: ["obsidian"],
 });
 class TFile {
-  constructor(path, content) {
+  constructor(path, content = "") {
     this.path = path;
     this.name = path.split("/").at(-1);
     this.extension = "md";
     this.content = content;
   }
 }
+const at = (y, m, d, h, mi) => new Date(y, m - 1, d, h, mi);
+
 async function fixture() {
   const files = new Map();
   const writes = [];
+  const renames = [];
+  const deleted = [];
   const vault = {
     getMarkdownFiles: () => [...files.values()],
     getAbstractFileByPath: path => files.get(path),
     read: async file => file.content,
     createFolder: async () => {},
     create: async (path, content) => {
+      assert.ok(!files.has(path), `create twice: ${path}`);
       const file = new TFile(path, content);
       files.set(path, file);
       writes.push(path);
       return file;
     },
-    modify: async (file, content) => { file.content = content; writes.push(file.path); },
+    modify: async (file, content) => {
+      file.content = content;
+      writes.push(file.path);
+    },
+    delete: async file => {
+      deleted.push(file.path);
+      files.delete(file.path);
+    },
+  };
+  const fileManager = {
+    renameFile: async (file, path) => {
+      assert.ok(!files.has(path), `rename onto existing: ${path}`);
+      files.delete(file.path);
+      renames.push([file.path, path]);
+      file.path = path;
+      file.name = path.split("/").at(-1);
+      files.set(path, file);
+    },
+    trashFile: async file => {
+      deleted.push(file.path);
+      files.delete(file.path);
+    },
   };
   const module = {exports: {}};
   vm.runInNewContext(bundle.outputFiles[0].text, {
     module, exports: module.exports,
     require: () => ({TFile, normalizePath: p => p}),
   });
-  const store = new module.exports.MemoStore({vault}, {folder:"Mote",useTrash:false});
-  await store.addMemo("first", new Date(2026,9,21,10,0));
-  await store.addMemo("second", new Date(2026,9,21,10,0));
-  const stale = store.getAll().find(m => m.content === "second");
-  return {store, stale, files, writes, vault, file: files.get("Mote/2026.md")};
+  const store = new module.exports.MemoStore(
+    {vault, fileManager}, {folder: "Mote", useTrash: false});
+  return {store, files, writes, renames, deleted, vault};
 }
 
-test("CRUD preserves adjacent same-minute notes and link fragments", async () => {
+async function seeded() {
   const f = await fixture();
-  const content = "[fish](https://example.com/#rd) #work/sub";
-  await f.store.editMemo(f.stale, content);
-  let edited = f.store.getAll().find(m => m.content === content);
-  assert.deepEqual([...edited.tags], ["work/sub"]);
-  await f.store.togglePinned(edited);
-  edited = f.store.getAll().find(m => m.isPinned);
-  assert.ok(edited.content.includes("https://example.com/#rd"));
-  await f.store.togglePinned(edited);
-  edited = f.store.getAll().find(m => m.content === content);
-  await f.store.deleteMemo(edited);
-  assert.deepEqual(f.store.getAll().map(m => m.content).join(), "first");
-});
-
-for (const action of ["edit", "delete", "move"]) {
-  test(`${action} relocates a stale range after another same-minute note is inserted`, async () => {
-    const f = await fixture();
-    const marker = "- 10:00\n  second";
-    f.file.content = f.file.content.replace(marker, "- 10:00\n  inserted\n\n" + marker);
-    if (action === "edit") await f.store.editMemo(f.stale, "edited");
-    if (action === "delete") await f.store.deleteMemo(f.stale);
-    if (action === "move") await f.store.editMemoDateTime(f.stale, new Date(2026,9,20,9,0));
-    assert.ok(f.store.getAll().some(m => m.content === "inserted"));
-    assert.ok(f.store.getAll().some(m => m.content === "first"));
-    if (action === "edit") assert.ok(f.store.getAll().some(m => m.content === "edited"));
-    if (action === "delete") assert.ok(!f.store.getAll().some(m => m.content === "second"));
-    if (action === "move") {
-      const moved = f.store.getAll().filter(m => m.content === "second");
-      assert.equal(moved.length, 1);
-      assert.equal(moved[0].date, "2026-10-20");
-    }
-  });
-
-  test(`${action} refuses a note whose content was externally changed`, async () => {
-    const f = await fixture();
-    f.file.content = f.file.content.replace("  second", "  externally changed\n  extra line");
-    const before = f.file.content;
-    const writes = f.writes.length;
-    const operation = action === "edit" ? () => f.store.editMemo(f.stale, "edited")
-      : action === "delete" ? () => f.store.deleteMemo(f.stale)
-      : () => f.store.editMemoDateTime(f.stale, new Date(2026,9,20,9,0));
-    await assert.rejects(operation);
-    assert.equal(f.file.content, before);
-    assert.equal(f.writes.length, writes);
-  });
+  await f.store.addMemo("first", at(2026, 10, 21, 10, 0));
+  await f.store.addMemo("second", at(2026, 10, 21, 10, 0));
+  const second = f.store.getAll().find(m => m.content === "second");
+  return {...f, second};
 }
 
-test("failed cross-year destination write leaves the original note untouched", async () => {
+test("addMemo writes one file per memo, body verbatim", async () => {
   const f = await fixture();
-  const before = f.file.content;
-  f.vault.create = async () => {throw new Error("destination unavailable");};
-  await assert.rejects(() => f.store.editMemoDateTime(f.stale, new Date(2025,9,21,10,0)));
-  assert.equal(f.file.content, before);
+  await f.store.addMemo("hello\n\n- [ ] task #work", at(2026, 10, 21, 10, 0));
+  const path = "Mote/2026/2026-10-21 10.00.md";
+  assert.equal(f.files.get(path).content, "hello\n\n- [ ] task #work\n");
+  const memo = f.store.getAll()[0];
+  assert.equal(memo.file, path);
+  assert.equal(memo.content, "hello\n\n- [ ] task #work");
+  assert.equal(memo.hasOpenTask, true);
+  assert.deepEqual([...memo.tags], ["work"]);
 });
 
-test("same-year date changes write the yearly file only once", async () => {
-  const f = await fixture();
-  f.writes.length = 0;
-  await f.store.editMemoDateTime(f.stale, new Date(2026,9,20,9,0));
-  assert.deepEqual(f.writes, ["Mote/2026.md"]);
+test("same-minute memos get .01 / .02 suffixes", async () => {
+  const f = await seeded();
+  await f.store.addMemo("third", at(2026, 10, 21, 10, 0));
+  assert.deepEqual([...f.files.keys()].sort(), [
+    "Mote/2026/2026-10-21 10.00.01.md",
+    "Mote/2026/2026-10-21 10.00.02.md",
+    "Mote/2026/2026-10-21 10.00.md",
+  ]);
+  assert.equal(f.store.getAll()[0].file, "Mote/2026/2026-10-21 10.00.02.md");
 });
 
-test("cross-year moves preserve both years' neighboring notes", async () => {
-  const f = await fixture();
-  await f.store.addMemo("target neighbor", new Date(2025,9,21,8,0));
-  await f.store.editMemoDateTime(f.stale, new Date(2025,9,21,9,0));
-  await f.store.reloadAll();
-  assert.equal(f.store.getAll().length, 3);
-  assert.equal(f.store.getAll().find(m => m.content === "second").file, "Mote/2025.md");
-  assert.ok(f.store.getAll().some(m => m.content === "first"));
-  assert.ok(f.store.getAll().some(m => m.content === "target neighbor"));
+test("editMemo changes only its own file", async () => {
+  const f = await seeded();
+  const first = f.store.getAll().find(m => m.content === "first");
+  await f.store.editMemo(first, "edited\n\nwith a quote\n\n> [!quote] x\n> y");
+  assert.equal(f.files.get("Mote/2026/2026-10-21 10.00.md").content,
+    "edited\n\nwith a quote\n\n> [!quote] x\n> y\n");
+  assert.equal(f.files.get("Mote/2026/2026-10-21 10.00.01.md").content, "second\n");
+  assert.equal(f.store.getAll().filter(m => m.content === "second").length, 1);
 });
 
-test("source cleanup failure keeps a recoverable copy in both years", async () => {
-  const f = await fixture();
-  const before = f.file.content;
-  f.vault.modify = async () => {throw new Error("source unavailable");};
-  await assert.rejects(() => f.store.editMemoDateTime(f.stale, new Date(2025,9,21,9,0)));
-  assert.equal(f.file.content, before);
-  assert.ok(f.files.get("Mote/2025.md").content.includes("second"));
+test("editMemoDateTime renames the file and keeps the identity", async () => {
+  const f = await seeded();
+  await f.store.editMemoDateTime(f.second, at(2025, 1, 2, 9, 30), "moved");
+  assert.deepEqual(f.renames, [
+    ["Mote/2026/2026-10-21 10.00.01.md", "Mote/2025/2025-01-02 09.30.md"],
+  ]);
+  const moved = f.store.getAll().find(m => m.content === "moved");
+  assert.equal(moved.file, "Mote/2025/2025-01-02 09.30.md");
+  assert.equal(moved.date, "2025-01-02");
+  assert.equal(moved.time, "09:30");
+  assert.equal(f.store.getAll().filter(m => m.content === "second").length, 0);
 });
 
-test("identical same-minute notes use the closest matching current range", async () => {
-  const f = await fixture();
-  await f.store.addMemo("second", new Date(2026,9,21,10,0));
-  const duplicate = f.store.getAll().filter(m => m.content === "second").sort((a,b) => a.range[0]-b.range[0]);
-  await f.store.editMemo(duplicate[1], "edited duplicate");
-  const notes = f.store.getAll().sort((a,b) => a.range[0]-b.range[0]);
-  assert.equal(notes.map(m => m.content).join("|"), "first|second|edited duplicate");
+test("editMemoDateTime onto an occupied minute picks the next suffix", async () => {
+  const f = await seeded();
+  await f.store.addMemo("occupant", at(2025, 1, 2, 9, 30));
+  await f.store.editMemoDateTime(f.second, at(2025, 1, 2, 9, 30));
+  assert.ok(f.files.has("Mote/2025/2025-01-02 09.30.01.md"));
+  assert.equal(f.store.getAll().filter(m => m.content === "second").length, 1);
 });
 
-test("soft delete backs up the intended note and leaves other notes intact", async () => {
-  const f = await fixture();
+test("deleteMemo moves the file to _trash/ when trash is on", async () => {
+  const f = await seeded();
   f.store.settings.useTrash = true;
-  await f.store.deleteMemo(f.stale);
-  assert.ok(f.files.get("Mote/_trash.md").content.includes("second"));
-  assert.equal(f.store.getAll().map(m => m.content).join(), "first");
+  await f.store.deleteMemo(f.second);
+  assert.ok(f.files.has("Mote/_trash/2026-10-21 10.00.01.md"));
+  assert.equal(f.store.getAll().some(m => m.content === "second"), false);
+  assert.equal(f.store.getAll().some(m => m.content === "first"), true);
+});
+
+test("deleteMemo hard-deletes when trash is off", async () => {
+  const f = await seeded();
+  await f.store.deleteMemo(f.second);
+  assert.deepEqual(f.deleted, ["Mote/2026/2026-10-21 10.00.01.md"]);
+  assert.equal(f.store.getAll().length, 1);
+});
+
+test("memos outside the folder or not matching the name pattern are ignored", async () => {
+  const f = await fixture();
+  const outside = new TFile("Elsewhere/2026-10-21 10.00.md", "x");
+  const container = new TFile("Mote/2026/2026.md", "y");
+  f.files.set(outside.path, outside);
+  f.files.set(container.path, container);
+  await f.store.reloadAll();
+  assert.equal(f.store.getAll().length, 0);
+  assert.equal(f.store.isInFolder(outside), false);
+  assert.equal(f.store.isInFolder(container), false);
 });

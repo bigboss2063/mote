@@ -12,9 +12,9 @@ import {
   Platform,
   debounce,
 } from "obsidian";
-import { Memo, MemoriaSettings, RESERVED_TAGS, VIEW_TYPE_MEMORIA, VIEW_TYPE_MEMORIA_STATS, VIEW_TYPE_MEMORIA_YEAR } from "./types";
+import { Memo, MemoriaSettings, MemoTarget, RESERVED_TAGS, VIEW_TYPE_MEMORIA, VIEW_TYPE_MEMORIA_STATS, VIEW_TYPE_MEMORIA_YEAR } from "./types";
 import { MemoStore } from "./store";
-import { extractTags, stripMemoTags } from "./parser";
+import { extractTags, memoLinkName, stripMemoTags } from "./parser";
 import { createMainLeaf } from "./workspace";
 import { TagSuggest } from "./tag-suggest";
 import { extractImages, renderImageGrid, openLightbox } from "./image-grid";
@@ -32,6 +32,8 @@ import {
   setTextareaValue,
   WrapHandler,
 } from "./textarea-utils";
+import { InsightModal } from "./ai/insight-modal";
+import type { InsightScopeFilter, ScopeType } from "./ai/scope";
 
 interface Filter {
   tag: string | null;
@@ -87,6 +89,7 @@ export class MemoriaView extends ItemView {
   private listEl!: HTMLElement;
   private sidebarEl!: HTMLElement;
   private sidebarToggleEl: HTMLButtonElement | null = null;
+  private insightBtnEl: HTMLButtonElement | null = null;
   private layoutObserver: ResizeObserver | null = null;
   private narrowSidebarLayout = false;
   private searchEl!: HTMLInputElement;
@@ -297,6 +300,20 @@ export class MemoriaView extends ItemView {
     //   之前把数据报告按钮塞在 search-wrap 里，会让人误以为和搜索是同一组功能，
     //   现在改成独立的 topbar-tools 区域，语义上"左内容右工具"，也方便未来扩展。
     const tools = topBar.createDiv({ cls: "memoria-topbar-tools" });
+
+    // AI 洞察和"数据报告 / 年度全景"一样是打开独立界面的动作，放在工具区；
+    // 侧栏放的是视图和筛选，把动作混进去会让人以为它会筛选列表。
+    this.insightBtnEl = tools.createEl("button", {
+      cls: "memoria-icon-btn memoria-insight-entry",
+      attr: {
+        "aria-label": t("insight.action"),
+        title: t("insight.action"),
+      },
+    });
+    setIcon(this.insightBtnEl, "sparkles");
+    this.insightBtnEl.addEventListener("click", () => {
+      this.openInsight(this.getInsightScopeMemos());
+    });
 
     const setDensity = (density: "cozy" | "compact") => {
       void (async () => {
@@ -1900,14 +1917,68 @@ export class MemoriaView extends ItemView {
     this.renderAll();
   }
 
+  /** Bring a note referenced by an AI insight into view instead of opening its
+   *  Markdown file. Filters are cleared so the target is guaranteed to render. */
+  public revealMemo(target: MemoTarget): void {
+    // 一 memo 一文件后，路径就是身份：直接命中，不需要 date/time/正文兜底。
+    const targetMemo = this.store
+      .getAll()
+      .find((memo) => memo.file === target.file);
+    if (!targetMemo) {
+      new Notice(t("insight.history.sourceMissing"));
+      return;
+    }
+
+    let index = this.getFilteredMemos().indexOf(targetMemo);
+    if (index < 0) {
+      // The current filter hides the source. Narrow to its date instead of
+      // re-rendering the whole archive just to reach one card.
+      this.filter = {
+        tag: null,
+        year: null,
+        date: targetMemo.date,
+        keyword: "",
+        preset: "all",
+      };
+      if (this.searchEl) this.searchEl.value = "";
+      index = this.getFilteredMemos().indexOf(targetMemo);
+      this.pageLimit = Math.max(this.getInitialPageLimit(), index + 1);
+      this.renderAll();
+    } else if (index >= this.pageLimit) {
+      this.pageLimit = index + 1;
+      this.renderList();
+    }
+
+    void this.app.workspace.revealLeaf(this.leaf);
+    const key = memoCardKey(targetMemo);
+    const card = Array.from(
+      this.listEl.querySelectorAll<HTMLElement>(".memoria-card")
+    ).find((el) => el.dataset.memoKey === key);
+    if (!card) {
+      new Notice(t("insight.history.sourceMissing"));
+      return;
+    }
+    card.scrollIntoView({ block: "center", behavior: "smooth" });
+    card.addClass("is-located");
+    window.setTimeout(() => card.removeClass("is-located"), 2200);
+  }
+
   private renderAll(): void {
     // v2.2.0: 每次 renderAll 同步一次 root 的 fab-mode class，
     //   让用户在设置页切换 mobileInputStyle 后立即生效（store.notifyChange 会触发 renderAll）
     this.syncFabMode();
     this.syncContentWidth();
     this.syncSidebarLayout();
+    this.syncInsightEntry();
     this.renderSidebar();
     this.renderList();
+  }
+
+  /** AI 驱动的入口只在启用且确实有笔记时出现，避免空点。 */
+  private syncInsightEntry(): void {
+    if (!this.insightBtnEl) return;
+    const available = this.settings.aiEnabled && this.store.getAll().length > 0;
+    this.insightBtnEl.toggleClass("memoria-hidden", !available);
   }
 
   private renderSidebar(): void {
@@ -2930,10 +3001,6 @@ export class MemoriaView extends ItemView {
           cls: "memoria-empty-text",
           text: t("empty.onThisDay"),
         });
-        empty.createDiv({
-          cls: "memoria-empty-sub",
-          text: t("empty.onThisDaySub"),
-        });
         const jumpBtn = empty.createEl("button", {
           cls: "memoria-empty-btn",
         });
@@ -3138,6 +3205,7 @@ export class MemoriaView extends ItemView {
         (memo.isStarred ? " is-starred" : "") +
         (this.editingMemo === memo ? " is-editing" : ""),
     });
+    card.dataset.memoKey = memoCardKey(memo);
     // Desktop drag selects text; double-click still edits. Mobile keeps native selection.
     card.addEventListener("dblclick", (e) => {
       if (Platform.isMobile) return;
@@ -3174,6 +3242,18 @@ export class MemoriaView extends ItemView {
       e.stopPropagation();
       this.quoteMemo(memo);
     });
+
+    if (this.settings.aiEnabled) {
+      const insightBtn = actions.createEl("button", {
+        cls: "memoria-icon-btn memoria-card-insight",
+        attr: { "aria-label": t("insight.action.note") },
+      });
+      setIcon(insightBtn, "sparkles");
+      insightBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.openInsight([memo], memo);
+      });
+    }
 
     const menuBtn = actions.createEl("button", {
       cls: "memoria-icon-btn",
@@ -3828,8 +3908,99 @@ export class MemoriaView extends ItemView {
     const leaf = this.app.workspace.getLeaf(false);
     const file = this.app.vault.getAbstractFileByPath(memo.file);
     if (file instanceof TFile) {
-      await leaf.openFile(file, { eState: { line: memo.range[0] } });
+      await leaf.openFile(file);
     }
+  }
+
+  private openInsight(scopeMemos: Memo[], seed?: Memo): void {
+    if (!this.settings.aiEnabled) {
+      new Notice(t("insight.setup.disabled"));
+      return;
+    }
+    new InsightModal(this.app, this.store, this.settings, {
+      seed,
+      scopeMemos,
+      scopeFilter: seed ? undefined : this.getInsightScopeFilter(),
+      scopeDescription: seed
+        ? t("insight.scope.single")
+        : this.describeInsightScope(),
+      openMemo: (target) => this.revealMemo(target),
+    }).open();
+  }
+
+  /** Snapshot of the list filter, mapped to the scope editor's fields. The
+   *  initial memo list still comes from the view so review sampling stays intact. */
+  private getInsightScopeFilter(): InsightScopeFilter {
+    const isReview =
+      this.filter.preset === "random" || this.filter.preset === "on-this-day";
+    if (isReview) {
+      const typeMap: Record<ReviewTypeFilter, ScopeType> = {
+        all: "all",
+        starred: "starred",
+        pinned: "pinned",
+        "with-image": "with-image",
+        todo: "todo",
+      };
+      return {
+        type: typeMap[this.reviewFilters.type],
+        year: this.reviewFilters.year || null,
+        date: null,
+        tag: this.reviewFilters.tag || null,
+        keyword: this.reviewFilters.keyword,
+      };
+    }
+    const presetMap: Partial<Record<Filter["preset"], ScopeType>> = {
+      today: "today",
+      week: "week",
+      "no-tag": "no-tag",
+      "with-image": "with-image",
+      "with-link": "with-link",
+      pinned: "pinned",
+      starred: "starred",
+      todo: "todo",
+    };
+    return {
+      type: presetMap[this.filter.preset] ?? "all",
+      year: this.filter.year,
+      date: this.filter.date,
+      tag: this.filter.tag,
+      keyword: this.filter.keyword,
+    };
+  }
+
+  private getInsightScopeMemos(): Memo[] {
+    const isReview =
+      this.filter.preset === "random" || this.filter.preset === "on-this-day";
+    if (isReview) return this.applyReviewFilters(this.getBaseFilteredMemos());
+    return this.getFilteredMemos();
+  }
+
+  private describeInsightScope(): string {
+    const isReview =
+      this.filter.preset === "random" || this.filter.preset === "on-this-day";
+    if (!isReview) return this.describeFilter();
+
+    const parts: string[] = [];
+    const rf = this.reviewFilters;
+    const typeKeys: Record<Exclude<ReviewTypeFilter, "all">, string> = {
+      starred: "review.type.starred",
+      pinned: "review.type.pinned",
+      "with-image": "review.type.withImage",
+      todo: "review.type.todo",
+    };
+    if (this.filter.tag) parts.push(`#${this.filter.tag}`);
+    if (this.filter.year) parts.push(this.filter.year);
+    if (this.filter.date) parts.push(this.filter.date);
+    if (this.filter.keyword) parts.push(`「${this.filter.keyword}」`);
+    if (rf.year && rf.year !== this.filter.year) parts.push(rf.year);
+    if (rf.tag && rf.tag !== this.filter.tag) parts.push(`#${rf.tag}`);
+    if (rf.type !== "all") parts.push(t(typeKeys[rf.type]));
+    if (rf.keyword && rf.keyword !== this.filter.keyword) {
+      parts.push(`「${rf.keyword}」`);
+    }
+    if (parts.length === 0) parts.push(t("export.desc.all"));
+    const separator = getCurrentLocale() === "en-US" ? ", " : "，";
+    return parts.join(separator);
   }
 
   /**
@@ -3853,7 +4024,7 @@ export class MemoriaView extends ItemView {
       .map((l) => (l.trim() === "" ? ">" : `> ${l}`))
       .join("\n");
 
-    const block = `> [!quote] ${memo.date} ${memo.time}\n${quoted}\n\n`;
+    const block = `> [!quote] [[${memoLinkName(memo.file)}]]\n${quoted}\n\n`;
 
     // 如果输入框已有内容，追加；否则直接填入
     // v2.1.0-iter8: 用 setTextareaValue 保留 undo（用户能 Ctrl+Z 撤销引用插入）
@@ -4827,6 +4998,11 @@ function fmtDateLocal(d: Date): string {
   const m = (d.getMonth() + 1).toString().padStart(2, "0");
   const day = d.getDate().toString().padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+function memoCardKey(memo: Memo): string {
+  // 一 memo 一文件：路径即唯一身份，直接当 DOM key。
+  return memo.file;
 }
 
 /**

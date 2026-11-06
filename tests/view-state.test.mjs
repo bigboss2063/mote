@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
 import { build } from "esbuild";
+import { obsidianStub } from "./obsidian-stub.mjs";
 
 const bundle = await build({entryPoints:["src/view.ts"],bundle:true,write:false,
   platform:"node",format:"cjs",external:["obsidian"]});
@@ -9,7 +10,7 @@ function prototype(mobile = false) {
   const module = {exports:{}};
   vm.runInNewContext(bundle.outputFiles[0].text, {
     module,exports:module.exports,
-    require:() => ({ItemView:class {},Notice:class {},Platform:{isMobile:mobile}}),
+    require:() => obsidianStub({ItemView:class {},Notice:class {},Platform:{isMobile:mobile}}),
   });
   return module.exports.MemoriaView.prototype;
 }
@@ -29,7 +30,7 @@ test("menu write failures show a notice without reporting success", async () => 
   const module = {exports:{}};
   vm.runInNewContext(bundle.outputFiles[0].text, {
     module,exports:module.exports,console:{error:(...args)=>errors.push(args)},
-    require:() => ({ItemView:class {},Menu,Notice:class {constructor(message){notices.push(message);}}}),
+    require:() => obsidianStub({ItemView:class {},Menu,Notice:class {constructor(message){notices.push(message);}}}),
   });
   const view = Object.create(module.exports.MemoriaView.prototype);
   const reject = async () => {throw new Error("fixture conflict");};

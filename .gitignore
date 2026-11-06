@@ -20,3 +20,12 @@ npm-debug.log*
 # 发布流水线的临时文件
 *.log
 .tmp/
+
+# 本地工作记录（不属于插件产物）
+.workbuddy/
+
+# 本地 Obsidian 热重载标记
+.hotreload
+
+# Obsidian 插件本地数据（可能包含 API Key）
+data.json

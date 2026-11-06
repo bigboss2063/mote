@@ -16,7 +16,6 @@ import {
   VIEW_TYPE_MEMORIA_YEAR,
 } from "./types";
 import { MemoStore } from "./store";
-import { renderMemo } from "./parser";
 import { MemoriaView } from "./view";
 import { MemoriaSettingTab } from "./settings";
 import { StatsView } from "./stats";
@@ -87,14 +86,6 @@ export default class MemoriaPlugin extends Plugin {
       name: t("command.quickCapture"),
       callback: () => {
         void this.quickCapture();
-      },
-    });
-
-    this.addCommand({
-      id: "memoria-normalize-all",
-      name: t("command.normalizeAll"),
-      callback: () => {
-        void this.normalizeAll();
       },
     });
 
@@ -230,94 +221,6 @@ export default class MemoriaPlugin extends Plugin {
       active: true,
     });
     await this.app.workspace.revealLeaf(leaf);
-  }
-
-  /**
-   * 规范化所有 memo：用最新的 renderMemo 把每条笔记重写一遍，
-   * 修复历史上把 callout / task list / heading 等块级语法
-   * 直接拼到 "- HH:MM" 行末尾导致 md 渲染错误的问题。
-   */
-  private async normalizeAll(): Promise<void> {
-    if (!(await this.confirmAsync(t("notice.normalizeConfirm")))) {
-      return;
-    }
-    new Notice(t("notice.normalizing"));
-    try {
-      // 先 reload 一次，拿到最新的 memos
-      await this.store.reloadAll();
-      const memos = this.store.getAll();
-      // 按文件分组，按行号倒序处理（避免 splice 后行号失效）
-      const byFile = new Map<string, typeof memos>();
-      for (const m of memos) {
-        const arr = byFile.get(m.file) ?? [];
-        arr.push(m);
-        byFile.set(m.file, arr);
-      }
-      let count = 0;
-      for (const [filePath, list] of byFile) {
-        // 按 range[0] 倒序，从后往前重写（保证已处理区间的行号不影响未处理的）
-        list.sort((a, b) => b.range[0] - a.range[0]);
-        const file = this.app.vault.getAbstractFileByPath(filePath);
-        if (!(file instanceof TFile)) continue;
-        const raw = await this.app.vault.read(file);
-        // v1.1.14: 提出 split/join 到循环外，之前每条 memo 都 split+join 一次，
-        //   对 1000+ 条笔记的 vault 从"毫秒级"放大到"秒级"。
-        const lines = raw.split(/\r?\n/);
-        for (const m of list) {
-          const [s, e] = m.range;
-          const rendered = renderMemo(m.time, m.content).split("\n");
-          lines.splice(s, e - s + 1, ...rendered);
-          count++;
-        }
-        await this.app.vault.modify(file, lines.join("\n"));
-      }
-      await this.store.reloadAll();
-      new Notice(t("notice.normalized", { n: count }));
-    } catch (e) {
-      console.error(e);
-      new Notice(t("notice.normalizeFailed", { msg: (e as Error).message }));
-    }
-  }
-
-  private confirmAsync(message: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      const backdrop = activeDocument.body.createDiv({
-        cls: "memoria-modal-backdrop",
-      });
-      const box = backdrop.createDiv({ cls: "memoria-modal memoria-confirm" });
-      box.createDiv({ cls: "memoria-modal-title", text: message });
-      const btns = box.createDiv({ cls: "memoria-modal-btns" });
-      const cancel = btns.createEl("button", { text: t("input.cancel") });
-      const ok = btns.createEl("button", {
-        text: t("notice.confirmContinue"),
-        cls: "mod-warning",
-      });
-
-      let settled = false;
-      const close = (result: boolean) => {
-        if (settled) return;
-        settled = true;
-        backdrop.remove();
-        activeDocument.removeEventListener("keydown", onKey, true);
-        window.setTimeout(() => resolve(result), 0);
-      };
-      const onKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          e.preventDefault();
-          close(false);
-        } else if (e.key === "Enter") {
-          e.preventDefault();
-          close(true);
-        }
-      };
-
-      cancel.addEventListener("click", () => close(false));
-      ok.addEventListener("click", () => close(true));
-      backdrop.addEventListener("mousedown", (e) => {
-        if (e.target === backdrop) close(false);
-      });
-      activeDocument.addEventListener("keydown", onKey, true);
-    });
   }
 
   private async quickCapture(): Promise<void> {

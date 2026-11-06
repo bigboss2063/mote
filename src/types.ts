@@ -2,7 +2,7 @@
 
 /** 单条 memo 记录 */
 export interface Memo {
-  /** 所在文件路径，如 "Memoria/2026.md" */
+  /** 这条 memo 的文件路径，同时就是它的身份，如 "Mote/2026/2026-04-25 12.43.md" */
   file: string;
   /** 日期 yyyy-MM-dd */
   date: string;
@@ -10,7 +10,7 @@ export interface Memo {
   time: string;
   /** 完整 Date 对象（本地时间） */
   datetime: Date;
-  /** 正文（不含时间前缀） */
+  /** 正文（文件全文） */
   content: string;
   /** 从正文中解析出来的标签 */
   tags: string[];
@@ -26,8 +26,11 @@ export interface Memo {
   hasOpenTask: boolean;
   /** v1.5.0: 是否含至少一个已完成任务 `- [x]`（保留字段，未来做"已完成待办"视图用） */
   hasClosedTask: boolean;
-  /** 在源文件中的行号范围 [startLine, endLine] 0-based */
-  range: [number, number];
+}
+
+/** Loose reference used to find a memo card in the Mote feed. */
+export interface MemoTarget {
+  file: string;
 }
 
 export interface MemoriaSettings {
@@ -45,7 +48,7 @@ export interface MemoriaSettings {
    *   笔记跨度长（8 年甚至更多）的用户，右侧年份列表会很长造成视觉干扰，
    *   关闭后可隐藏。默认 true（沿用老行为，不影响现有用户） */
   showSidebarYears: boolean;
-  /** v1.1.9: 删除笔记时保留到 _trash.md（关掉就是硬删除） */
+  /** v1.1.9: 删除笔记时把文件移到 `_trash/`（关掉就是硬删除） */
   useTrash: boolean;
   /** v1.2.3: 导出图片的背景主题。
    *   "auto" = 跟随 Obsidian 浅/深色
@@ -57,9 +60,6 @@ export interface MemoriaSettings {
   collapseLineLimit: number;
   /** v1.4.0: 每日目标笔记数（侧栏进度条的满值）。范围 1-30 */
   dailyGoal: number;
-  /** v1.4.3: 回收站最大条数上限（FIFO 滚动，超出后最旧的被丢弃）。
-   *   0 = 不限制（不推荐，长期会让 _trash.md 膨胀影响性能） */
-  trashMaxItems: number;
   /** v2.0.0: 视图密度。compact = 紧凑模式，每张卡只显示前几行 */
   density: "cozy" | "compact";
   /** v2.4.0: 桌面端输入区与笔记流的阅读宽度。移动端始终自适应。 */
@@ -94,6 +94,16 @@ export interface MemoriaSettings {
    *   "always-visible" → 输入框常驻底部（v2.1.x 及之前的行为）
    *   仅触屏设备生效（hover: none + pointer: coarse），桌面端永远常驻 */
   mobileInputStyle: "fab" | "always-visible";
+  /** AI 洞察：默认关闭，用户显式启用并确认隐私说明后才会显示入口。 */
+  aiEnabled: boolean;
+  /** OpenAI 兼容接口的 Base URL，例如 https://api.openai.com/v1 */
+  aiBaseUrl: string;
+  /** API Key，保存在插件 data.json 中；本地模型可留空。 */
+  aiApiKey: string;
+  /** 模型名，例如 gpt-4o-mini / deepseek-chat */
+  aiModel: string;
+  /** 用户已确认：生成时会选中笔记正文发送到上面配置的服务。 */
+  aiConsent: boolean;
 }
 
 /** v2.1.0: 宠物存档数据（保存在 data.json 里） */
@@ -119,7 +129,6 @@ export const DEFAULT_SETTINGS: MemoriaSettings = {
   exportTheme: "auto",
   collapseLineLimit: 8,
   dailyGoal: 5,
-  trashMaxItems: 300,
   density: "cozy",
   contentWidth: "balanced",
   enableVimKeys: false,
@@ -132,6 +141,11 @@ export const DEFAULT_SETTINGS: MemoriaSettings = {
   sidebarCollapsed: false,
   buddy: null,
   mobileInputStyle: "fab",
+  aiEnabled: false,
+  aiBaseUrl: "",
+  aiApiKey: "",
+  aiModel: "",
+  aiConsent: false,
 };
 
 export const VIEW_TYPE_MEMORIA = "memoria-view";

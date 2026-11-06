@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
 import { build } from "esbuild";
+import { obsidianStub } from "./obsidian-stub.mjs";
 
 const bundle = await build({
   entryPoints: ["src/view.ts"], bundle: true, write: false,
@@ -12,13 +13,14 @@ function cardFixture(mobile) {
   const module = {exports: {}};
   vm.runInNewContext(bundle.outputFiles[0].text, {
     module, exports: module.exports,
-    require: () => ({ItemView: class {}, Platform: {isMobile: mobile}}),
+    require: () => obsidianStub({ItemView: class {}, Platform: {isMobile: mobile}}),
   });
   const listeners = new Map();
   let edits = 0;
-  const memo = {};
+  const memo = { file: "Mote/2026/2026-01-01 10.00.md" };
   const stop = new Error("The rest of the card rendering is outside this gesture test");
   const card = {
+    dataset: {},
     addEventListener(name, callback) { listeners.set(name, callback); },
     createDiv() { throw stop; },
   };
@@ -63,7 +65,7 @@ test("mobile leaves long-press and double-tap selection to the system", () => {
 test("active tag is appended when its only occurrence is a URL fragment", () => {
   const module = {exports: {}};
   vm.runInNewContext(bundle.outputFiles[0].text, {
-    module, exports: module.exports, require: () => ({ItemView: class {}}),
+    module, exports: module.exports, require: () => obsidianStub({ItemView: class {}}),
   });
   const append = text => module.exports.MemoriaView.prototype.appendActiveTagIfMissing.call(
     {filter: {tag: "rd"}}, text
@@ -77,7 +79,7 @@ test("active tag is appended when its only occurrence is a URL fragment", () => 
 test("card rendering keeps URL fragments out of its tag pills", () => {
   const module = {exports: {}};
   vm.runInNewContext(bundle.outputFiles[0].text, {
-    module, exports: module.exports, require: () => ({ItemView: class {}}),
+    module, exports: module.exports, require: () => obsidianStub({ItemView: class {}}),
   });
   const strip = text => module.exports.MemoriaView.prototype.stripTags.call({}, text);
   const link = "[fish](https://mp.weixin.qq.com/s/example#rd)";

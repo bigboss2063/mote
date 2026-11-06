@@ -24,7 +24,7 @@
 
 import { Memo } from "./types";
 
-/** localStorage key：最近展示过的 memo range[0] 列表（用 file:range[0] 作为 key） */
+/** localStorage key：最近展示过的 memo 文件路径列表 */
 const RECENT_SHOWN_KEY = "memoria:smart-review:recent";
 const RECENT_SHOWN_MAX = 30; // 保留最近 30 条曾展示过的，超出 FIFO
 
@@ -105,7 +105,7 @@ export function pickSmartReview(
 }
 
 function memoId(m: Memo): string {
-  return `${m.file}:${m.range[0]}`;
+  return m.file;
 }
 
 function shuffle<T>(arr: T[]): T[] {

@@ -242,6 +242,73 @@ export class MemoriaSettingTab extends PluginSettingTab {
         })
       );
 
+    // ================= AI 洞察 =================
+    const aiHeading = new Setting(containerEl)
+      .setName(t("settings.heading.ai"))
+      .setHeading();
+    // 标记分区，供 AI 洞察弹窗"打开设置"时直接滚动定位
+    aiHeading.settingEl.setAttr("data-mote-section", "ai");
+
+    new Setting(containerEl)
+      .setName(t("settings.ai.enable.name"))
+      .setDesc(t("settings.ai.enable.desc"))
+      .addToggle((tg) =>
+        tg.setValue(this.plugin.settings.aiEnabled).onChange(async (v) => {
+          this.plugin.settings.aiEnabled = v;
+          await this.plugin.saveSettings();
+          this.plugin.store.notifyChange();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName(t("settings.ai.baseUrl.name"))
+      .setDesc(t("settings.ai.baseUrl.desc"))
+      .addText((tx) =>
+        tx
+          .setPlaceholder("https://api.openai.com/v1")
+          .setValue(this.plugin.settings.aiBaseUrl)
+          .onChange(async (v) => {
+            this.plugin.settings.aiBaseUrl = v.trim();
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName(t("settings.ai.apiKey.name"))
+      .setDesc(t("settings.ai.apiKey.desc"))
+      .addText((tx) => {
+        tx.inputEl.type = "password";
+        tx.setPlaceholder("sk-...")
+          .setValue(this.plugin.settings.aiApiKey)
+          .onChange(async (v) => {
+            this.plugin.settings.aiApiKey = v.trim();
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName(t("settings.ai.model.name"))
+      .setDesc(t("settings.ai.model.desc"))
+      .addText((tx) =>
+        tx
+          .setPlaceholder("gpt-4o-mini / deepseek-chat")
+          .setValue(this.plugin.settings.aiModel)
+          .onChange(async (v) => {
+            this.plugin.settings.aiModel = v.trim();
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName(t("settings.ai.consent.name"))
+      .setDesc(t("settings.ai.consent.desc"))
+      .addToggle((tg) =>
+        tg.setValue(this.plugin.settings.aiConsent).onChange(async (v) => {
+          this.plugin.settings.aiConsent = v;
+          await this.plugin.saveSettings();
+        })
+      );
+
     // ================= 数据 =================
     new Setting(containerEl).setName(t("settings.heading.data")).setHeading();
 
@@ -268,27 +335,6 @@ export class MemoriaSettingTab extends PluginSettingTab {
           this.plugin.settings.useTrash = v;
           await this.plugin.saveSettings();
         })
-      );
-
-    // v1.4.3: 回收站最大条数（FIFO 滚动，超出后丢弃最旧的）
-    new Setting(containerEl)
-      .setName(t("settings.trashMax.name"))
-      .setDesc(t("settings.trashMax.desc"))
-      .addDropdown((d) =>
-        d
-          .addOptions({
-            "100": t("settings.trash.100"),
-            "300": t("settings.trash.300"),
-            "500": t("settings.trash.500"),
-            "1000": t("settings.trash.1000"),
-            "3000": t("settings.trash.3000"),
-            "0": t("settings.trash.0"),
-          })
-          .setValue(String(this.plugin.settings.trashMaxItems))
-          .onChange(async (v) => {
-            this.plugin.settings.trashMaxItems = parseInt(v, 10) || 0;
-            await this.plugin.saveSettings();
-          })
       );
 
     // v1.2.3: 导出图片的背景主题

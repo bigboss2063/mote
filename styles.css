@@ -9,16 +9,13 @@
 .memoria-root button.memoria-icon-btn,
 .memoria-root button.memoria-tool-btn,
 .memoria-root button.memoria-cal-nav,
-.memoria-root button.memoria-overview-btn,
-.memoria-root button.memoria-edit-cancel,
 .memoria-root button.memoria-submit-btn {
   box-shadow: none;
   /* 关键：覆盖 Obsidian 默认按钮的背景边框 */
 }
 .memoria-root button.memoria-icon-btn,
 .memoria-root button.memoria-tool-btn,
-.memoria-root button.memoria-cal-nav,
-.memoria-root button.memoria-overview-btn {
+.memoria-root button.memoria-cal-nav {
   background-color: transparent;
   border: none;
   box-shadow: none;
@@ -39,19 +36,30 @@
 .memoria-year-view,
 .memoria-modal,
 .memoria-modal-backdrop,
+.memoria-insight-modal,
+.memoria-insight-history-modal,
 .memoria-lightbox,
 .memoria-tag-suggest,
 .memoria-heatmap-tooltip,
-.memoria-table-picker {
+.memoria-table-picker,
+.memoria-insight-cite-card {
+  /* 圆角只有四档：数据格 / 行内标记 / 控件 / 容器，另加胶囊。
+   * 嵌套元素的圆角取「父级圆角 − 间距」，不做无依据的微调。 */
+  --memoria-radius-cell: 2px;
+  --memoria-radius-xs: 4px;
   --memoria-radius-control: 6px;
-  --memoria-radius-card: 10px;
-  --memoria-radius-panel: 12px;
+  --memoria-radius-container: 10px;
   --memoria-radius-pill: 999px;
   --memoria-feed-max-width: 980px;
 
+  /* 字号只有三档：说明 12 / 正文 14 / 标题 20。
+   * 层级差异优先用字重、颜色和间距表达，不足时才新增字号。 */
   --memoria-font-xs: 12px;
   --memoria-font-body: 14px;
   --memoria-font-title: 20px;
+
+  /* 动效：只用于颜色和透明度反馈，时长与曲线保持唯一。 */
+  --memoria-motion: 250ms ease-out;
 
   /* Radix 色阶用途：背景 1-2，交互底色 3-5，边界 6-8，实色操作 9-10，
    * 文字 11-12；危险/警示只使用 Red / Amber 语义色。
@@ -68,10 +76,32 @@
   --memoria-text-2: var(--memoria-slate-11);
   --memoria-text-3: var(--memoria-slate-10);
 
+  /* Radix blackA / whiteA：遮罩、强制深色表面与阴影。 */
+  --memoria-black-a-3: rgba(0, 0, 0, 0.15);
+  --memoria-black-a-4: rgba(0, 0, 0, 0.2);
+  --memoria-black-a-5: rgba(0, 0, 0, 0.3);
+  --memoria-black-a-6: rgba(0, 0, 0, 0.4);
+  --memoria-black-a-7: rgba(0, 0, 0, 0.55);
+  --memoria-black-a-8: rgba(0, 0, 0, 0.7);
+  --memoria-black-a-10: rgba(0, 0, 0, 0.87);
+  --memoria-white-a-3: rgba(255, 255, 255, 0.15);
+  --memoria-white-a-4: rgba(255, 255, 255, 0.2);
+  --memoria-white-a-5: rgba(255, 255, 255, 0.3);
+  --memoria-white-a-11: rgba(255, 255, 255, 0.95);
+  --memoria-white-a-12: #ffffff;
+
+  /* 阴影只用于浮层，且统一取 blackA 色阶。 */
+  --memoria-shadow-popover:
+    0 8px 24px -8px var(--memoria-black-a-6),
+    0 2px 6px -2px var(--memoria-black-a-4);
+  --memoria-shadow-modal:
+    0 24px 60px -16px var(--memoria-black-a-7),
+    0 6px 16px -6px var(--memoria-black-a-5);
+
   --memoria-accent-subtle: var(--memoria-green-3);
-  --memoria-accent-muted: var(--memoria-green-5);
+  --memoria-accent-hover: var(--memoria-green-4);
   --memoria-accent-border: var(--memoria-green-7);
-  --memoria-accent-strong: var(--memoria-green-9);
+  --memoria-accent-border-strong: var(--memoria-green-8);
   --memoria-accent-text: var(--memoria-green-11);
   --memoria-accent-deep: var(--memoria-green-12);
 
@@ -92,10 +122,13 @@
 .theme-light .memoria-year-view,
 .theme-light .workspace-leaf-content[data-type^="memoria"] .view-content,
 .theme-light .memoria-modal,
+.theme-light .memoria-insight-modal,
+.theme-light .memoria-insight-history-modal,
 .theme-light .memoria-modal-backdrop,
 .theme-light .memoria-tag-suggest,
 .theme-light .memoria-heatmap-tooltip,
-.theme-light .memoria-table-picker {
+.theme-light .memoria-table-picker,
+.theme-light .memoria-insight-cite-card {
   --memoria-slate-1: #fcfcfd;
   --memoria-slate-2: #f9f9fb;
   --memoria-slate-3: #f0f0f3;
@@ -151,8 +184,13 @@
   /* 实色操作使用 step 11，保证白字正文对比度 > 4.5:1 */
   --memoria-accent-solid: var(--memoria-green-11);
   --memoria-accent-solid-hover: var(--memoria-green-12);
-  --memoria-accent-contrast: #ffffff;
-  --memoria-overlay: rgba(0, 0, 0, 0.4);
+  --memoria-accent-contrast: var(--memoria-slate-1);
+  --memoria-danger-contrast: var(--memoria-white-a-12);
+  /* 热力图四档：浅色主题在 green 3/5/7/9 上递增 */
+  --memoria-heat-1: var(--memoria-green-3);
+  --memoria-heat-2: var(--memoria-green-5);
+  --memoria-heat-3: var(--memoria-green-7);
+  --memoria-heat-4: var(--memoria-green-9);
 
   --interactive-accent: var(--memoria-accent-solid);
   --interactive-accent-hover: var(--memoria-accent-solid-hover);
@@ -171,7 +209,7 @@
   --background-modifier-border-hover: var(--memoria-border-strong);
   --background-modifier-form-field: var(--memoria-surface-3);
   --background-modifier-hover: var(--memoria-surface-4);
-  --background-modifier-cover: var(--memoria-overlay);
+  --background-modifier-cover: var(--memoria-black-a-8);
   --text-normal: var(--memoria-text-1);
   --text-muted: var(--memoria-text-2);
   --text-faint: var(--memoria-text-3);
@@ -183,10 +221,13 @@
 .theme-dark .memoria-year-view,
 .theme-dark .workspace-leaf-content[data-type^="memoria"] .view-content,
 .theme-dark .memoria-modal,
+.theme-dark .memoria-insight-modal,
+.theme-dark .memoria-insight-history-modal,
 .theme-dark .memoria-modal-backdrop,
 .theme-dark .memoria-tag-suggest,
 .theme-dark .memoria-heatmap-tooltip,
-.theme-dark .memoria-table-picker {
+.theme-dark .memoria-table-picker,
+.theme-dark .memoria-insight-cite-card {
   --memoria-slate-1: #111113;
   --memoria-slate-2: #18191b;
   --memoria-slate-3: #212225;
@@ -243,7 +284,12 @@
   --memoria-accent-solid: var(--memoria-green-11);
   --memoria-accent-solid-hover: var(--memoria-green-12);
   --memoria-accent-contrast: var(--memoria-green-1);
-  --memoria-overlay: rgba(0, 0, 0, 0.65);
+  --memoria-danger-contrast: var(--memoria-white-a-12);
+  /* 热力图四档：暗色主题在 green 4/6/8/10 上递增 */
+  --memoria-heat-1: var(--memoria-green-4);
+  --memoria-heat-2: var(--memoria-green-6);
+  --memoria-heat-3: var(--memoria-green-8);
+  --memoria-heat-4: var(--memoria-green-10);
 
   --interactive-accent: var(--memoria-accent-solid);
   --interactive-accent-hover: var(--memoria-accent-solid-hover);
@@ -262,7 +308,7 @@
   --background-modifier-border-hover: var(--memoria-border-strong);
   --background-modifier-form-field: var(--memoria-surface-3);
   --background-modifier-hover: var(--memoria-surface-4);
-  --background-modifier-cover: var(--memoria-overlay);
+  --background-modifier-cover: var(--memoria-black-a-8);
   --text-normal: var(--memoria-text-1);
   --text-muted: var(--memoria-text-2);
   --text-faint: var(--memoria-text-3);
@@ -274,7 +320,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-size: 14px;
+  font-size: var(--memoria-font-body);
   color: var(--text-normal);
 }
 
@@ -294,11 +340,6 @@
   padding: 16px 10px 24px;
   border-right: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
-  transition:
-    width 250ms ease-out,
-    padding 250ms ease-out,
-    border-color 250ms ease-out,
-    opacity 250ms ease-out;
 }
 
 @media (min-width: 681px) {
@@ -318,7 +359,7 @@
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 4px 4px 14px;
+  padding: 4px 0 14px;
   position: relative;
 }
 .memoria-stat {
@@ -338,25 +379,11 @@
   margin-top: 4px;
   letter-spacing: 0.4px;
 }
-/* 视图切换按钮：贴在统计条右侧 */
-.memoria-stats-switch {
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  padding: 4px;
-  margin-left: 4px;
-  color: var(--text-faint);
-  align-self: center;
-}
-.memoria-stats-switch:hover {
-  color: var(--interactive-accent);
-}
-
 /* 热力图 */
 .memoria-heatmap {
   display: flex;
   gap: 3px;
-  padding: 8px 6px 8px;
+  padding: 8px 12px;
   /* v1.4.1: 去掉底部灰线，由下方的进度条提供"分隔感" */
 }
 .memoria-heatmap-col {
@@ -367,32 +394,27 @@
 }
 .memoria-heatmap-cell {
   aspect-ratio: 1;
-  border-radius: 2px;
+  border-radius: var(--memoria-radius-cell);
   background: var(--background-modifier-border);
   min-height: 8px;
 }
 .memoria-heatmap-cell.level-0 {
-  background: var(--background-modifier-border);
-  opacity: 0.45;
+  background: var(--memoria-surface-3);
 }
 .memoria-heatmap-cell.level-1 {
-  background: var(--interactive-accent);
-  opacity: 0.3;
+  background: var(--memoria-heat-1);
 }
 .memoria-heatmap-cell.level-2 {
-  background: var(--interactive-accent);
-  opacity: 0.55;
+  background: var(--memoria-heat-2);
 }
 .memoria-heatmap-cell.level-3 {
-  background: var(--interactive-accent);
-  opacity: 0.8;
+  background: var(--memoria-heat-3);
 }
 .memoria-heatmap-cell.level-4 {
-  background: var(--interactive-accent);
-  opacity: 1;
+  background: var(--memoria-heat-4);
 }
 .memoria-heatmap-cell.future {
-  opacity: 0.15;
+  background: transparent;
 }
 
 /* 侧栏分区标题 */
@@ -409,7 +431,7 @@
   user-select: none;
   display: flex;
   align-items: center;
-  transition: color 250ms ease-out;
+  transition: color var(--memoria-motion);
 }
 .memoria-section-collapsible:hover {
   color: var(--text-muted);
@@ -426,7 +448,7 @@
   margin: 14px 12px 0;
   padding: 10px 12px;
   background: var(--background-modifier-hover);
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
   font-size: var(--memoria-font-xs);
   line-height: 1.55;
   color: var(--text-faint);
@@ -434,7 +456,7 @@
 .memoria-sidebar-hint code {
   padding: 1px 5px;
   background: var(--background-primary);
-  border-radius: 3px;
+  border-radius: var(--memoria-radius-xs);
   font-size: var(--memoria-font-xs);
   color: var(--text-accent);
 }
@@ -448,27 +470,30 @@
   align-items: center;
   gap: 10px;
   padding: 7px 12px;
-  margin: 1px 2px;
-  border-radius: 6px;
+  margin: 1px 0;
+  border-radius: var(--memoria-radius-control);
   font-size: var(--memoria-font-body);
   color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
-  transition: background 250ms ease-out, color 250ms ease-out;
+  transition: background var(--memoria-motion), color var(--memoria-motion);
 }
 .memoria-nav-item:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 .memoria-nav-item.active {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
+  background: var(--memoria-accent-subtle);
+  color: var(--memoria-accent-text);
   font-weight: 500;
 }
+.memoria-nav-item.active:hover {
+  background: var(--memoria-accent-hover);
+}
 .memoria-nav-item.active .memoria-nav-count {
-  color: var(--text-on-accent);
-  opacity: 0.85;
+  color: var(--memoria-accent-text);
+  opacity: 0.75;
 }
 .memoria-nav-icon {
   flex-shrink: 0;
@@ -478,7 +503,7 @@
   align-items: center;
   justify-content: center;
   opacity: 0.85;
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
 }
 .memoria-nav-icon .svg-icon {
   width: 16px;
@@ -532,7 +557,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 20px;
+  font-size: var(--memoria-font-title);
   font-weight: 700;
   color: var(--text-normal);
 }
@@ -558,7 +583,7 @@
   border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-pill);
   padding: 0 8px 0 12px;
-  transition: border-color 250ms ease-out;
+  transition: border-color var(--memoria-motion);
 }
 .memoria-search-wrap:focus-within {
   border-color: var(--interactive-accent);
@@ -591,18 +616,20 @@
   outline: none;
 }
 .memoria-root button.memoria-icon-btn {
-  padding: 4px 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   border: none;
   background: transparent;
   /* Essential top-bar actions stay one step above decorative metadata so
    * pale themes do not wash them out. */
   color: var(--text-muted);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--memoria-radius-control);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 250ms ease-out, color 250ms ease-out;
+  transition: background var(--memoria-motion), color var(--memoria-motion);
   box-shadow: none;
 }
 .memoria-root button.memoria-icon-btn:hover {
@@ -614,6 +641,10 @@
 .memoria-root button.memoria-icon-btn .svg-icon {
   width: 14px;
   height: 14px;
+}
+/* 图标按钮的基础 display 优先级更高，隐藏态需要单独一条规则 */
+.memoria-root button.memoria-icon-btn.memoria-hidden {
+  display: none;
 }
 
 /* v1.1.2: 刷新按钮点击后转圈动画 */
@@ -634,9 +665,9 @@
   margin: 16px 24px 0;
   padding: 14px 16px 10px;
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: var(--memoria-radius-panel);
+  border-radius: var(--memoria-radius-container);
   background: var(--background-primary);
-  transition: border-color 250ms ease-out;
+  transition: border-color var(--memoria-motion);
   flex-shrink: 0;
   /* v1.4.4: 输入卡建立独立的层叠上下文，并抬高到 z-index:2。
    *   原因：:focus-within 激活后的 3px accent 光晕 box-shadow 会向外扩散，
@@ -647,9 +678,8 @@
   z-index: 2;
 }
 .memoria-input-card:focus-within {
-  border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--interactive-accent) 15%, transparent);
+  border-color: var(--memoria-accent-border-strong);
+  box-shadow: 0 0 0 2px var(--memoria-accent-subtle);
 }
 
 /* v2.0.17: 输入卡片"渐进式披露"动画
@@ -674,7 +704,7 @@
  *
  * 展开态：所有规则恢复正常值（即原 v2.0.16 及之前的视觉表现）
  *
- * transition 时长 250ms ease-out，只作用于高度、透明度等真正变化的属性。
+ * transition 时长 var(--memoria-motion)，只作用于高度、透明度等真正变化的属性。
  *   配合 JS 的 150ms 鼠标驻留检测（防快速掠过误触发）和帧间 class 切换
  *   （绕过 Chromium 对 textarea :hover 伪类的 transition 短路 bug）。
  */
@@ -696,8 +726,8 @@
    *   v2.0.17-iter13: 时长 1.1s → 0.7s，v2.4 进一步收敛为 250ms。
    */
   transition:
-    min-height 250ms ease-out,
-    height 250ms ease-out;
+    min-height var(--memoria-motion),
+    height var(--memoria-motion);
 }
 /* v2.0.17: 输入时（input 事件触发 autoResizeInput）临时禁用动画，
  *   避免 textarea 随内容长高时被过渡拖住手感。
@@ -708,15 +738,11 @@
 .memoria-input-toolbar {
   /* v2.0.17: 工具栏整体淡入淡出 */
   transition:
-    opacity 250ms ease-out,
-    border-top-color 250ms ease-out;
+    opacity var(--memoria-motion),
+    border-top-color var(--memoria-motion);
 }
 .memoria-root button.memoria-submit-btn {
-  /* v2.0.17: 发送按钮饱和度淡入 */
-  transition:
-    background 250ms ease-out,
-    filter 250ms ease-out,
-    opacity 250ms ease-out;
+  transition: background var(--memoria-motion);
 }
 
 /* 收起态（默认）—— textarea 收矮 + 工具栏淡化 + 发送按钮褪色
@@ -733,12 +759,8 @@
   min-height: 40px;
 }
 .memoria-input-card:not(.is-focused):not(.has-content):not(.is-editing):not(.dragging) .memoria-input-toolbar {
-  opacity: 0.55;
-  border-top-color: color-mix(in srgb, var(--background-modifier-border) 50%, transparent);
-}
-.memoria-root .memoria-input-card:not(.is-focused):not(.has-content):not(.is-editing):not(.dragging) button.memoria-submit-btn {
   opacity: 0.7;
-  filter: saturate(0.7);
+  border-top-color: var(--memoria-border-subtle);
 }
 
 .memoria-input {
@@ -768,7 +790,7 @@
   box-shadow: none;
   color: var(--text-normal);
   font-family: var(--font-text);
-  font-size: 14px;
+  font-size: var(--memoria-font-body);
   line-height: 1.6;
   /* v1.1.8: 关掉浏览器原生 resize 拉手，高度由 JS 动态控制；超出 max-height 才出现滚动条 */
   resize: none;
@@ -788,16 +810,12 @@
   outline: none;
 }
 .memoria-input::placeholder {
-  color: color-mix(
-    in srgb,
-    var(--text-muted) 78%,
-    var(--interactive-accent)
-  );
+  color: var(--text-faint);
 }
 .memoria-input.dragging {
-  background: var(--background-modifier-hover);
-  border-radius: 6px;
-  box-shadow: inset 0 0 0 2px var(--interactive-accent);
+  background: var(--memoria-accent-subtle);
+  border-radius: var(--memoria-radius-control);
+  box-shadow: inset 0 0 0 0.5px var(--memoria-accent-border-strong);
 }
 .memoria-input-toolbar {
   display: flex;
@@ -813,7 +831,9 @@
   gap: 2px;
 }
 .memoria-root button.memoria-tool-btn {
-  padding: 4px 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -822,7 +842,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 250ms ease-out, color 250ms ease-out;
+  transition: background var(--memoria-motion), color var(--memoria-motion);
   box-shadow: none;
 }
 .memoria-root button.memoria-tool-btn:hover {
@@ -830,8 +850,8 @@
   color: var(--text-normal);
 }
 .memoria-root button.memoria-tool-btn .svg-icon {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 }
 .memoria-input-hint {
   margin-left: 6px;
@@ -851,7 +871,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 250ms ease-out, filter 250ms ease-out;
+  transition: background var(--memoria-motion);
   box-shadow: none;
 }
 .memoria-root button.memoria-submit-btn .svg-icon {
@@ -861,8 +881,6 @@
 }
 .memoria-root button.memoria-submit-btn:hover {
   background: var(--interactive-accent-hover);
-  /* 有些主题没定义 --interactive-accent-hover，fallback 用 filter 做微变亮 */
-  filter: brightness(1.05);
 }
 
 /* ================== 列表 ================== */
@@ -877,9 +895,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 0 4px 14px;
+  padding: 0 0 14px;
   color: var(--text-muted);
   font-size: var(--memoria-font-xs);
+}
+.memoria-list-meta-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .memoria-root button.memoria-meta-btn {
   display: inline-flex;
@@ -897,7 +922,7 @@
 }
 .memoria-root button.memoria-meta-btn:hover,
 .memoria-root button.memoria-meta-btn:focus-visible {
-  border-color: var(--interactive-accent);
+  border-color: var(--memoria-accent-border-strong);
   color: var(--text-normal);
 }
 .memoria-root button.memoria-meta-btn .svg-icon {
@@ -912,7 +937,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 0 4px 14px;
+  margin: 0 0 14px;
   padding: 0;
   border: none;
   background: transparent;
@@ -975,7 +1000,7 @@
   border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--memoria-radius-pill);
   background: var(--background-modifier-form-field);
-  transition: border-color 250ms ease-out;
+  transition: border-color var(--memoria-motion);
 }
 .memoria-review-search-wrap:focus-within {
   border-color: var(--interactive-accent);
@@ -1045,7 +1070,7 @@
   margin-bottom: 4px;
 }
 .memoria-empty-sub {
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-faint);
 }
 
@@ -1054,8 +1079,8 @@
   margin-bottom: 28px;
 }
 .memoria-day-head {
-  padding: 6px 4px 12px;
-  font-size: 12px;
+  padding: 6px 0 12px;
+  font-size: var(--memoria-font-xs);
   font-weight: 600;
   color: var(--text-accent);
   letter-spacing: 0.3px;
@@ -1072,7 +1097,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 4px 12px;
+  padding: 6px 0 12px;
   color: var(--text-accent);
   font-size: var(--memoria-font-xs);
   font-weight: 600;
@@ -1092,8 +1117,8 @@
   margin-bottom: 12px;
   background: var(--background-primary-alt, var(--background-secondary));
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: var(--memoria-radius-card);
-  transition: border-color 250ms ease-out;
+  border-radius: var(--memoria-radius-container);
+  transition: border-color var(--memoria-motion);
 }
 .memoria-card:hover {
   border-color: var(--background-modifier-border-hover);
@@ -1139,13 +1164,13 @@
   display: flex;
   gap: 2px;
   opacity: 0;
-  transition: opacity 250ms ease-out;
+  transition: opacity var(--memoria-motion);
 }
 .memoria-card:hover .memoria-card-actions {
   opacity: 1;
 }
 .memoria-card-body {
-  font-size: 14px;
+  font-size: var(--memoria-font-body);
   line-height: 1.7;
   color: var(--text-normal);
   word-break: break-word;
@@ -1175,10 +1200,8 @@
 }
 .memoria-card-body blockquote {
   margin: 0.5em 0;
-  padding: 4px 12px;
-  border-left: 3px solid var(--interactive-accent);
-  background: var(--background-modifier-hover);
-  border-radius: 0 4px 4px 0;
+  padding: 0 0 0 12px;
+  border-left: 0.5px solid var(--memoria-border);
   color: var(--text-muted);
 }
 /* 行内 code（文字里的 `xxx`）：胶囊背景；
@@ -1186,7 +1209,7 @@
 .memoria-card-body :not(pre) > code {
   padding: 1px 5px;
   background: var(--background-modifier-hover);
-  border-radius: 3px;
+  border-radius: var(--memoria-radius-xs);
   font-family: var(--font-monospace);
   font-size: 0.9em;
   white-space: break-spaces;
@@ -1199,9 +1222,9 @@
   padding: 10px 12px;
   background: var(--code-background, var(--background-secondary));
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
   overflow-x: auto;
-  font-size: 13px;
+  font-size: var(--memoria-font-xs);
   line-height: 1.55;
 }
 .memoria-card-body pre > code {
@@ -1229,12 +1252,12 @@
   padding: 4px 8px;
   font-size: var(--memoria-font-xs);
   color: var(--text-muted);
-  background: color-mix(in srgb, var(--background-modifier-hover) 80%, transparent);
+  background: var(--memoria-surface-3);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: 4px;
+  border-radius: var(--memoria-radius-xs);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 250ms ease-out;
+  transition: opacity var(--memoria-motion);
 }
 .memoria-card-body pre:hover .copy-code-button,
 .memoria-card-body pre:hover > button,
@@ -1247,7 +1270,7 @@
 
 .memoria-card-body img {
   max-width: 100%;
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
   margin: 0.5em 0;
 }
 
@@ -1272,7 +1295,7 @@
   max-height: 240px;
   object-fit: contain;
   background: var(--background-modifier-hover);
-  border-radius: 8px;
+  border-radius: var(--memoria-radius-control);
 }
 .memoria-img-grid-2 {
   grid-template-columns: repeat(2, 1fr);
@@ -1298,10 +1321,10 @@
   position: relative;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
   background: var(--background-modifier-hover);
   cursor: zoom-in;
-  transition: opacity 250ms ease-out;
+  transition: opacity var(--memoria-motion);
 }
 .memoria-img-cell:hover {
   opacity: 0.92;
@@ -1316,7 +1339,7 @@
 }
 .memoria-img-grid-1 .memoria-img-cell {
   cursor: zoom-in;
-  border-radius: 8px;
+  border-radius: var(--memoria-radius-control);
   background: transparent;
 }
 
@@ -1324,8 +1347,8 @@
 .memoria-img-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  background: var(--memoria-black-a-7);
+  color: var(--memoria-white-a-12);
   font-size: var(--memoria-font-title);
   font-weight: 600;
   display: flex;
@@ -1339,7 +1362,7 @@
 .memoria-lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.88);
+  background: var(--memoria-black-a-10);
   z-index: 10002;
   display: flex;
   align-items: center;
@@ -1358,8 +1381,8 @@
   max-width: 92vw;
   max-height: 88vh;
   object-fit: contain;
-  border-radius: 4px;
-  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+  border-radius: var(--memoria-radius-xs);
+  box-shadow: var(--memoria-shadow-modal);
   cursor: pointer;
 }
 .memoria-lightbox-counter {
@@ -1367,10 +1390,10 @@
   top: 18px;
   left: 50%;
   transform: translateX(-50%);
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--memoria-white-a-11);
   font-size: var(--memoria-font-xs);
   font-variant-numeric: tabular-nums;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--memoria-black-a-7);
   padding: 4px 12px;
   border-radius: var(--memoria-radius-pill);
 }
@@ -1381,16 +1404,19 @@
   width: 36px;
   height: 36px;
   border: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: var(--memoria-white-a-3);
+  color: var(--memoria-white-a-12);
   border-radius: 50%;
-  font-size: 22px;
   cursor: pointer;
   line-height: 1;
-  transition: background 250ms ease-out;
+  transition: background var(--memoria-motion);
 }
 .memoria-lightbox-close:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--memoria-white-a-5);
+}
+.memoria-lightbox-close .svg-icon {
+  width: 18px;
+  height: 18px;
 }
 .memoria-lightbox-nav {
   position: fixed;
@@ -1399,16 +1425,19 @@
   width: 44px;
   height: 64px;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 36px;
+  background: var(--memoria-white-a-3);
+  color: var(--memoria-white-a-12);
   cursor: pointer;
   line-height: 1;
-  border-radius: 6px;
-  transition: background 250ms ease-out;
+  border-radius: var(--memoria-radius-control);
+  transition: background var(--memoria-motion);
 }
 .memoria-lightbox-nav:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--memoria-white-a-5);
+}
+.memoria-lightbox-nav .svg-icon {
+  width: 24px;
+  height: 24px;
 }
 .memoria-lightbox-prev {
   left: 16px;
@@ -1440,7 +1469,7 @@
   border-radius: var(--memoria-radius-pill);
   font-size: var(--memoria-font-xs);
   cursor: pointer;
-  transition: background 250ms ease-out, color 250ms ease-out;
+  transition: background var(--memoria-motion), color var(--memoria-motion);
   user-select: none;
 }
 .memoria-load-more {
@@ -1455,7 +1484,7 @@
 .memoria-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: var(--memoria-overlay, rgba(0, 0, 0, 0.45));
+  background: var(--memoria-black-a-8);
   z-index: 10000;
   display: flex;
   align-items: center;
@@ -1465,9 +1494,9 @@
   width: min(560px, 90vw);
   background: var(--background-primary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: var(--memoria-radius-panel);
+  border-radius: var(--memoria-radius-container);
   padding: 20px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--memoria-shadow-modal);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1494,7 +1523,6 @@
   resize: none;
   overflow-y: auto;
   outline: none;
-  transition: height 250ms ease-out;
 }
 .memoria-modal-textarea:focus {
   border-color: var(--interactive-accent);
@@ -1512,7 +1540,7 @@
   border-radius: var(--memoria-radius-control);
   cursor: pointer;
   font-size: var(--memoria-font-xs);
-  transition: background 250ms ease-out;
+  transition: background var(--memoria-motion);
 }
 .memoria-modal .memoria-modal-btns button:hover {
   background: var(--background-modifier-hover);
@@ -1528,7 +1556,7 @@
 
 /* ================== 概览：热力图 ↔ 日历 可切换 ================== */
 .memoria-overview {
-  padding: 10px 6px 6px;
+  padding: 0;
   /* v1.4.1: 去掉底部灰线，和下方进度条视觉上连贯 */
   margin-bottom: 0;
 }
@@ -1538,7 +1566,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 4px 6px;
+  padding: 0 12px 6px;
   min-height: 20px;
 }
 .memoria-overview-label {
@@ -1549,31 +1577,22 @@
   text-transform: uppercase;
 }
 
-/* 切换按钮：位于标题行右侧，hover 才显轮廓 */
-.memoria-overview-btn {
-  padding: 3px 6px;
-  color: var(--text-faint);
-}
-.memoria-overview-btn:hover {
-  color: var(--interactive-accent);
-}
-
 /* 热力图保持原样，去掉外层 padding */
 .memoria-overview .memoria-heatmap {
-  padding: 0 2px;
+  padding: 0 12px;
   border-bottom: none;
   margin-bottom: 0;
 }
 
 /* ================== 月历 ================== */
 .memoria-calendar {
-  padding: 0 2px;
+  padding: 0 12px;
 }
 .memoria-cal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 4px 8px;
+  padding: 0 0 8px;
 }
 .memoria-cal-nav {
   width: 22px;
@@ -1586,7 +1605,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--memoria-radius-xs);
   box-shadow: none;
 }
 .memoria-cal-nav:hover {
@@ -1598,13 +1617,13 @@
   height: 14px;
 }
 .memoria-cal-title {
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   font-weight: 600;
   color: var(--text-normal);
   cursor: pointer;
   padding: 3px 8px;
-  border-radius: 4px;
-  transition: background 250ms ease-out;
+  border-radius: var(--memoria-radius-xs);
+  transition: background var(--memoria-motion);
 }
 .memoria-cal-title:hover {
   background: var(--background-modifier-hover);
@@ -1631,7 +1650,7 @@
   justify-content: center;
   font-size: var(--memoria-font-xs);
   color: var(--text-muted);
-  border-radius: 4px;
+  border-radius: var(--memoria-radius-xs);
   cursor: default;
   user-select: none;
 }
@@ -1646,12 +1665,8 @@
   background: var(--background-modifier-hover);
 }
 .memoria-cal-cell.is-today {
-  background: color-mix(
-    in srgb,
-    var(--interactive-accent) 15%,
-    transparent
-  );
-  color: var(--interactive-accent);
+  background: var(--memoria-accent-subtle);
+  color: var(--memoria-accent-text);
   font-weight: 600;
 }
 .memoria-cal-cell.is-active {
@@ -1678,18 +1693,16 @@
   background: var(--interactive-accent);
 }
 .memoria-cal-dot.level-1 {
-  opacity: 0.35;
+  background: var(--memoria-heat-2);
 }
 .memoria-cal-dot.level-2 {
-  opacity: 0.6;
+  background: var(--memoria-heat-3);
 }
 .memoria-cal-dot.level-3 {
-  opacity: 0.85;
+  background: var(--memoria-heat-4);
 }
 .memoria-cal-dot.level-4 {
-  opacity: 1;
-  box-shadow: 0 0 0 1px
-    color-mix(in srgb, var(--interactive-accent) 40%, transparent);
+  background: var(--memoria-accent-solid);
 }
 .memoria-cal-cell.is-active .memoria-cal-dot {
   background: var(--text-on-accent);
@@ -1702,9 +1715,8 @@
 
 /* 编辑态的输入卡片：强调色边框发光 */
 .memoria-input-card.is-editing {
-  border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--interactive-accent) 15%, transparent);
+  border-color: var(--memoria-accent-border-strong);
+  box-shadow: 0 0 0 2px var(--memoria-accent-subtle);
 }
 
 /* 右下角发送区：取消按钮 + 发送按钮 */
@@ -1726,12 +1738,12 @@
   border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   font-family: var(--font-text);
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
   outline: none;
   cursor: pointer;
-  transition: border-color 250ms ease-out, color 250ms ease-out;
+  transition: border-color var(--memoria-motion), color var(--memoria-motion);
 }
 .memoria-edit-datetime:hover,
 .memoria-edit-datetime:focus {
@@ -1745,9 +1757,9 @@
   background: var(--background-primary);
   color: var(--text-muted);
   font-size: var(--memoria-font-xs);
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
   cursor: pointer;
-  transition: background 250ms ease-out, color 250ms ease-out;
+  transition: background var(--memoria-motion), color var(--memoria-motion);
   box-shadow: none;
 }
 .memoria-cancel-btn:hover {
@@ -1793,9 +1805,8 @@
 
 /* 正在编辑的卡片：高亮边框 */
 .memoria-card.is-editing {
-  border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--interactive-accent) 18%, transparent);
+  border-color: var(--memoria-accent-border-strong);
+  box-shadow: 0 0 0 2px var(--memoria-accent-subtle);
 }
 
 /* ================== 标签联想下拉框 ================== */
@@ -1804,9 +1815,9 @@
   z-index: 10001;
   background: var(--background-primary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--memoria-radius-container);
   padding: 4px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--memoria-shadow-popover);
   max-height: 280px;
   overflow-y: auto;
   min-width: 180px;
@@ -1817,11 +1828,12 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  border-radius: 5px;
+  /* 与浮层 10px 圆角、4px 内边距同心：10 - 4 = 6 */
+  border-radius: var(--memoria-radius-control);
   cursor: pointer;
   color: var(--text-normal);
   user-select: none;
-  transition: background 250ms ease-out;
+  transition: background var(--memoria-motion);
 }
 .memoria-tag-suggest-item:hover,
 .memoria-tag-suggest-item.active {
@@ -1848,18 +1860,18 @@
 .memoria-card-body .callout {
   margin: 0.5em 0;
   padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: var(--memoria-radius-control);
+  font-size: var(--memoria-font-body);
 }
 .memoria-card-body .callout-title {
   padding: 0;
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   font-weight: 600;
 }
 .memoria-card-body .callout-content {
   margin-top: 4px;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--memoria-font-body);
   line-height: 1.55;
 }
 .memoria-card-body .callout-content > *:first-child {
@@ -1869,7 +1881,7 @@
   margin-bottom: 0;
 }
 .memoria-card-body .callout-icon {
-  font-size: 14px;
+  font-size: var(--memoria-font-body);
 }
 
 /* ========== 任务列表 ========== */
@@ -1898,6 +1910,10 @@
 /* 侧栏切换按钮：桌面端收起侧栏，移动端打开抽屉 */
 .memoria-sidebar-toggle {
   display: inline-flex;
+}
+/* 工具按钮和"收起侧栏"不是同一类动作，留一点间距分组 */
+.memoria-topbar .memoria-sidebar-toggle {
+  margin-left: 6px;
 }
 
 @media (max-width: 860px) {
@@ -1930,7 +1946,7 @@
     max-height: none;
     z-index: 5;
     transform: translateX(-100%);
-    transition: transform 250ms ease-out;
+    transition: transform var(--memoria-motion);
     /* v1.1.18: 阴影只在打开时显示
      *   关闭态 translateX(-100%) 虽然侧栏本体移到视口外，但 box-shadow
      *   `4 0 18 0.25` 的 18px 扩散会泄到视口左侧，轻微压在输入卡片左缘上，
@@ -1943,26 +1959,27 @@
   }
   .memoria-root.memoria-sidebar-open .memoria-sidebar {
     transform: translateX(0);
-    box-shadow: 4px 0 18px rgba(0, 0, 0, 0.25);
+    box-shadow: 4px 0 20px -6px var(--memoria-black-a-6);
   }
   /* 蒙版 */
   .memoria-sidebar-overlay {
     display: block;
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0);
+    background: transparent;
     pointer-events: none;
-    transition: background 250ms ease-out;
+    transition: background var(--memoria-motion);
     z-index: 4;
   }
   .memoria-root.memoria-sidebar-open .memoria-sidebar-overlay {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--memoria-black-a-6);
     pointer-events: auto;
     cursor: pointer;
   }
   /* 手机端把侧栏按钮放到左侧，用作抽屉入口 */
   .memoria-sidebar-toggle {
     margin-right: 6px;
+    margin-left: 0;
     order: -1;
   }
   /* 主体占满 */
@@ -1996,13 +2013,14 @@
     order: 10;
     margin: 0 8px 8px;
     padding: 10px 12px 8px;
-    /* 加一个上方投影，让底部卡片有"浮起来"的感觉，视觉上和微信/微博聊天框一致 */
-    box-shadow: 0 -4px 14px -4px rgba(0, 0, 0, 0.08);
-    border-radius: 14px;
+    /* 底部输入卡浮在列表之上，只用一层几乎不可见的投影交代层级 */
+    box-shadow: 0 -6px 16px -10px var(--memoria-black-a-5);
+    border-radius: var(--memoria-radius-container);
   }
   .memoria-input {
     min-height: 56px;
-    font-size: 15px; /* 手机上避免 iOS 自动缩放 */
+    /* 16px 是 iOS 聚焦输入框不再放大的最小字号 */
+    font-size: 16px;
     /* v1.1.18: 防第三方 OB 主题给 textarea 加 text-indent / padding-left，
      *   导致 placeholder 首字符"此"被左边界裁掉。
      * v1.4.14: 把 padding-left 从 0 改为 4px。
@@ -2033,7 +2051,7 @@
     padding: 12px 14px;
   }
   .memoria-card-body {
-    font-size: 15px;
+    font-size: var(--memoria-font-body);
   }
   /* 操作按钮始终可见（手机没有 hover） */
   .memoria-card-actions {
@@ -2044,7 +2062,7 @@
     padding: 4px 6px 10px;
   }
   .memoria-stat-num {
-    font-size: 20px;
+    font-size: var(--memoria-font-title);
   }
   /* 图片更小 */
   .memoria-img-grid {
@@ -2082,7 +2100,10 @@
   .memoria-lightbox-nav {
     width: 36px;
     height: 48px;
-    font-size: 28px;
+  }
+  .memoria-lightbox-nav .svg-icon {
+    width: 28px;
+    height: 28px;
   }
 }
 
@@ -2139,11 +2160,8 @@
   padding-top: 8px;
   padding-bottom: 4px;
 }
-.mstat-pagetitle-icon {
-  font-size: 24px;
-}
 .mstat-pagetitle-text {
-  font-size: 20px;
+  font-size: var(--memoria-font-title);
   font-weight: 700;
   color: var(--text-normal);
   letter-spacing: 0.3px;
@@ -2204,7 +2222,7 @@
   padding: 22px 10px;
   background: var(--background-primary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: var(--memoria-radius-panel);
+  border-radius: var(--memoria-radius-container);
   text-align: center;
 }
 .memoria-stats-view .mstat-bignum-num {
@@ -2245,18 +2263,18 @@
   border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
-  border-radius: 999px;
+  border-radius: var(--memoria-radius-pill);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-shadow: none;
-  transition: background 250ms ease-out, color 250ms ease-out;
+  transition: background var(--memoria-motion), color var(--memoria-motion);
 }
 .memoria-stats-view button.mstat-yh-year-arrow:hover {
   background: var(--background-modifier-hover);
   color: var(--interactive-accent);
-  border-color: color-mix(in srgb, var(--interactive-accent) 50%, var(--background-modifier-border));
+  border-color: var(--memoria-accent-border);
 }
 .memoria-stats-view button.mstat-yh-year-arrow .svg-icon {
   width: 13px;
@@ -2267,8 +2285,8 @@
   border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
-  border-radius: 999px;
-  font-size: 12px;
+  border-radius: var(--memoria-radius-pill);
+  font-size: var(--memoria-font-xs);
   cursor: pointer;
   font-variant-numeric: tabular-nums;
   box-shadow: none;
@@ -2293,7 +2311,7 @@
 }
 .memoria-stats-view .mstat-year-metric-value {
   color: var(--text-normal);
-  font-size: 20px;
+  font-size: var(--memoria-font-title);
   font-weight: 650;
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
@@ -2317,38 +2335,33 @@
 .memoria-stats-view .mstat-yh-cell {
   width: 13px;
   height: 13px;
-  border-radius: 2px;
+  border-radius: var(--memoria-radius-cell);
   background: var(--background-modifier-border);
   flex-shrink: 0;
 }
 .memoria-stats-view .mstat-yh-cell.level-0 {
-  background: var(--background-modifier-border);
-  opacity: 0.45;
+  background: var(--memoria-surface-3);
 }
 .memoria-stats-view .mstat-yh-cell.level-1 {
-  background: var(--interactive-accent);
-  opacity: 0.3;
+  background: var(--memoria-heat-1);
 }
 .memoria-stats-view .mstat-yh-cell.level-2 {
-  background: var(--interactive-accent);
-  opacity: 0.55;
+  background: var(--memoria-heat-2);
 }
 .memoria-stats-view .mstat-yh-cell.level-3 {
-  background: var(--interactive-accent);
-  opacity: 0.8;
+  background: var(--memoria-heat-3);
 }
 .memoria-stats-view .mstat-yh-cell.level-4 {
-  background: var(--interactive-accent);
-  opacity: 1;
+  background: var(--memoria-heat-4);
 }
 .memoria-stats-view .mstat-yh-cell.is-clickable {
   cursor: pointer;
-  transition: box-shadow 250ms ease-out, opacity 250ms ease-out;
+  transition: box-shadow var(--memoria-motion), opacity var(--memoria-motion);
 }
 .memoria-stats-view .mstat-yh-cell.is-clickable:hover,
 .memoria-stats-view .mstat-yh-cell.is-clickable:focus-visible {
   box-shadow: 0 0 0 2px var(--background-primary),
-    0 0 0 3px color-mix(in srgb, var(--interactive-accent) 72%, transparent);
+    0 0 0 3px var(--memoria-accent-solid);
   opacity: 1;
   outline: none;
 }
@@ -2431,7 +2444,7 @@
 }
 .memoria-stats-view .mstat-bar-col.is-clickable {
   cursor: pointer;
-  border-radius: var(--radius-s);
+  border-radius: var(--memoria-radius-xs);
   outline: none;
 }
 .memoria-stats-view .mstat-bar-col.is-clickable:focus-visible {
@@ -2439,8 +2452,7 @@
 }
 .memoria-stats-view .mstat-bar-col.is-selected .mstat-bar {
   opacity: 1;
-  filter: brightness(1.08);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 32%, transparent);
+  box-shadow: 0 0 0 2px var(--memoria-accent-border);
 }
 .memoria-stats-view .mstat-bar-wrap {
   flex: 1;
@@ -2454,7 +2466,7 @@
   width: clamp(16px, 42%, 34px);
   background: var(--interactive-accent);
   opacity: 0.72;
-  border-radius: 6px 6px 2px 2px;
+  border-radius: var(--memoria-radius-xs) var(--memoria-radius-xs) 0 0;
   min-height: 2px;
 }
 .memoria-stats-view .mstat-bar.is-max {
@@ -2523,7 +2535,7 @@
 }
 .memoria-stats-view .mstat-rhythm-metric-value {
   color: var(--text-normal);
-  font-size: 20px;
+  font-size: var(--memoria-font-title);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
@@ -2564,11 +2576,11 @@
   stroke-dasharray: 2 6;
 }
 .memoria-stats-view .mstat-rhythm-area {
-  fill: color-mix(in srgb, var(--interactive-accent) 13%, transparent);
+  fill: var(--memoria-accent-subtle);
 }
 .memoria-stats-view .mstat-rhythm-line {
   fill: none;
-  stroke: color-mix(in srgb, var(--interactive-accent) 82%, var(--text-normal));
+  stroke: var(--memoria-accent-solid);
   stroke-width: 2.25;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -2637,7 +2649,7 @@
 .memoria-stats-view .mstat-drilldown-title {
   min-width: 0;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -2670,7 +2682,7 @@
   text-align: left;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-s);
+  border-radius: var(--memoria-radius-control);
   box-shadow: none;
 }
 .memoria-stats-view button.mstat-drilldown-item:hover {
@@ -2692,7 +2704,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2761,7 +2773,7 @@
   padding: 16px 12px;
   background: var(--background-primary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--memoria-radius-container);
   align-items: center;
 }
 .memoria-stats-view .mstat-cloud-tag {
@@ -2806,14 +2818,13 @@
 .memoria-stats-view .mstat-hbar-wrap {
   height: 16px;
   background: var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--memoria-radius-container);
   overflow: hidden;
 }
 .memoria-stats-view .mstat-hbar {
   height: 100%;
   background: var(--interactive-accent);
-  border-radius: 8px;
-  transition: width 250ms ease-out;
+  border-radius: var(--memoria-radius-pill);
 }
 .memoria-stats-view .mstat-hbar-num {
   font-size: var(--memoria-font-xs);
@@ -2827,7 +2838,7 @@
   margin-top: 12px;
   padding: 10px 14px;
   background: var(--background-modifier-hover);
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
   font-size: var(--memoria-font-body);
   color: var(--text-muted);
 }
@@ -2838,7 +2849,7 @@
   font-size: var(--memoria-font-body);
   text-align: center;
   background: var(--background-secondary);
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
 }
 
 /* v1.1.17: 柱状图 & 年度热力图滚动容器
@@ -2858,7 +2869,7 @@
 }
 .memoria-stats-view .mstat-bar-chart-scroll::-webkit-scrollbar-thumb {
   background: var(--background-modifier-border);
-  border-radius: 2px;
+  border-radius: var(--memoria-radius-cell);
 }
 .memoria-stats-view .mstat-bar-chart-scroll .mstat-bar-chart {
   /* 让柱图有固定最小宽度，不被 flex 压扁 */
@@ -2967,7 +2978,7 @@
   }
   /* 结论文字 */
   .memoria-stats-view .mstat-desc {
-    font-size: 12px;
+    font-size: var(--memoria-font-xs);
     padding: 8px 12px;
   }
 }
@@ -3027,7 +3038,7 @@
   padding: 14px 6px;
   background: var(--background-secondary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: 10px;
+  border-radius: var(--memoria-radius-container);
   text-align: center;
 }
 .memoria-stats-modal .mstat-bignum-num {
@@ -3058,7 +3069,7 @@
   border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
-  border-radius: 999px;
+  border-radius: var(--memoria-radius-pill);
   font-size: var(--memoria-font-xs);
   cursor: pointer;
   font-variant-numeric: tabular-nums;
@@ -3082,7 +3093,7 @@
 }
 .memoria-stats-modal .mstat-yh-wrap::-webkit-scrollbar-thumb {
   background: var(--background-modifier-border);
-  border-radius: 3px;
+  border-radius: var(--memoria-radius-xs);
 }
 .memoria-stats-modal .mstat-yh-col {
   display: flex;
@@ -3093,29 +3104,24 @@
 .memoria-stats-modal .mstat-yh-cell {
   width: 11px;
   height: 11px;
-  border-radius: 2px;
+  border-radius: var(--memoria-radius-cell);
   background: var(--background-modifier-border);
   flex-shrink: 0;
 }
 .memoria-stats-modal .mstat-yh-cell.level-0 {
-  background: var(--background-modifier-border);
-  opacity: 0.45;
+  background: var(--memoria-surface-3);
 }
 .memoria-stats-modal .mstat-yh-cell.level-1 {
-  background: var(--interactive-accent);
-  opacity: 0.3;
+  background: var(--memoria-heat-1);
 }
 .memoria-stats-modal .mstat-yh-cell.level-2 {
-  background: var(--interactive-accent);
-  opacity: 0.55;
+  background: var(--memoria-heat-2);
 }
 .memoria-stats-modal .mstat-yh-cell.level-3 {
-  background: var(--interactive-accent);
-  opacity: 0.8;
+  background: var(--memoria-heat-3);
 }
 .memoria-stats-modal .mstat-yh-cell.level-4 {
-  background: var(--interactive-accent);
-  opacity: 1;
+  background: var(--memoria-heat-4);
 }
 
 /* 月份标签：绝对定位，不再挤 */
@@ -3178,9 +3184,9 @@
   width: 100%;
   background: var(--interactive-accent);
   opacity: 0.55;
-  border-radius: 3px 3px 0 0;
+  border-radius: var(--memoria-radius-xs) var(--memoria-radius-xs) 0 0;
   min-height: 2px;
-  transition: opacity 250ms ease-out;
+  transition: opacity var(--memoria-motion);
 }
 .memoria-stats-modal .mstat-bar.is-max {
   opacity: 1;
@@ -3209,7 +3215,7 @@
   gap: 8px 12px;
   padding: 12px 8px;
   background: var(--background-secondary);
-  border-radius: 8px;
+  border-radius: var(--memoria-radius-container);
   line-height: 1.6;
   align-items: baseline;
 }
@@ -3243,7 +3249,7 @@
   background: var(--background-secondary);
 }
 .memoria-stats-modal .mstat-hbar-label {
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -3252,14 +3258,13 @@
 .memoria-stats-modal .mstat-hbar-wrap {
   height: 14px;
   background: var(--background-modifier-border);
-  border-radius: 7px;
+  border-radius: var(--memoria-radius-pill);
   overflow: hidden;
 }
 .memoria-stats-modal .mstat-hbar {
   height: 100%;
   background: var(--interactive-accent);
-  border-radius: 7px;
-  transition: width 250ms ease-out;
+  border-radius: var(--memoria-radius-pill);
 }
 .memoria-stats-modal .mstat-hbar-num {
   font-size: var(--memoria-font-xs);
@@ -3273,32 +3278,33 @@
   margin-top: 10px;
   padding: 8px 12px;
   background: var(--background-modifier-hover);
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--memoria-radius-control);
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
 }
 
 .memoria-stats-modal .mstat-empty {
   padding: 16px;
   color: var(--text-faint);
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   text-align: center;
   background: var(--background-secondary);
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
 }
 
 
 /* ============================================================
- * v1.1.0: 浠ｇ爜鍧楀鍒舵寜閽?/ 琛ㄦ牸瀹瑰櫒 / 琛ㄦ牸閫夋嫨鍣ㄥ脊绐? * ============================================================ */
+ * v1.1.0: 代码块复制按钮 / 表格容器 / 表格选择器弹窗
+ * ============================================================ */
 
 /* 代码块样式见上方 .memoria-card-body pre 规则；复制按钮由 Obsidian 原生提供 */
 
-/* --- 琛ㄦ牸锛氬彲妯悜婊氬姩瀹瑰櫒 + 缇庡寲 --- */
+/* --- 表格：可横向滚动容器 + 美化 --- */
 .memoria-card-body .memoria-table-wrap {
   max-width: 100%;
   overflow-x: auto;
   margin: 6px 0;
-  border-radius: 6px;
+  border-radius: var(--memoria-radius-control);
   /* 婊氬姩鏉℃煍鍜?*/
 }
 .memoria-card-body .memoria-table-wrap::-webkit-scrollbar {
@@ -3306,12 +3312,12 @@
 }
 .memoria-card-body .memoria-table-wrap::-webkit-scrollbar-thumb {
   background: var(--background-modifier-border);
-  border-radius: 3px;
+  border-radius: var(--memoria-radius-xs);
 }
 .memoria-card-body .memoria-table-wrap table {
   margin: 0;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--memoria-font-xs);
 }
 .memoria-card-body .memoria-table-wrap th,
 .memoria-card-body .memoria-table-wrap td {
@@ -3324,22 +3330,22 @@
   font-weight: 600;
 }
 .memoria-card-body .memoria-table-wrap tr:nth-child(even) td {
-  background: color-mix(in srgb, var(--background-secondary) 40%, transparent);
+  background: var(--memoria-surface-2);
 }
 
-/* --- 琛ㄦ牸閫夋嫨鍣ㄥ脊绐楋紙鎻掑叆琛ㄦ牸鎸夐挳锛?-- */
+/* --- 表格选择器弹窗（插入表格按钮） --- */
 .memoria-table-picker {
   position: fixed;
   z-index: 999;
   background: var(--background-primary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  border-radius: var(--memoria-radius-container);
+  box-shadow: var(--memoria-shadow-popover);
   padding: 10px;
   user-select: none;
 }
 .memoria-table-picker-label {
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   color: var(--text-muted);
   text-align: center;
   margin-bottom: 6px;
@@ -3357,16 +3363,16 @@
   height: 22px;
   background: var(--background-secondary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: 3px;
+  border-radius: var(--memoria-radius-xs);
   cursor: pointer;
-  transition: background 250ms ease-out, border-color 250ms ease-out;
+  transition: background var(--memoria-motion), border-color var(--memoria-motion);
 }
 .memoria-table-picker-cell:hover {
-  border-color: var(--interactive-accent);
+  border-color: var(--memoria-accent-border);
 }
 .memoria-table-picker-cell.is-active {
-  background: color-mix(in srgb, var(--interactive-accent) 25%, transparent);
-  border-color: var(--interactive-accent);
+  background: var(--memoria-accent-subtle);
+  border-color: var(--memoria-accent-border-strong);
 }
 
 /* v1.1.7: 手机端表格选择器 —— 单击即插入
@@ -3376,8 +3382,8 @@
  */
 .memoria-table-picker.is-mobile {
   padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  border-radius: var(--memoria-radius-container);
+  box-shadow: var(--memoria-shadow-modal);
 }
 .memoria-table-picker.is-mobile .memoria-table-picker-grid {
   grid-template-columns: repeat(5, 36px);
@@ -3390,7 +3396,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 5px;
+  border-radius: var(--memoria-radius-xs);
 }
 .memoria-table-picker.is-mobile .memoria-table-picker-cell-text {
   font-size: var(--memoria-font-xs);
@@ -3399,8 +3405,8 @@
   pointer-events: none; /* 点击直接穿透到 cell */
 }
 .memoria-table-picker.is-mobile .memoria-table-picker-cell:active {
-  background: color-mix(in srgb, var(--interactive-accent) 35%, transparent);
-  border-color: var(--interactive-accent);
+  background: var(--memoria-accent-subtle);
+  border-color: var(--memoria-accent-border-strong);
 }
 .memoria-table-picker.is-mobile .memoria-table-picker-label {
   font-size: var(--memoria-font-body);
@@ -3410,14 +3416,18 @@
 }
 
 
-/* v1.1.1: 删除确认浮层 —— 警告风格按钮 */
+/* 删除确认浮层：实色危险操作走 Red 9/10，前景用白 */
 .memoria-confirm .memoria-modal-btns .mod-warning {
-  background: var(--text-error, #e03131);
-  color: #fff;
+  background: var(--memoria-danger-solid);
+  color: var(--memoria-danger-contrast);
   border-color: transparent;
 }
 .memoria-confirm .memoria-modal-btns .mod-warning:hover {
-  background: color-mix(in srgb, var(--text-error, #e03131) 85%, #000);
+  background: color-mix(
+    in srgb,
+    var(--memoria-danger-solid) 88%,
+    var(--memoria-red-10)
+  );
 }
 
 /* ================================================================
@@ -3427,7 +3437,7 @@
 /* —— 卡片 hover 引用按钮（次级可见，从 ⋯ 菜单提到表面） —— */
 .memoria-card-quote {
   opacity: 0;
-  transition: opacity 250ms ease-out;
+  transition: opacity var(--memoria-motion);
 }
 .memoria-card:hover .memoria-card-quote {
   opacity: 0.7;
@@ -3457,12 +3467,12 @@
   background: var(--interactive-accent);
   color: var(--text-on-accent);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--memoria-radius-pill);
   font-size: var(--memoria-font-body);
   font-weight: 500;
   cursor: pointer;
   box-shadow: none;
-  transition: background 250ms ease-out;
+  transition: background var(--memoria-motion);
 }
 .memoria-empty-btn:hover {
   background: var(--interactive-accent-hover);
@@ -3489,11 +3499,7 @@
 
 /* #18 标签胶囊 hover 反馈 */
 .memoria-tag-pill:hover {
-  background: color-mix(
-    in srgb,
-    var(--interactive-accent) 16%,
-    transparent
-  );
+  background: var(--memoria-accent-subtle);
   color: var(--interactive-accent);
 }
 
@@ -3519,7 +3525,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  margin: 4px 10px 10px;
+  margin: 4px 12px 10px;
   padding: 2px 0;
   /* 作为 overview 和 "视图" 列表之间的分隔；底部加一点 margin 和视图列表拉开距离 */
 }
@@ -3530,8 +3536,8 @@
   min-width: 0;
   padding: 4px 4px;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 250ms ease-out;
+  border-radius: var(--memoria-radius-xs);
+  transition: background var(--memoria-motion);
 }
 .memoria-daily-goal:hover {
   background: var(--background-modifier-hover);
@@ -3539,7 +3545,7 @@
 .memoria-daily-goal-bar {
   height: 4px;
   background: var(--background-modifier-border);
-  border-radius: 2px;
+  border-radius: var(--memoria-radius-cell);
   overflow: hidden;
   position: relative;
 }
@@ -3547,8 +3553,7 @@
   height: 100%;
   width: 0%;
   background: var(--interactive-accent);
-  border-radius: 2px;
-  transition: width 250ms ease-out;
+  border-radius: var(--memoria-radius-cell);
 }
 
 /* 右侧图标组 */
@@ -3584,7 +3589,6 @@
   max-height: var(--memoria-collapse-max, 240px);
   overflow: hidden;
   position: relative;
-  transition: max-height 250ms ease-out;
   /* v2.1.3-iter3: 扩展 overflow 的左裁切边界，给 task-list 复选框的负 margin 让出空间
    *
    * 问题：折叠态下 task-list 复选框 □ 左侧方框被裁掉一竖。
@@ -3644,7 +3648,7 @@
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    color-mix(in srgb, var(--interactive-accent) 4%, var(--background-primary-alt, var(--background-secondary))) 100%
+    var(--background-primary-alt, var(--background-secondary)) 100%
   );
 }
 
@@ -3663,12 +3667,12 @@
   background: transparent;
   border: none;
   box-shadow: none;
-  border-radius: 4px;
+  border-radius: var(--memoria-radius-xs);
   color: var(--text-faint);
   font-size: var(--memoria-font-xs);
   line-height: 1.4;
   cursor: pointer;
-  transition: color 250ms ease-out;
+  transition: color var(--memoria-motion);
   letter-spacing: 0.2px;
   font-family: inherit;
   /* margin-left:auto 在 flex 容器（tagRow）里把按钮推到最右
@@ -3800,7 +3804,7 @@
   color: var(--text-muted);
   cursor: pointer;
   box-shadow: none;
-  transition: background 250ms ease-out, color 250ms ease-out;
+  transition: background var(--memoria-motion), color var(--memoria-motion);
 }
 .memoria-year-view button.memoria-year-nav-btn {
   width: 28px;
@@ -3838,9 +3842,9 @@
 .memoria-year-month {
   background: var(--background-secondary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: var(--memoria-radius-panel);
+  border-radius: var(--memoria-radius-container);
   padding: 18px 16px 14px;
-  transition: border-color 250ms ease-out;
+  transition: border-color var(--memoria-motion);
 }
 .memoria-year-month:hover {
   border-color: var(--background-modifier-border-hover);
@@ -3897,7 +3901,7 @@
   color: var(--text-normal);
   border-radius: 50%;
   cursor: default;
-  transition: background 250ms ease-out, color 250ms ease-out, box-shadow 250ms ease-out;
+  transition: background var(--memoria-motion), color var(--memoria-motion), box-shadow var(--memoria-motion);
   user-select: none;
 }
 
@@ -3910,31 +3914,29 @@
 /* 有笔记的日期：accent 色圆点 + 浅色数字 */
 .memoria-year-day.has-memo {
   background: var(--interactive-accent);
-  color: var(--text-on-accent, #fff);
+  color: var(--text-on-accent);
   font-weight: 500;
   cursor: pointer;
 }
 
-/* v1.4.8: 按笔记数分 4 档颜色深浅，与侧栏 / 数据报告热力图一致
- *   实现：用 color-mix 把 accent 色和背景混合出 4 种深浅。
- *   不用 opacity 是因为那会把数字也变淡，圆点多了以后看不清；
- *   color-mix 只改背景色保持文字清晰。
- */
+/* 按笔记数分 4 档，与侧栏 / 数据报告热力图共用一套强度顺序。
+ *   前三档用 green 3/4/5 的浅底，保证日期数字始终清晰；
+ *   最活跃的一天用实色 accent，作为整月的视觉锚点。 */
 .memoria-year-day.has-memo.level-1 {
-  background: color-mix(in srgb, var(--interactive-accent) 30%, var(--background-secondary));
-  color: var(--text-normal);
+  background: var(--memoria-green-3);
+  color: var(--memoria-text-1);
 }
 .memoria-year-day.has-memo.level-2 {
-  background: color-mix(in srgb, var(--interactive-accent) 55%, var(--background-secondary));
-  color: var(--text-on-accent, #fff);
+  background: var(--memoria-green-4);
+  color: var(--memoria-text-1);
 }
 .memoria-year-day.has-memo.level-3 {
-  background: color-mix(in srgb, var(--interactive-accent) 80%, var(--background-secondary));
-  color: var(--text-on-accent, #fff);
+  background: var(--memoria-green-5);
+  color: var(--memoria-text-1);
 }
 .memoria-year-day.has-memo.level-4 {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent, #fff);
+  background: var(--memoria-accent-solid);
+  color: var(--memoria-accent-contrast);
 }
 
 .memoria-year-day.has-memo:hover {
@@ -3969,10 +3971,6 @@
   /* 数字等宽字形，统计行读起来更稳 */
   font-variant-numeric: tabular-nums;
 }
-.memoria-year-foot-sep {
-  opacity: 0.35;
-}
-
 /* ---- 响应式：窄屏降级 ---- */
 @media (max-width: 1200px) {
   .memoria-year-grid {
@@ -4013,7 +4011,7 @@
     /* 手机单列时容器更宽，圆点也相应放大一点，配合手指触控 */
     max-width: 26px;
     max-height: 26px;
-    font-size: 12px;
+    font-size: var(--memoria-font-xs);
   }
   /* 移动端 topbar 工具区收紧 */
   .memoria-topbar-tools {
@@ -4023,17 +4021,17 @@
 
 
 
-/* ==================== v2.0.0 鏂板鏍峰紡 ==================== */
+/* ==================== v2.0.0 新增样式 ==================== */
 
 /* 鎼滅储鍛戒腑楂樹寒 */
 .memoria-search-hit {
-  background: var(--text-highlight-bg, rgba(255, 208, 0, 0.35));
+  background: var(--text-highlight-bg, var(--memoria-amber-4));
   color: inherit;
   padding: 0 1px;
-  border-radius: 2px;
+  border-radius: var(--memoria-radius-cell);
 }
 
-/* 绱у噾瑙嗗浘妯″紡锛氶檺鍒舵瘡寮犲崱姝ｆ枃楂樺害 + 鍥剧墖缂╁皬 */
+/* 紧凑视图模式：限制每张卡片正文高度 + 图片缩小 */
 .memoria-list.is-compact .memoria-card-body {
   max-height: 6em;
   overflow: hidden;
@@ -4069,26 +4067,30 @@
   margin-left: 0;
 }
 
-/* Vim 閫変腑鎬?*/
+/* Vim 选中态 */
 .memoria-card.is-vim-selected {
   outline: 2px solid var(--interactive-accent);
   outline-offset: -2px;
-  transition: outline 250ms ease-out;
+}
+
+.memoria-card.is-located {
+  border-color: var(--memoria-accent-border);
+  background: var(--memoria-accent-subtle);
 }
 
 /* 鐑姏鍥惧寮?tooltip */
 .memoria-heatmap-tooltip {
   background: var(--background-secondary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--memoria-radius-container);
   padding: 8px 12px;
   min-width: 180px;
   max-width: 280px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--memoria-shadow-popover);
   font-size: var(--memoria-font-xs);
   color: var(--text-normal);
   pointer-events: none;
-  animation: memoria-tip-in 250ms ease-out;
+  animation: memoria-tip-in var(--memoria-motion);
 }
 @keyframes memoria-tip-in {
   from { opacity: 0; }
@@ -4202,7 +4204,7 @@
   /* 默认隐藏 */
   opacity: 0;
   visibility: hidden;
-  transition: opacity 250ms ease-out, visibility 250ms;
+  transition: opacity var(--memoria-motion), visibility var(--memoria-motion);
   pointer-events: none;
 }
 .memoria-buddy:hover .memoria-buddy-topbar {
@@ -4265,7 +4267,7 @@
 }
 .memoria-buddy-sprite {
   font-family: var(--font-monospace);
-  font-size: 12px;
+  font-size: var(--memoria-font-xs);
   line-height: 1.18;
   white-space: pre;
   text-align: center;
@@ -4303,9 +4305,9 @@
 }
 .memoria-buddy-name.is-clickable {
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: var(--memoria-radius-xs);
   padding: 0 2px;
-  transition: background 250ms ease-out;
+  transition: background var(--memoria-motion);
 }
 .memoria-buddy-name.is-clickable:hover {
   background: var(--background-modifier-hover);
@@ -4354,12 +4356,8 @@
 .memoria-buddy-stat-bar {
   display: block;
   height: 4px;
-  background: color-mix(
-    in srgb,
-    var(--interactive-accent) 12%,
-    var(--background-modifier-border)
-  );
-  border-radius: 2px;
+  background: var(--memoria-surface-3);
+  border-radius: var(--memoria-radius-cell);
   overflow: hidden;
   position: relative;
   /* 关键：去掉之前的内嵌边框 */
@@ -4367,13 +4365,8 @@
 .memoria-buddy-stat-fill {
   display: block;
   height: 100%;
-  border-radius: 2px;
-  background: color-mix(
-    in srgb,
-    var(--interactive-accent) 82%,
-    var(--text-normal)
-  );
-  opacity: 0.82;
+  border-radius: var(--memoria-radius-cell);
+  background: var(--memoria-accent-solid);
 }
 
 /* ================================================================
@@ -4466,7 +4459,7 @@
   gap: 6px;
 }
 .memoria-buddy-egg .memoria-buddy-sprite {
-  font-size: 14px;
+  font-size: var(--memoria-font-body);
   color: var(--text-muted);
 }
 .memoria-buddy-egg.is-ready .memoria-buddy-sprite {
@@ -4487,9 +4480,9 @@
   font-size: var(--memoria-font-xs);
   background: var(--background-primary);
   border: 0.5px solid var(--background-modifier-border);
-  border-radius: 4px;
+  border-radius: var(--memoria-radius-xs);
   color: var(--text-normal);
-  transition: border-color 250ms ease-out;
+  transition: border-color var(--memoria-motion);
 }
 .memoria-buddy-egg-input:focus {
   border-color: var(--interactive-accent);
@@ -4510,9 +4503,9 @@
   background: var(--interactive-accent);
   color: var(--text-on-accent);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--memoria-radius-xs);
   cursor: pointer;
-  transition: opacity 250ms ease-out;
+  transition: opacity var(--memoria-motion);
 }
 .memoria-buddy-egg-btn:hover {
   opacity: 0.9;
@@ -4575,17 +4568,13 @@
     color: var(--text-on-accent);
     border: none;
     border-radius: 50%;
-    /* 浮起阴影 + 微弱主题色光晕，让 FAB 视觉"漂浮在内容上方"
-       两层阴影：第一层柔和大范围底影，第二层高对比微小贴边阴影增加立体感 */
-    box-shadow:
-      0 4px 14px -2px color-mix(in srgb, var(--interactive-accent) 35%, rgba(0, 0, 0, 0.25)),
-      0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--memoria-shadow-popover);
     cursor: pointer;
     z-index: 100;
     /* 出现/消失动画 */
     transform: scale(1);
     opacity: 1;
-    transition: transform 250ms ease-out, opacity 250ms ease-out, box-shadow 250ms ease-out;
+    transition: transform var(--memoria-motion), opacity var(--memoria-motion);
     /* 防 iOS Safari 给原生 button 套灰边 */
     -webkit-appearance: none;
     appearance: none;
@@ -4593,10 +4582,8 @@
   }
   .memoria-root.memoria-input-fab-mode .memoria-fab:active {
     /* 按下反馈：略缩 + 阴影变小，模拟"按下去"的物理感 */
-    transform: scale(0.92);
-    box-shadow:
-      0 2px 6px -1px color-mix(in srgb, var(--interactive-accent) 35%, rgba(0, 0, 0, 0.3)),
-      0 1px 2px rgba(0, 0, 0, 0.1);
+    transform: scale(0.94);
+    box-shadow: 0 2px 8px -4px var(--memoria-black-a-6);
   }
   .memoria-root.memoria-input-fab-mode .memoria-fab .svg-icon {
     width: 24px;
@@ -4623,8 +4610,6 @@
     pointer-events: none;
     /* 防止子元素的 box-shadow 溢出 */
     box-shadow: none;
-    transition: max-height 250ms ease-out, opacity 250ms ease-out,
-      padding 250ms ease-out, margin 250ms ease-out;
   }
   .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input-card {
     /* v2.3.3: 展开态改为 position: fixed 贴屏幕底部固定。
@@ -4651,7 +4636,7 @@
     opacity: 1;
     z-index: 50;
     background: var(--background-primary);
-    transition: opacity 250ms ease-out;
+    transition: opacity var(--memoria-motion);
   }
 
   /* 已展开时 FAB 自身淡出 + 缩小消失（不是直接 display: none，留过渡感）*/
@@ -4687,7 +4672,7 @@
     box-shadow: none;
     z-index: 2;
     -webkit-tap-highlight-color: transparent;
-    transition: background 250ms ease-out, color 250ms ease-out;
+    transition: background var(--memoria-motion), color var(--memoria-motion);
   }
   .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input-close:active {
     background: var(--background-modifier-active-hover, var(--interactive-accent));
@@ -4742,8 +4727,15 @@
     box-sizing: border-box;
   }
 
-  .memoria-list > * {
-    max-width: var(--memoria-feed-max-width);
+  /* 行宽限制落在滚动容器本身，而不是它的每个子元素上。
+   * 子元素各自 max-width + auto margin 时，居中的基准是「列表内容盒」：
+   * 点输入框 → 卡片展开 → 列表变矮 → 纵向滚动条出现 → 内容盒窄了一条滚动条
+   * → 所有 memo 整体左移半条滚动条宽度（≈7px），和输入卡左边缘错开。
+   * 限制 .memoria-list 自身宽度后，滚动条只挤右侧 padding，左边缘恒定。
+   * 1028 = 980（行宽）+ 24px × 2（.memoria-list 左右 padding）。 */
+  .memoria-list {
+    width: 100%;
+    max-width: calc(var(--memoria-feed-max-width) + 48px);
     margin-left: auto;
     margin-right: auto;
     box-sizing: border-box;
@@ -4805,7 +4797,6 @@
 .memoria-root button.memoria-icon-btn,
 .memoria-root button.memoria-tool-btn,
 .memoria-root button.memoria-cal-nav,
-.memoria-root button.memoria-overview-btn,
 .memoria-root button.memoria-collapse-toggle {
   border: none !important;
   background: transparent !important;
@@ -4817,19 +4808,6 @@
   background: var(--interactive-accent) !important;
   color: var(--text-on-accent) !important;
   box-shadow: none !important;
-}
-
-.memoria-root
-  .memoria-input-card:not(.is-focused):not(.has-content):not(.is-editing):not(.dragging)
-  button.memoria-submit-btn {
-  background: color-mix(
-    in srgb,
-    var(--interactive-accent) 32%,
-    var(--background-secondary)
-  ) !important;
-  color: color-mix(in srgb, var(--text-normal) 72%, var(--interactive-accent)) !important;
-  opacity: 1 !important;
-  filter: saturate(0.72) !important;
 }
 
 .memoria-root button.memoria-submit-btn:hover {
@@ -4895,7 +4873,7 @@
   border-right: 0.5px solid var(--background-modifier-border);
   opacity: 1;
   transform: translateX(-100%);
-  transition: transform 250ms ease-out;
+  transition: transform var(--memoria-motion);
   z-index: 5;
   box-shadow: none;
   overflow-y: auto;
@@ -4931,7 +4909,7 @@
 .memoria-root.memoria-narrow-panel .memoria-topbar-title {
   grid-area: 1 / 2;
   min-width: 0;
-  font-size: 14px;
+  font-size: var(--memoria-font-body);
 }
 .memoria-root.memoria-narrow-panel .memoria-brand {
   display: none;
@@ -5087,4 +5065,1345 @@ body.sc-style-context-background-image
   .memoria-card.is-pinned
   .memoria-card-body.is-collapsed::after {
   background: transparent;
+}
+
+/* ================== AI 洞察 ================== */
+/* 只用 Slate 面板 + Green 强调：范围与视角是"设置"，结果才是内容。
+ * 所有描边 0.5px，圆角只用 control / container 两档。 */
+.memoria-insight-modal,
+.memoria-insight-history-modal {
+  --modal-background: var(--memoria-surface-1);
+  --modal-border-width: 0.5px;
+  --modal-border-color: var(--memoria-border);
+  --modal-radius: var(--memoria-radius-container);
+}
+.memoria-insight-modal {
+  width: min(880px, 94vw);
+  max-width: min(880px, 94vw);
+}
+.memoria-insight-modal:not(.is-result) {
+  width: min(760px, 94vw);
+  max-width: min(760px, 94vw);
+}
+.memoria-insight-history-modal {
+  width: min(1040px, 96vw);
+  max-width: min(1040px, 96vw);
+}
+.memoria-insight-history-modal .modal-title {
+  font-size: var(--memoria-font-title);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- 弹窗头部：图标徽标 + 标题 + 范围摘要 ----------
+ * 标题区承担"这是什么"和"分析什么"，用一条细分隔线收口，
+ * 让正文从干净的一行开始，而不是顶着统计文字。 */
+.memoria-insight-modal .modal-header,
+.memoria-insight-modal.mod-scrollable-content .modal-header {
+  align-items: flex-start;
+  padding: 18px 22px 14px;
+  border-bottom: 0.5px solid var(--memoria-border-subtle);
+  margin-bottom: 0;
+}
+.memoria-insight-modal .modal-title {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 11px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.3;
+}
+.memoria-insight-modal.mod-scrollable-content .modal-title {
+  padding: 0;
+}
+.memoria-insight-modal .modal-close-button,
+.memoria-insight-modal .modal-close-button.clickable-icon,
+.memoria-insight-modal .modal-header-button.clickable-icon,
+.memoria-insight-history-modal .modal-close-button,
+.memoria-insight-history-modal .modal-close-button.clickable-icon,
+.memoria-insight-history-modal .modal-header-button.clickable-icon {
+  color: var(--memoria-text-3);
+  /* 兼容 Obsidian 新旧版本的关闭按钮类名。 */
+  cursor: pointer;
+}
+.memoria-insight-modal .modal-close-button:hover,
+.memoria-insight-modal .modal-header-button.clickable-icon:hover,
+.memoria-insight-history-modal .modal-close-button:hover,
+.memoria-insight-history-modal .modal-header-button.clickable-icon:hover {
+  color: var(--memoria-text-1);
+}
+.memoria-insight-modal .modal-close-button {
+  top: 15px;
+  right: 14px;
+}
+.memoria-insight-title-badge {
+  display: none;
+}
+.memoria-insight-title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.memoria-insight-title-name {
+  color: var(--memoria-text-1);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.memoria-insight-scope-stats {
+  overflow: hidden;
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+  /* 标题区是半粗体，摘要只是附带信息，明确压回常规字重 */
+  font-weight: 400;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.memoria-insight-scope-stats.is-empty {
+  color: var(--memoria-danger-text);
+}
+.memoria-insight-modal .modal-content,
+.memoria-insight-modal.mod-scrollable-content .modal-content {
+  padding: 14px 22px 0;
+}
+
+/* ---------- 首页：范围与视角 ---------- */
+.memoria-insight-home {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 头部右侧的两个低频动作：与标题下方的范围摘要同一行，靠右收齐。
+ * 按钮高 26px 而摘要文字只有 12px，用负边距把两者视觉中线对齐。 */
+.memoria-insight-head-actions {
+  display: flex;
+  align-self: flex-end;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  margin-bottom: -5px;
+}
+
+/* 结果页：头部收成一条窄导航条，只留返回键和关闭键。
+ * 正文自带标题，这里再重复一遍"AI 洞察"只会多出一个同字号的大标题。 */
+.memoria-insight-modal.is-result .modal-header {
+  padding: 12px 22px;
+  border-bottom: none;
+}
+.memoria-insight-modal.is-result .modal-close-button {
+  top: 13px;
+}
+.memoria-insight-modal.is-result .memoria-insight-title-badge,
+.memoria-insight-modal.is-result .memoria-insight-title-text {
+  display: none;
+}
+/* 文字按钮：Obsidian 默认 button 有背景和描边，这里必须点名 button 才压得住 */
+.memoria-insight-modal button.memoria-insight-text-btn,
+.memoria-insight-history-modal button.memoria-insight-text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 7px;
+  border: 0.5px solid transparent;
+  border-radius: var(--memoria-radius-control);
+  background: transparent;
+  color: var(--memoria-text-2);
+  box-shadow: none;
+  font-size: var(--memoria-font-xs);
+  /* 与右侧范围摘要同一档：12px / 常规字重，靠 hover 底色表达可点击 */
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--memoria-motion),
+    border-color var(--memoria-motion),
+    color var(--memoria-motion);
+}
+.memoria-insight-modal button.memoria-insight-text-btn:hover,
+.memoria-insight-history-modal button.memoria-insight-text-btn:hover {
+  border-color: var(--memoria-border-subtle);
+  background: var(--memoria-surface-2);
+  color: var(--memoria-text-1);
+}
+.memoria-insight-modal button.memoria-insight-text-btn:disabled,
+.memoria-insight-history-modal button.memoria-insight-text-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.memoria-insight-btn-icon,
+.memoria-insight-btn-icon .svg-icon {
+  display: inline-flex;
+  /* 图标略大于 12px 正文即可，跟着文字一起收小，避免按钮整块偏重 */
+  width: 13px;
+  height: 13px;
+}
+.memoria-insight-scope-toggle.is-open {
+  border-color: var(--memoria-border-subtle);
+  background: var(--memoria-surface-2);
+  color: var(--memoria-text-1);
+}
+/* 头部纯图标按钮：去掉文字后收成正方形，图标居中 */
+.memoria-insight-modal button.memoria-insight-text-btn.memoria-insight-icon-btn {
+  justify-content: center;
+  width: 26px;
+  padding: 0;
+}
+.memoria-insight-icon-btn .memoria-insight-btn-icon,
+.memoria-insight-icon-btn .memoria-insight-btn-icon .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* 视角：单列列表，图标、名称、说明分别对齐。 */
+.memoria-insight-perspectives {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+.memoria-insight-modal button.memoria-insight-perspective {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: auto;
+  min-height: 44px;
+  padding: 10px 36px 10px 12px;
+  border: none;
+  border-radius: var(--memoria-radius-control);
+  background: transparent;
+  color: var(--memoria-text-1);
+  box-shadow: none;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+  transition:
+    background var(--memoria-motion),
+    color var(--memoria-motion);
+}
+.memoria-insight-modal button.memoria-insight-perspective:hover {
+  background: var(--memoria-surface-2);
+}
+.memoria-insight-modal button.memoria-insight-perspective.is-active {
+  background: var(--memoria-accent-subtle);
+}
+.memoria-insight-modal button.memoria-insight-perspective:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.memoria-insight-perspective-icon {
+  display: flex;
+  flex: 0 0 18px;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 22px;
+  box-sizing: border-box;
+  color: var(--memoria-text-3);
+  transition: color var(--memoria-motion);
+}
+.memoria-insight-perspective-icon .svg-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+.memoria-insight-perspective.is-active .memoria-insight-perspective-icon {
+  color: var(--memoria-accent-text);
+}
+.memoria-insight-perspective-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  color: var(--memoria-text-1);
+  font-size: var(--memoria-font-body);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.memoria-insight-perspective-check {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: inline-flex;
+  transform: translateY(-50%);
+  opacity: 0;
+  color: var(--memoria-accent-text);
+  transition: opacity var(--memoria-motion);
+}
+.memoria-insight-perspective-check .svg-icon {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.4;
+}
+.memoria-insight-perspective-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.55;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.memoria-insight-perspective-text {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.memoria-insight-perspective.is-active .memoria-insight-perspective-name {
+  color: var(--memoria-accent-deep);
+}
+.memoria-insight-perspective.is-active .memoria-insight-perspective-check {
+  opacity: 1;
+}
+
+/* 底部操作条：左侧快捷键提示，右侧唯一主动作，吸附在内容底部。
+ * 长列表滚动时始终可见。 */
+.memoria-insight-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 11px 0 14px;
+  border-top: 0.5px solid var(--memoria-border-subtle);
+  background: var(--memoria-surface-1);
+}
+.memoria-insight-foot-hint {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+.memoria-insight-foot-hint-text {
+  color: var(--memoria-text-3);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.5;
+}
+.memoria-insight-kbd {
+  padding: 2px 5px;
+  border: none;
+  border-radius: var(--memoria-radius-xs);
+  background: var(--memoria-surface-3);
+  color: var(--memoria-text-3);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.memoria-insight-modal button.mod-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  margin-left: 0;
+  padding: 0 15px 0 13px;
+  border: 0.5px solid var(--memoria-accent-solid);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-accent-solid);
+  color: var(--memoria-accent-contrast);
+  box-shadow: none;
+  font-size: var(--memoria-font-body);
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background var(--memoria-motion),
+    border-color var(--memoria-motion);
+}
+.memoria-insight-modal button.mod-cta .svg-icon {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.9;
+}
+.memoria-insight-cta-icon,
+.memoria-insight-cta-icon .svg-icon {
+  display: inline-flex;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+}
+.memoria-insight-modal button.mod-cta:hover {
+  border-color: var(--memoria-accent-solid-hover);
+  background: var(--memoria-accent-solid-hover);
+}
+.memoria-insight-modal button.mod-cta:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- 分析范围 ---------- */
+.memoria-insight-scope-panel {
+  margin: 0 0 20px;
+  padding: 4px 0 12px;
+}
+.memoria-insight-scope-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+  font-weight: 600;
+}
+.memoria-insight-modal button.memoria-insight-scope-reset {
+  margin-right: -6px;
+}
+.memoria-insight-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.memoria-insight-scope-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.memoria-insight-scope-keyword {
+  grid-column: span 2;
+}
+.memoria-insight-scope-label {
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.4;
+}
+.memoria-insight-modal .memoria-insight-scope-control {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 0.5px solid var(--memoria-border);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-surface-1);
+  color: var(--memoria-text-1);
+  font-family: inherit;
+  font-size: var(--memoria-font-xs);
+  line-height: 1;
+}
+.memoria-insight-modal .memoria-insight-scope-control:hover {
+  border-color: var(--memoria-border-strong);
+}
+.memoria-insight-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.memoria-insight-modal button.memoria-insight-select-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 32px;
+  padding: 0 30px 0 10px;
+  box-sizing: border-box;
+  border: 0.5px solid var(--memoria-border);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-surface-1);
+  color: var(--memoria-text-1);
+  box-shadow: none;
+  font-family: inherit;
+  font-size: var(--memoria-font-xs);
+  line-height: 1;
+  text-align: left;
+  cursor: pointer;
+}
+.memoria-insight-modal button.memoria-insight-select-trigger:hover {
+  border-color: var(--memoria-border-strong);
+}
+.memoria-insight-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.memoria-insight-select-icon {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  color: var(--memoria-text-3);
+  pointer-events: none;
+}
+.memoria-insight-select-icon .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+.memoria-insight-menu.is-measuring {
+  visibility: hidden;
+}
+
+/* ---------- 结果页：与历史详情共用 .memoria-insight-doc 结构 ---------- */
+.memoria-insight-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.5;
+}
+.memoria-insight-status:empty {
+  display: none;
+}
+/* 错误态 · 方案 B：置顶内联警示条，行内完成重试，不打断下方内容阅读 */
+.memoria-insight-status.is-error.is-banner {
+  display: block;
+  margin: 0 0 12px;
+  padding: 0;
+}
+.memoria-insight-error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 10px 12px;
+  border: 1px solid var(--memoria-danger-border);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-danger-subtle);
+}
+.memoria-insight-error-banner-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.memoria-insight-error-banner-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--memoria-danger-text);
+}
+.memoria-insight-error-banner-icon .svg-icon {
+  width: 16px;
+  height: 16px;
+}
+.memoria-insight-error-banner-msg {
+  color: var(--memoria-danger-text);
+  font-size: var(--memoria-font-body);
+  line-height: 1.5;
+}
+.memoria-insight-modal button.memoria-insight-error-banner-retry {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--memoria-danger-border);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-surface-1);
+  color: var(--memoria-danger-text);
+  box-shadow: none;
+  font-size: var(--memoria-font-xs);
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+}
+.memoria-insight-modal button.memoria-insight-error-banner-retry:hover {
+  background: var(--memoria-surface-2);
+}
+.memoria-insight-error-banner-retry .svg-icon {
+  width: 13px;
+  height: 13px;
+}
+/* 错误态 · 方案 A：无任何内容时的居中错误空态，视线聚焦单一主操作 */
+.memoria-insight-status.is-error.is-empty-state {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+.memoria-insight-error-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 16px 52px;
+  text-align: center;
+}
+.memoria-insight-error-empty-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--memoria-danger-subtle);
+  color: var(--memoria-danger-text);
+}
+.memoria-insight-error-empty-badge .svg-icon {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.8;
+}
+.memoria-insight-error-empty-title {
+  margin: 20px 0 0;
+  color: var(--memoria-text-1);
+  font-size: var(--memoria-font-title);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.memoria-insight-error-empty-desc {
+  max-width: 340px;
+  margin: 6px 0 0;
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-body);
+  line-height: 1.65;
+}
+.memoria-insight-error-empty .mod-cta {
+  margin-top: 20px;
+}
+.memoria-insight-error-empty-hint {
+  margin: 12px 0 0;
+  color: var(--memoria-text-3);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.5;
+}
+
+/* 生成过程 */
+.memoria-insight-spinner {
+  display: inline-flex;
+}
+.memoria-insight-spinner .svg-icon {
+  width: 14px;
+  height: 14px;
+  animation: memoria-spin 1s linear infinite;
+}
+.memoria-insight-thinking {
+  margin: 0 0 14px;
+  border: 0.5px solid var(--memoria-border-subtle);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-surface-2);
+  overflow: hidden;
+}
+.memoria-insight-thinking-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 4px 8px 4px 10px;
+  color: var(--memoria-text-1);
+  font-size: var(--memoria-font-xs);
+}
+.memoria-insight-thinking-label {
+  margin-right: auto;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.memoria-insight-modal button.memoria-insight-stop {
+  height: 24px;
+  padding: 0 8px;
+  border: 0.5px solid var(--memoria-border);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-surface-1);
+  color: var(--memoria-text-2);
+  box-shadow: none;
+  font-size: var(--memoria-font-xs);
+  line-height: 1;
+  cursor: pointer;
+}
+.memoria-insight-modal button.memoria-insight-stop:hover {
+  border-color: var(--memoria-border-strong);
+  color: var(--memoria-text-1);
+}
+.memoria-insight-modal button.memoria-insight-stop:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.memoria-insight-thinking-body {
+  max-height: 180px;
+  overflow: auto;
+  padding: 0 10px 8px;
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.memoria-insight-thinking-body.has-text {
+  padding-top: 8px;
+  border-top: 0.5px solid var(--memoria-border-subtle);
+}
+.memoria-insight-thinking-body.is-hidden {
+  display: none;
+}
+
+/* 结果正文 */
+.memoria-insight-result-wrap {
+  margin: 0;
+}
+.memoria-insight-result {
+  min-width: 0;
+  max-width: 100%;
+  color: var(--memoria-text-1);
+  font-size: var(--memoria-font-body);
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.memoria-insight-streaming {
+  white-space: pre-wrap;
+}
+/* 流式光标：紧跟正文尾部的强调色游标，提示仍在生成 */
+.memoria-insight-caret {
+  display: inline-block;
+  width: 2px;
+  height: 18px;
+  margin-left: 2px;
+  border-radius: 1px;
+  background: var(--memoria-accent-solid);
+  vertical-align: -3px;
+  animation: memoria-caret-blink 1s steps(1) infinite;
+}
+@keyframes memoria-caret-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+.memoria-insight-result :is(img, video, iframe, svg) {
+  max-width: 100%;
+  height: auto;
+}
+.memoria-insight-result :is(table, pre) {
+  max-width: 100%;
+}
+.memoria-insight-result pre {
+  overflow-x: auto;
+}
+.memoria-insight-result > :first-child {
+  margin-top: 0;
+}
+.memoria-insight-result > :last-child {
+  margin-bottom: 0;
+}
+.memoria-insight-result h1 {
+  margin: 0 0 10px;
+  font-size: var(--memoria-font-title);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.memoria-insight-result :is(h2, h3, h4, h5, h6) {
+  margin: 1em 0 0.4em;
+  font-size: var(--memoria-font-body);
+  font-weight: 600;
+  line-height: 1.5;
+}
+.memoria-insight-result a {
+  color: var(--memoria-accent-text);
+}
+.memoria-insight-result blockquote {
+  margin: 0.6em 0;
+  padding-left: 12px;
+  border-left: 0.5px solid var(--memoria-border);
+  color: var(--memoria-text-2);
+}
+.memoria-insight-result hr {
+  margin: 1em 0;
+  border: none;
+  border-top: 0.5px solid var(--memoria-border-subtle);
+}
+.memoria-insight-result :not(pre) > code {
+  padding: 1px 4px;
+  border-radius: var(--memoria-radius-xs);
+  background: var(--memoria-surface-3);
+  font-size: var(--memoria-font-xs);
+}
+.memoria-insight-result pre {
+  padding: 10px 12px;
+  border: 0.5px solid var(--memoria-border-subtle);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-surface-2);
+  font-size: var(--memoria-font-xs);
+}
+.memoria-insight-result table {
+  width: 100%;
+  margin: 0.8em 0;
+  border-collapse: collapse;
+  font-size: var(--memoria-font-xs);
+}
+.memoria-insight-result th,
+.memoria-insight-result td {
+  padding: 4px 8px;
+  border: 0.5px solid var(--memoria-border-subtle);
+  text-align: left;
+}
+.memoria-insight-result th {
+  background: var(--memoria-surface-2);
+  font-weight: 600;
+}
+.memoria-insight-result mark {
+  background: var(--memoria-warning-subtle);
+  color: var(--memoria-text-1);
+}
+.memoria-insight-result button.memoria-insight-cite {
+  /* 引用角标：12px 右上箭头，随文内联，hover 出浮窗，点击跳原文 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  margin: 0 0 0 4px;
+  padding: 0;
+  box-sizing: border-box;
+  border: none;
+  border-radius: var(--memoria-radius-xs);
+  background: transparent;
+  color: var(--memoria-accent-text);
+  box-shadow: none;
+  /* 圆心对齐中日韩字的视觉中线（基线上方约 7px），而不是西文小写字母 */
+  vertical-align: -1px;
+  cursor: pointer;
+  transition: color var(--memoria-motion);
+}
+.memoria-insight-cite .svg-icon {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.2;
+}
+.memoria-insight-result button.memoria-insight-cite:hover,
+.memoria-insight-result button.memoria-insight-cite:focus-visible {
+  color: var(--memoria-accent-solid);
+}
+.memoria-insight-cite:focus-visible {
+  outline: 2px solid var(--memoria-accent-solid);
+  outline-offset: 1px;
+}
+.memoria-insight-cite-card {
+  position: fixed;
+  z-index: 11000;
+  width: min(340px, calc(100vw - 16px));
+  padding: 14px 16px;
+  box-sizing: border-box;
+  border: 0.5px solid var(--memoria-border);
+  border-radius: var(--memoria-radius-container);
+  background: var(--memoria-surface-1);
+  box-shadow: var(--memoria-shadow-popover);
+}
+.memoria-insight-cite-time {
+  color: var(--memoria-text-3);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.memoria-insight-cite-text {
+  display: -webkit-box;
+  max-height: 168px;
+  margin-top: 8px;
+  overflow: hidden;
+  color: var(--memoria-text-1);
+  font-size: var(--memoria-font-body);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+}
+.memoria-insight-cite-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.memoria-insight-cite-tag {
+  padding: 1px 6px;
+  border-radius: var(--memoria-radius-xs);
+  background: var(--memoria-accent-subtle);
+  color: var(--memoria-accent-text);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.5;
+}
+
+/* 思考过程折叠条：置于正文上方的横条，无思考过程时整条隐藏 */
+.memoria-insight-reasoning {
+  margin: 0 0 12px;
+}
+.memoria-insight-reasoning-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  height: auto;
+  margin-left: 0;
+  padding: 8px 10px;
+  border: 0.5px solid var(--memoria-border-subtle);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-surface-2);
+  color: var(--memoria-text-2);
+  box-shadow: none;
+  font-size: var(--memoria-font-xs);
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--memoria-motion),
+    color var(--memoria-motion);
+}
+.memoria-insight-reasoning-toggle:hover {
+  background: var(--memoria-surface-3);
+  color: var(--memoria-text-1);
+}
+.memoria-insight-reasoning-toggle .svg-icon {
+  width: 13px;
+  height: 13px;
+  transition: transform var(--memoria-motion);
+}
+.memoria-insight-reasoning-toggle.is-open .svg-icon {
+  transform: rotate(180deg);
+}
+.memoria-insight-reasoning-body {
+  max-height: 220px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  overflow: auto;
+  border: 0.5px solid var(--memoria-border-subtle);
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-surface-1);
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* ---------- 未配置态：居中引导卡 ----------
+ * 复用标题徽标（强调底 + 描边）、范围面板（surface-2 描边卡）与主按钮的词汇，
+ * 让"还没配置好"和正常首页看起来是同一个界面的两种状态。 */
+.memoria-insight-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 16px 52px;
+  text-align: center;
+}
+.memoria-insight-setup-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  margin-bottom: 14px;
+  border: 0.5px solid var(--memoria-accent-border);
+  border-radius: var(--memoria-radius-container);
+  background: var(--memoria-accent-subtle);
+  color: var(--memoria-accent-text);
+}
+.memoria-insight-setup-icon .svg-icon {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.75;
+}
+.memoria-insight-setup p.memoria-insight-setup-title {
+  margin: 0;
+  color: var(--memoria-text-1);
+  font-size: var(--memoria-font-body);
+  font-weight: 600;
+  line-height: 1.5;
+}
+.memoria-insight-setup p.memoria-insight-setup-desc {
+  max-width: 340px;
+  margin: 6px 0 0;
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.65;
+}
+/* 配置清单：三项前置条件一行一条，完成项用强调色对勾，缺口一眼可见。 */
+.memoria-insight-setup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: min(300px, 100%);
+  margin: 18px 0 20px;
+  padding: 8px 12px;
+  border: 0.5px solid var(--memoria-border-subtle);
+  border-radius: var(--memoria-radius-container);
+  background: var(--memoria-surface-2);
+  text-align: left;
+}
+.memoria-insight-setup-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  color: var(--memoria-text-3);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.4;
+}
+.memoria-insight-setup-item-mark {
+  display: inline-flex;
+  flex: 0 0 14px;
+  align-items: center;
+  justify-content: center;
+}
+.memoria-insight-setup-item-mark .svg-icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+.memoria-insight-setup-item.is-done {
+  color: var(--memoria-text-1);
+}
+.memoria-insight-setup-item.is-done .memoria-insight-setup-item-mark {
+  color: var(--memoria-accent-text);
+}
+.memoria-insight-setup button.mod-cta {
+  margin-left: 0;
+}
+
+.memoria-insight-modal :is(button, select, input, textarea):focus-visible,
+.memoria-insight-history-modal :is(button, select, input, textarea):focus-visible {
+  outline: 2px solid var(--memoria-accent-solid);
+  outline-offset: 2px;
+}
+
+/* ---------- 历史洞察 ---------- */
+.memoria-insight-history {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+.memoria-insight-history-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 56px 16px;
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+}
+.memoria-insight-history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 56px 16px;
+  color: var(--memoria-text-2);
+  text-align: center;
+}
+.memoria-insight-history-empty-icon {
+  display: flex;
+  color: var(--memoria-text-3);
+}
+.memoria-insight-history-empty-icon .svg-icon {
+  width: 28px;
+  height: 28px;
+}
+.memoria-insight-history-empty-title {
+  color: var(--memoria-text-1);
+  font-size: var(--memoria-font-body);
+  font-weight: 600;
+}
+.memoria-insight-history-body {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 32px;
+  min-height: 340px;
+  min-width: 0;
+}
+.memoria-insight-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  max-height: 62vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+}
+.memoria-insight-history-modal button.memoria-insight-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  /* Obsidian 给 button 设了固定高度和居中，这里必须让两行内容把行撑开 */
+  height: auto;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 9px 12px;
+  border: none;
+  border-radius: var(--memoria-radius-control);
+  background: transparent;
+  color: var(--memoria-text-1);
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--memoria-motion);
+}
+.memoria-insight-history-modal button.memoria-insight-history-item:hover {
+  background: var(--memoria-surface-2);
+}
+.memoria-insight-history-modal button.memoria-insight-history-item.is-active {
+  background: var(--memoria-accent-subtle);
+}
+.memoria-insight-history-item-title {
+  width: 100%;
+  overflow: hidden;
+  color: var(--memoria-text-1);
+  font-size: var(--memoria-font-body);
+  font-weight: 500;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.memoria-insight-history-item-meta {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  overflow: hidden;
+  color: var(--memoria-text-3);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.memoria-insight-history-item-kind {
+  color: var(--memoria-accent-text);
+}
+.memoria-insight-history-detail {
+  min-width: 0;
+  max-width: 100%;
+  max-height: 62vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+}
+/* 文档视图：结果页与历史详情共用，正文到底部留一口气 */
+.memoria-insight-doc {
+  min-width: 0;
+  padding-bottom: 18px;
+}
+.memoria-insight-doc-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 0.5px solid var(--memoria-border-subtle);
+  min-width: 0;
+}
+.memoria-insight-doc-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.memoria-insight-doc-title {
+  color: var(--memoria-text-1);
+  font-size: var(--memoria-font-title);
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.memoria-insight-doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--memoria-text-3);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.5;
+}
+.memoria-insight-doc-kind {
+  padding: 2px 8px;
+  border: 0.5px solid var(--memoria-accent-border);
+  border-radius: 999px;
+  background: var(--memoria-accent-subtle);
+  color: var(--memoria-accent-text);
+  font-weight: 500;
+}
+/* 正文收口：分割线 + 右下角纯图标操作 */
+.memoria-insight-doc-divider {
+  height: 1px;
+  margin: 16px 0 12px;
+  background: var(--memoria-border-subtle);
+}
+.memoria-insight-doc-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+.memoria-insight-modal button.memoria-insight-back {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  /* 图标自带留白，向左探 5px 让箭头贴齐内容左边缘 */
+  margin-left: -5px;
+  padding: 0;
+  border: none;
+  border-radius: var(--memoria-radius-xs);
+  background: transparent;
+  color: var(--memoria-text-2);
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background var(--memoria-motion),
+    color var(--memoria-motion);
+}
+.memoria-insight-modal button.memoria-insight-back:hover {
+  background: var(--memoria-surface-3);
+  color: var(--memoria-text-1);
+}
+.memoria-insight-back .svg-icon {
+  width: 16px;
+  height: 16px;
+}
+.memoria-insight-modal button.memoria-insight-doc-action,
+.memoria-insight-history-modal button.memoria-insight-doc-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--memoria-radius-control);
+  background: var(--memoria-surface-1);
+  color: var(--memoria-text-2);
+  box-shadow: none;
+  font-size: var(--memoria-font-xs);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background var(--memoria-motion),
+    color var(--memoria-motion);
+}
+.memoria-insight-doc-action .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+.memoria-insight-modal button.memoria-insight-doc-action:hover,
+.memoria-insight-history-modal button.memoria-insight-doc-action:hover {
+  background: var(--memoria-surface-3);
+  color: var(--memoria-text-1);
+}
+.memoria-insight-modal button.memoria-insight-doc-action.is-danger,
+.memoria-insight-history-modal button.memoria-insight-doc-action.is-danger {
+  color: var(--memoria-danger-text);
+}
+.memoria-insight-modal button.memoria-insight-doc-action.is-danger:hover,
+.memoria-insight-history-modal button.memoria-insight-doc-action.is-danger:hover {
+  background: var(--memoria-danger-subtle);
+  color: var(--memoria-danger-text);
+}
+.memoria-insight-modal button.memoria-insight-doc-action.is-danger.is-confirm,
+.memoria-insight-history-modal button.memoria-insight-doc-action.is-danger.is-confirm {
+  background: var(--memoria-danger-subtle);
+  color: var(--memoria-danger-text);
+}
+/* 二次确认态：图标按钮就地展开成「图标 + 确认删除」，避免首击毫无反馈 */
+.memoria-insight-modal button.memoria-insight-doc-action.is-confirm,
+.memoria-insight-history-modal button.memoria-insight-doc-action.is-confirm {
+  width: auto;
+  gap: 5px;
+  padding: 0 9px;
+  white-space: nowrap;
+}
+.memoria-insight-doc-scope {
+  margin: 0 0 12px;
+  color: var(--memoria-text-2);
+  font-size: var(--memoria-font-xs);
+  line-height: 1.5;
+}
+
+.memoria-insight-scope-panel.is-hidden,
+.memoria-insight-home.is-hidden,
+.memoria-insight-status.is-hidden,
+.memoria-insight-status.is-error.is-hidden,
+.memoria-insight-thinking.is-hidden,
+.memoria-insight-result-wrap.is-hidden,
+.memoria-insight-reasoning-body.is-hidden,
+.memoria-insight-modal button.memoria-insight-back.is-hidden,
+.memoria-insight-head-actions.is-hidden {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  .memoria-insight-modal,
+  .memoria-insight-history-modal {
+    width: 94vw;
+    max-width: 94vw;
+  }
+  .memoria-insight-scope-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* 触屏上把偏小的文字按钮补到可稳定点中的高度 */
+  .memoria-insight-modal button.memoria-insight-text-btn {
+    height: 30px;
+    padding: 0 8px;
+  }
+  .memoria-insight-modal button.memoria-insight-text-btn.memoria-insight-icon-btn {
+    width: 30px;
+  }
+  .memoria-insight-modal button.memoria-insight-doc-action {
+    width: 32px;
+    height: 32px;
+  }
+  /* 窄屏藏掉快捷键提示，把宽度留给主动作 */
+  .memoria-insight-foot-hint {
+    display: none;
+  }
+  .memoria-insight-kbd {
+    display: none;
+  }
+  .memoria-insight-foot {
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .memoria-insight-history-body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .memoria-insight-history-list {
+    max-height: 200px;
+    padding-right: 0;
+    padding-bottom: 8px;
+  }
+  .memoria-insight-history-detail {
+    max-height: none;
+  }
+}
+
+@media (max-width: 560px) {
+  /* 窄屏保持列表密度，说明文字按可用宽度换行。 */
+  .memoria-insight-modal button.memoria-insight-perspective {
+    align-items: flex-start;
+    min-height: 64px;
+  }
+  .memoria-insight-perspective-text {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memoria-insight-spinner .svg-icon {
+    animation: none;
+  }
+  .memoria-insight-caret {
+    animation: none;
+  }
+  .memoria-insight-reasoning-toggle .svg-icon,
+  .memoria-insight-text-btn,
+  .memoria-insight-perspective {
+    transition: none;
+  }
 }

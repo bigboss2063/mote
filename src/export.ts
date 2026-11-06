@@ -18,6 +18,7 @@
 
 import { App, Notice, normalizePath } from "obsidian";
 import { Memo } from "./types";
+import { weekdayName } from "./parser";
 import { t, getCurrentLocale } from "./i18n";
 
 export type ExportFormat = "md" | "html" | "json";
@@ -477,13 +478,8 @@ body {
   for (const m of memos) for (const t of m.tags) tagSet.add(t);
 
   const locale = getCurrentLocale();
-  const weekdayNamesCN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-  const weekdayNamesEN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const weekdayNames = locale === "en-US" ? weekdayNamesEN : weekdayNamesCN;
-  const getWeekday = (dateStr: string): string => {
-    const d = new Date(dateStr + "T00:00:00");
-    return weekdayNames[d.getDay()] ?? "";
-  };
+  const getWeekday = (dateStr: string): string =>
+    weekdayName(locale, new Date(dateStr + "T00:00:00").getDay());
 
   const parts: string[] = [];
   parts.push("<!DOCTYPE html>");

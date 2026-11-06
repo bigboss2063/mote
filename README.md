@@ -1,226 +1,63 @@
-<div align="center">
-
 # Mote 🪶
 
-**A flomo-style fleeting-thoughts plugin for Obsidian**
+Obsidian 里的随手记：一个输入框，记完就走。数据是自己的纯 Markdown。
 
-> Your data stays as plain Markdown. Freedom belongs to you.
+在 [Memoria](https://github.com/i-iooi-i/obsidian-memoria) 的基础上继续维护。0.1.0 起存储格式重写：**一条 memo 一个文件**，引用就是普通的 wikilink。
 
-[![release](https://img.shields.io/github/v/release/bigboss2063/mote?include_prereleases&label=release)](https://github.com/bigboss2063/mote/releases)
-[![downloads](https://img.shields.io/github/downloads/bigboss2063/mote/total)](https://github.com/bigboss2063/mote/releases)
-[![license](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
-[![obsidian](https://img.shields.io/badge/Obsidian-1.7.2%2B-purple)](https://obsidian.md)
+![主视图](./docs/screenshots/main.png)
 
-**English** · [简体中文](#简体中文)
+## 存储格式
 
-</div>
+```text
+Mote/
+├── 2026/
+│   ├── 2026-04-25 12.43.md
+│   └── 2026-04-25 14.20.md
+└── _insights/
+    └── 2026-04-25 15.47 今天的想法.md
+```
 
----
-
-> **Mote** is a personal fork of [Memoria](https://github.com/i-iooi-i/obsidian-memoria) by [i-iooi-i](https://github.com/i-iooi-i). The original project and most of the code belong to its author; this fork focuses on UI and interaction changes.
-
----
-
-## English
-
-Mote is a lightweight memo plugin for Obsidian. It gives you a quick-capture input box, a waterfall-style timeline, tag search, image paste and drag support, task checkbox writeback, pinning, starring, statistics, and a year panorama view.
-
-All notes are stored as ordinary Markdown files in your vault. Mote does not lock your data into a database or a proprietary format, so your memos remain readable and searchable even if you stop using the plugin.
-
-Main features:
-
-- Quick capture with `Ctrl/Cmd+Enter`
-- Global capture command for fast notes
-- Plain Markdown storage in yearly files
-- Tag autocomplete and combined tag/keyword search
-- Paste, drag, and file-picker image capture
-- Sidebar heatmap, calendar, statistics report, and year panorama
-- Mobile-friendly layout and touch interactions
-- Chinese and English interface languages
-
-See [README.en.md](./README.en.md) for the full English documentation.
-
----
-
-## 简体中文
-
-> **Mote** 是 [Memoria](https://github.com/i-iooi-i/obsidian-memoria)（作者 [i-iooi-i](https://github.com/i-iooi-i)）的个人 fork，主要调整 UI 与交互；原始项目和大部分代码归原作者所有。
-
-## 📸 看起来像什么样
-
-**主视图**（瀑布流 + 侧栏热力图 + 置顶笔记）
-
-![Mote 主视图](./docs/screenshots/main.png)
-
-**数据报告**（365 天热力图、月度柱图、Top 10 标签、24 小时分布、有趣的发现）
-
-![数据报告](./docs/screenshots/stats.png)
-
-**年度全景**（12 个月铺开的日历，点任一天跳回主视图看那天的笔记）
-
-![年度全景](./docs/screenshots/year.png)
-
----
-
-## 💭 为什么做这个
-
-我想要一个随手记想法的地方。
-
-不需要复杂的双向链接，不需要知识图谱，也不需要每条笔记都想着"放进哪个文件夹"。就是一个输入框、一个发送按钮，按时间倒序瀑布流显示，偶尔翻翻过去的自己。
-
-但我同时希望：**这些想法永远是我能随时 grep 的纯 markdown 文件**。哪一天我不再用这个插件，不再用 Obsidian，甚至不再用电脑的图形界面——那些笔记还躺在硬盘上，文本编辑器打开就能读，命令行 grep 就能搜。
-
-Mote 就是这样一个插件：把"浮墨式的快速记录体验"搬进 Obsidian，数据落到你自己的 vault 里，存成最普通的 `YYYY.md` 文件。
-
----
-
-## ✨ 它能做什么
-
-**随手记**
-- 输入卡片 + `Ctrl/Cmd+Enter` 发送
-- 全局快捷键 `Ctrl/Cmd+Shift+M` 任意位置唤出速记弹窗
-- iOS 快捷指令通过 `obsidian://memoria-capture` 直接写入文字闪念
-- 图片：粘贴 / 拖拽 / 选择文件，自动入库为 vault 附件
-- 标签联想（汇集 vault 所有标签）、列表 Tab 缩进、Enter 自动续行
-- 草稿自动保存，重启不丢
-
-**随手翻**
-- 按天分组瀑布流，置顶自动置顶
-- 侧栏 14 周热力图 ↔ 月历一键切换
-- 预设视图：今天 / 本周 / 置顶 / 收藏 / **往年的今天** / 随机 5 条
-- 组合搜索：`#标签 关键词` 空格分隔，多标签多关键词 AND
-
-**看见自己**
-- 数据报告独立标签页：365 天大热力图、月度分布、Top 10 标签、24 小时活跃、标签云
-- 年度全景：12 个月完整日历铺开，看一整年的节奏
-- 有趣的发现：最长连续打卡、最活跃的一天、夜猫子次数、年同比等
-
-**贴心细节**
-- 长笔记自动折叠，点"全文"展开
-- 任务列表可勾选，自动回写 md
-- 卡片右键菜单：置顶 / 收藏 / 编辑 / 引用 / 保存为图片 / 打开原文
-- 删除可软删除到 `_trash.md`（可关）
-- 桌面端可选择默认打开位置（主窗口、左侧栏、右侧栏），并记住侧栏收起状态
-- 移动端：抽屉侧栏、长按选择文字，通过笔记菜单编辑；表格选择器适配手指
-
----
-
-## 📂 存储格式
-
-Mote 在指定文件夹下维护 `YYYY.md` 文件，采用「时间独占一行 + 内容缩进」格式：
+`2026-04-25 12.43.md` 的全文就是这条 memo：
 
 ```markdown
-# 2026
-
-## 2026-04-25 周六
-
-- 12:43
-  这是今天的第一条想法 #灵感
-
-- 14:20
-  又想到了一件事
-  可以换行继续写，每一行都缩进 2 空格
-
-- 15:47
-  > [!tip] callout / 任务列表 / 标题等块级语法都能正确渲染
-
-- 16:30
-  - [ ] 任务列表也 OK
-  - [x] 自动勾选回写
+想到就记，记完就忘。
+#灵感
 ```
 
-每条 `- HH:MM` 开头是一条独立 memo。**停用插件那一刻，笔记依然是完整可读的 md 文件。**
+文件名就是时间，没有 frontmatter，没有缩进，同一分钟的第二条自动叫 `12.43.01.md`。引用一条 memo：
 
----
-
-## 🚀 安装
-
-目前支持手动安装。从 [Releases](../../releases/latest) 下载最新版的三件套：
-
-```
-<Your Vault>/.obsidian/plugins/mote/
-├── main.js
-├── manifest.json
-└── styles.css
+```markdown
+> [!quote] [[2026-04-25 12.43]]
 ```
 
-然后 Obsidian → 设置 → 第三方插件 → 启用 **Mote** → 左侧 Ribbon 点 🪶 打开面板。
+改时间 = 在 Obsidian 里重命名，全库链接自动跟着改。停用插件、换掉 Obsidian，文件依然是能读能 grep 的 md。
 
-> 也可以用 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 插件输入 `bigboss2063/mote` 自动安装和更新。
->
-> 从 Memoria 迁移：把旧插件目录里的 `data.json` 复制到新目录即可保留设置；笔记文件不受影响。
+AI 洞察也落成笔记：`_insights/` 下一文一文件，来源写在 frontmatter 的 `sources` 里；正文的 `[1]` 保持纯文本，渲染时按 `sources` 顺序映射成可点的引用。
 
----
+## 能做什么
 
-## ⌨️ 常用快捷键
+- 速记：输入卡片、`Ctrl/Cmd+Enter` 发送、全局快捷键、iOS 快捷指令
+- 瀑布流、按天分组、置顶/收藏、组合搜索
+- 侧栏热力图、月历、数据报告、年度全景
+- 图片粘贴/拖拽入库；任务勾选回写；删除移到 `_trash/`
+- AI 洞察（可选，走自己的 OpenAI 兼容接口）：对单条或当前筛选生成带引用的洞察
 
-| 动作 | 快捷键 |
-|---|---|
-| 发送当前输入 | `Ctrl/Cmd + Enter` |
-| 快速记录（全局弹窗） | `Ctrl/Cmd + Shift + M` |
-| 列表缩进 / 反缩进 | `Tab` / `Shift+Tab` |
-| 进入编辑模式 | 双击卡片（移动端通过笔记菜单选择编辑） |
-| 退出编辑 | `Esc` |
+## 安装
 
----
+手动放置三件套到 `<vault>/.obsidian/plugins/mote/`，或用 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 添加 `bigboss2063/mote`。
 
-## 📱 iOS 快捷指令
+0.1.0 不读取 2.x 的 `YYYY.md`；旧数据用仓库里的 `scripts/migrate.mjs` 一次性迁移（默认 dry-run，加 `--apply` 写盘）。
 
-Mote 支持通过 iOS 快捷指令输入文字并写入当前时间的笔记：
-
-1. 在 Mote 设置页找到「iOS 快捷指令」，点击「复制 URI 模板」。
-2. 新建快捷指令，依次添加「请求输入」「URL 编码」「URL」「打开 URL」。
-3. 将复制的 URI 模板粘贴到「URL」，并把「URL 编码」的结果追加到模板末尾。
-4. 运行快捷指令；Obsidian 会打开目标仓库，Mote 保存后显示通知。
-
-也可以把快捷指令加入主屏幕、Siri，或设置为接收分享菜单中的文字。URI 不带 `content` 参数时，手机端会打开 Mote 并展开与右下角 ➕ 相同的输入卡片；桌面端则打开快速记录弹窗。
-
-> iOS 会唤醒 Obsidian 后再运行社区插件，因此冷启动时需要等待目标仓库和插件加载。目前仅支持文字，不支持图片。
-
----
-
-## 🛠 开发
+## 开发
 
 ```bash
 npm install
-npm run dev     # watch 模式
-npm run build   # 生产打包
+npm run dev        # watch
+npm test           # node --test
+npm run typecheck
+npm run build
 ```
 
----
+## 许可
 
-## 📦 发布
-
-1. 同步更新 `manifest.json`、`package.json` 的版本号，并在 `versions.json` 补上新版本对应的 `minAppVersion`。
-2. 提交后推送与 manifest 完全一致、不带 `v` 前缀的 tag：
-
-```bash
-git tag 2.5.0
-git push origin 2.5.0
-```
-
-3. GitHub Actions 会运行 lint、类型检查、测试和构建，并创建 draft release（自动附带 `main.js`、`manifest.json`、`styles.css`）；确认后手动发布。
-
-详见 [docs/RELEASING.md](./docs/RELEASING.md)。
-
----
-
-## 📜 变更日志
-
-详见 [CHANGELOG.md](./CHANGELOG.md)。
-
----
-
-## 📝 许可
-
-[MIT](./LICENSE)
-
----
-
-<div align="center">
-
-**Mote**，意为「微尘」——一颗颗细小的念头落下来，就成了你的记录。
-
-愿你的每一个念头，都被轻轻接住。
-
-</div>
+MIT，fork 自 Memoria；`LICENSE` 保留原作者版权。变更记录见 [CHANGELOG.md](./CHANGELOG.md)。

@@ -23,7 +23,7 @@ class TFile {
     this.content = content;
   }
 }
-const memo = text => `## 2026-10-21 Wednesday\n- 10:00 ${text}\n`;
+const memoFile = (name, text) => new TFile(`Mote/2026/${name}.md`, `${text}\n`);
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
 async function fixture(files = [], ready = false) {
@@ -97,16 +97,26 @@ test("3000 startup attachment events cause no text reads or refreshes", async ()
   assert.equal(f.notifications, 1);
 });
 
-test("startup scans existing Markdown once even without a Mote view", async () => {
-  const files = [new TFile("Mote/2026.md", memo("first")), new TFile("Mote/archive/2025.MD", memo("second")),
-    new TFile("Mote/_trash.md", memo("trash")), new TFile("Mote-copy/2026.md", memo("outside")),
-    new TFile("Mote/attachments/file.pdf"), new TFile("Mote/attachments/photo.webp")];
+test("startup scans only memo files under the folder", async () => {
+  const files = [
+    memoFile("2026-10-21 10.00", "first"),
+    new TFile("Mote/2026/2026-10-20 09.30.md", "second\n"),
+    new TFile("Mote/_trash/2026-10-19 10.00.md", "trash\n"),
+    new TFile("Mote/_insights/2026-10-18 10.00 Note.md", "# Note\n"),
+    new TFile("Mote-copy/2026/2026-10-21 10.00.md", "outside\n"),
+    new TFile("Mote/2026/2026.md", "old container\n"),
+    new TFile("Mote/attachments/file.pdf"),
+    new TFile("Mote/attachments/photo.webp"),
+  ];
   const f = await fixture(files);
   files.forEach(file => f.emit("create", file));
   await flush();
   assert.equal(f.reads.length, 0);
   await f.finishStartup();
-  assert.deepEqual(f.reads.sort(), ["Mote/2026.md", "Mote/archive/2025.MD"]);
+  assert.deepEqual(f.reads.sort(), [
+    "Mote/2026/2026-10-20 09.30.md",
+    "Mote/2026/2026-10-21 10.00.md",
+  ]);
   assert.equal(f.plugin.store.getAll().length, 2);
   assert.equal(f.notifications, 1);
 });
@@ -114,16 +124,16 @@ test("startup scans existing Markdown once even without a Mote view", async () =
 test("post-startup create, modify, rename and delete still update notes", async () => {
   const f = await fixture();
   await f.finishStartup();
-  const file = new TFile("Mote/2026.md", memo("created"));
+  const file = memoFile("2026-10-21 10.00", "created");
   f.byPath.set(file.path, file);
   f.emit("create", file);
   await flush();
   assert.equal(f.plugin.store.getAll()[0].content, "created");
-  file.content = memo("modified");
+  file.content = "modified\n";
   f.emit("modify", file);
   await flush();
   assert.equal(f.plugin.store.getAll()[0].content, "modified");
-  const renamed = new TFile("Mote/archive/2026.md", file.content);
+  const renamed = new TFile("Mote/2026/2026-10-21 11.00.md", file.content);
   f.byPath.delete(file.path);
   f.byPath.set(renamed.path, renamed);
   f.emit("rename", renamed, file.path);
@@ -136,8 +146,8 @@ test("post-startup create, modify, rename and delete still update notes", async 
 });
 
 test("moving a note outside the folder or renaming to non-Markdown removes it", async () => {
-  for (const path of ["Elsewhere/2026.md", "Mote/2026.txt"]) {
-    const file = new TFile("Mote/2026.md", memo("old"));
+  for (const path of ["Elsewhere/2026/2026-10-21 10.00.md", "Mote/2026/2026-10-21 10.00.txt"]) {
+    const file = memoFile("2026-10-21 10.00", "old");
     const f = await fixture([file]);
     await f.finishStartup();
     f.byPath.delete(file.path);
@@ -151,14 +161,14 @@ test("moving a note outside the folder or renaming to non-Markdown removes it", 
 });
 
 test("enabling after layout is ready still loads existing notes", async () => {
-  const f = await fixture([new TFile("Mote/2026.md", memo("existing"))], true);
+  const f = await fixture([memoFile("2026-10-21 10.00", "existing")], true);
   await flush();
   assert.equal(f.plugin.store.getAll().length, 1);
   assert.equal(f.scans, 1);
 });
 
 test("unloading before layout is ready cancels deferred initialization", async () => {
-  const f = await fixture([new TFile("Mote/2026.md", memo("existing"))]);
+  const f = await fixture([memoFile("2026-10-21 10.00", "existing")]);
   f.plugin.onunload();
   await f.finishStartup();
   assert.equal(f.scans, 0);
@@ -168,7 +178,7 @@ test("unloading before layout is ready cancels deferred initialization", async (
 test("failed event reads are handled and later updates can recover", async () => {
   const f = await fixture();
   await f.finishStartup();
-  const file = new TFile("Mote/2026.md", memo("recovered"));
+  const file = memoFile("2026-10-21 10.00", "recovered");
   f.byPath.set(file.path, file);
   const read = f.app.vault.read;
   f.app.vault.read = async () => { throw new Error("read failure"); };

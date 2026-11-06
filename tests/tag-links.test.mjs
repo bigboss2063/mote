@@ -9,7 +9,7 @@ const bundle = await build({
 });
 const module = {exports: {}};
 vm.runInNewContext(bundle.outputFiles[0].text, {module, exports: module.exports});
-const {extractTags, parseFile, renderMemo, stripMemoTags} = module.exports;
+const {extractTags, parseMemoFile, stripMemoTags} = module.exports;
 const url = "https://mp.weixin.qq.com/s/example999#rd";
 const cases = [
   ["WeChat plain link", url, []],
@@ -33,8 +33,7 @@ const cases = [
 for (const [name, content, tags] of cases) {
   test(`tag extraction: ${name}`, () => {
     assert.deepEqual([...extractTags(content)], tags);
-    const raw = "## 2026-10-21 Wednesday\n" + renderMemo("10:00", content);
-    const [memo] = parseFile("Mote/2026.md", raw);
+    const memo = parseMemoFile("Mote/2026/2026-10-21 10.00.md", content + "\n");
     assert.deepEqual([...memo.tags], tags);
     assert.equal(memo.content, content);
   });

@@ -1,6 +1,6 @@
 {
   "name": "mote",
-  "version": "2.5.0",
+  "version": "0.1.0",
   "description": "Mote - Obsidian memos plugin with pure markdown storage",
   "main": "main.js",
   "scripts": {
@@ -30,5 +30,8 @@
     "obsidian": "latest",
     "tslib": "2.8.1",
     "typescript": "5.7.2"
+  },
+  "dependencies": {
+    "eventsource-parser": "^4.1.3"
   }
 }
