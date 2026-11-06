@@ -31,6 +31,8 @@ export interface InsightHistoryModalOptions {
   settings: MemoriaSettings;
   /** 点引用时回到 Mote 界面。 */
   openMemo?: (file: string) => void;
+  initialFile?: string;
+  quoteSource?: (file: string) => void;
 }
 
 function formatCreatedAt(record: InsightRecord): string {
@@ -55,6 +57,7 @@ export class InsightHistoryModal extends Modal {
 
   constructor(app: App, private options: InsightHistoryModalOptions) {
     super(app);
+    this.selectedFile = options.initialFile ?? null;
   }
 
   onOpen(): void {
@@ -260,11 +263,24 @@ export class InsightHistoryModal extends Modal {
       markdown: stripLeadingTitle(record.markdown),
       sourcePath: record.file,
       citations: resolveCitations(this.app, record.sources),
-      onOpenMemo: this.options.openMemo,
+      sourceFolder: this.options.settings.folder,
+      onOpenMemo: (file) => {
+        this.close();
+        this.options.openMemo?.(file);
+      },
+      onOpenInsight: (file) => this.select(file),
     });
 
     // 正文收口：分割线 + 右下角纯图标操作（复制 / 删除），与结果页同风格
     renderDocFoot(parent, [
+      ...(this.options.quoteSource ? [{
+        label: t("toolbar.quote"),
+        icon: "quote",
+        onClick: () => {
+          this.close();
+          this.options.quoteSource?.(record.file);
+        },
+      }] : []),
       {
         label: t("insight.history.copy"),
         icon: "copy",

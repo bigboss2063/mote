@@ -137,7 +137,7 @@ export async function loadInsightRecords(
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
-async function readInsightRecord(
+export async function readInsightRecord(
   app: App,
   file: TFile
 ): Promise<InsightRecord> {

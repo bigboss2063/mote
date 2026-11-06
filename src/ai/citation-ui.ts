@@ -2,7 +2,7 @@ import { App, Notice, TFile, setIcon } from "obsidian";
 import { memoFileInfo, parseMemoFile } from "../parser";
 import { RESERVED_TAGS } from "../types";
 import { t } from "../i18n";
-import type { Memo } from "../types";
+import { readInsightRecord, stripLeadingTitle } from "./insight-file";
 
 /** 正文里的一条引用：`[n]` → 对应的 memo 文件路径。 */
 export interface CitationRef {
@@ -65,35 +65,7 @@ export function decorateCitations(
       if (file === undefined) continue;
       if (index > last) fragment.append(text.slice(last, index));
 
-      const cite = doc.createElement("button");
-      cite.className = "memoria-insight-cite";
-      cite.setAttribute("type", "button");
-      cite.setAttribute("aria-label", t("insight.openSource"));
-      setIcon(cite, "arrow-up-right");
-      cite.addEventListener("mouseenter", () => {
-        void showCitation(cite, app, file);
-      });
-      cite.addEventListener("focus", () => {
-        void showCitation(cite, app, file);
-      });
-      cite.addEventListener("mouseleave", () => {
-        scheduleCloseCitation();
-      });
-      cite.addEventListener("blur", () => scheduleCloseCitation(0));
-      cite.addEventListener("click", (event) => {
-        event.preventDefault();
-        dismissCitationPreview();
-        if (!file) {
-          new Notice(t("insight.history.sourceMissing"));
-          return;
-        }
-        if (onOpenMemo) {
-          onOpenMemo(file);
-          return;
-        }
-        const target = app.vault.getAbstractFileByPath(file);
-        if (target instanceof TFile) void app.workspace.getLeaf(false).openFile(target);
-      });
+      const cite = createCitationButton(doc, app, file, onOpenMemo);
       fragment.append(cite);
       last = index + match[0].length;
     }
@@ -103,6 +75,73 @@ export function decorateCitations(
   }
 }
 
+/** Keep wikilinks in Markdown for backlinks and renames; decorate only Mote sources. */
+export function decorateSourceLinks(
+  root: HTMLElement,
+  app: App,
+  sourcePath: string,
+  folder: string,
+  onOpenSource: (file: string) => void
+): void {
+  const prefix = folder.replace(/\\/g, "/").replace(/\/+$/, "") + "/";
+  for (const link of Array.from(root.querySelectorAll<HTMLAnchorElement>("a.internal-link"))) {
+    if (link.closest("code, pre")) continue;
+    const href = link.getAttribute("data-href") || link.getAttribute("href") || "";
+    // Heading/block links retain their native, more precise destination.
+    if (!href || href.includes("#")) continue;
+    const target = app.metadataCache.getFirstLinkpathDest(href, sourcePath);
+    if (!(target instanceof TFile)) {
+      if (link.textContent === "↗") {
+        link.replaceWith(createCitationButton(root.ownerDocument, app, "", onOpenSource));
+      }
+      continue;
+    }
+    if (!target.path.startsWith(prefix)) continue;
+    if (!memoFileInfo(target.path) && !target.path.startsWith(prefix + "_insights/")) continue;
+    if (target.extension !== "md") continue;
+    link.replaceWith(createCitationButton(root.ownerDocument, app, target.path, onOpenSource));
+  }
+}
+
+function createCitationButton(
+  doc: Document,
+  app: App,
+  file: string,
+  onOpenMemo?: (file: string) => void
+): HTMLButtonElement {
+  const cite = doc.createElement("button");
+  cite.className = "memoria-insight-cite";
+  cite.setAttribute("type", "button");
+  cite.setAttribute("aria-label", t("insight.openSource"));
+  setIcon(cite, "arrow-up-right");
+  cite.addEventListener("mouseenter", () => {
+    void showCitation(cite, app, file);
+  });
+  cite.addEventListener("focus", () => {
+    void showCitation(cite, app, file);
+  });
+  cite.addEventListener("mouseleave", () => {
+    scheduleCloseCitation();
+  });
+  cite.addEventListener("blur", () => scheduleCloseCitation(0));
+  cite.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dismissCitationPreview();
+    if (!file || !(app.vault.getAbstractFileByPath(file) instanceof TFile)) {
+      new Notice(t("insight.history.sourceMissing"));
+      return;
+    }
+    if (onOpenMemo) {
+      onOpenMemo(file);
+      return;
+    }
+    const target = app.vault.getAbstractFileByPath(file);
+    if (target instanceof TFile) void app.workspace.getLeaf(false).openFile(target);
+  });
+  return cite;
+}
+
 async function showCitation(
   anchor: HTMLElement,
   app: App,
@@ -110,21 +149,27 @@ async function showCitation(
 ): Promise<void> {
   if (!file) return;
   const target = app.vault.getAbstractFileByPath(file);
-  if (!(target instanceof TFile) || !memoFileInfo(target.path)) return;
+  if (!(target instanceof TFile)) return;
   const token = ++openToken;
-  let memo: Memo | null = null;
+  let preview: { title: string; content: string; tags: string[] } | null = null;
   try {
-    memo = parseMemoFile(target.path, await app.vault.cachedRead(target));
+    if (memoFileInfo(target.path)) {
+      const memo = parseMemoFile(target.path, await app.vault.cachedRead(target));
+      if (memo) preview = { title: `${memo.date} ${memo.time}`, content: memo.content, tags: memo.tags };
+    } else if (target.path.includes("/_insights/")) {
+      const insight = await readInsightRecord(app, target);
+      preview = { title: insight.title, content: stripLeadingTitle(insight.markdown), tags: [] };
+    }
   } catch {
     return;
   }
-  if (token !== openToken || !memo || !anchor.isConnected) return;
+  if (token !== openToken || !preview || !anchor.isConnected) return;
   const doc = anchor.ownerDocument;
   if (anchor !== doc.activeElement && !anchor.matches(":hover")) return;
-  openCitationCard(anchor, memo);
+  openCitationCard(anchor, preview);
 }
 
-function openCitationCard(anchor: HTMLElement, memo: Memo): void {
+function openCitationCard(anchor: HTMLElement, memo: { title: string; content: string; tags: string[] }): void {
   closeCitationCard();
   const doc = anchor.ownerDocument;
   const win = doc.defaultView ?? window;
@@ -134,7 +179,7 @@ function openCitationCard(anchor: HTMLElement, memo: Memo): void {
   card.setAttribute("role", "tooltip");
   card.createDiv({
     cls: "memoria-insight-cite-time",
-    text: `${memo.date} ${memo.time}`,
+    text: memo.title,
   });
   card.createDiv({
     cls: "memoria-insight-cite-text",

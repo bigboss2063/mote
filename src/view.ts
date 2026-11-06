@@ -14,7 +14,7 @@ import {
 } from "obsidian";
 import { Memo, MemoriaSettings, MemoTarget, RESERVED_TAGS, VIEW_TYPE_MEMORIA, VIEW_TYPE_MEMORIA_STATS, VIEW_TYPE_MEMORIA_YEAR } from "./types";
 import { MemoStore } from "./store";
-import { extractTags, memoLinkName, stripMemoTags } from "./parser";
+import { extractTags, stripMemoTags } from "./parser";
 import { createMainLeaf } from "./workspace";
 import { TagSuggest } from "./tag-suggest";
 import { extractImages, renderImageGrid, openLightbox } from "./image-grid";
@@ -33,6 +33,8 @@ import {
   WrapHandler,
 } from "./textarea-utils";
 import { InsightModal } from "./ai/insight-modal";
+import { InsightHistoryModal } from "./ai/history-modal";
+import { decorateSourceLinks, dismissCitationPreview } from "./ai/citation-ui";
 import type { InsightScopeFilter, ScopeType } from "./ai/scope";
 
 interface Filter {
@@ -235,6 +237,7 @@ export class MemoriaView extends ItemView {
   }
 
   async onClose(): Promise<void> {
+    dismissCitationPreview();
     this.layoutObserver?.disconnect();
     this.layoutObserver = null;
     this.sidebarToggleEl = null;
@@ -3294,6 +3297,7 @@ export class MemoriaView extends ItemView {
       const cached = this.mdCache.get(cacheKey);
       if (cached !== undefined) {
         body.appendChild(cached.cloneNode(true));
+        this.decorateMemoSources(body, memo);
         // LRU：命中后重新插入 map 末尾
         this.mdCache.delete(cacheKey);
         this.mdCache.set(cacheKey, cached);
@@ -3317,6 +3321,7 @@ export class MemoriaView extends ItemView {
             const first = this.mdCache.keys().next();
             if (!first.done) this.mdCache.delete(first.value);
           }
+          if (body.isConnected) this.decorateMemoSources(body, memo);
         }).catch((err) => {
           console.error("[Mote] Failed to render markdown:", err);
         });
@@ -3925,6 +3930,7 @@ export class MemoriaView extends ItemView {
         ? t("insight.scope.single")
         : this.describeInsightScope(),
       openMemo: (target) => this.revealMemo(target),
+      quoteSource: (file) => this.quoteSource(file),
     }).open();
   }
 
@@ -4003,28 +4009,32 @@ export class MemoriaView extends ItemView {
     return parts.join(separator);
   }
 
-  /**
-   * 引用某条笔记：把它以 > 引用块的形式填入顶部输入框，方便续写
-   * 格式：
-   *   > [!quote] 2026-04-20 12:12
-   *   > 被引用的内容
-   *
-   *   （光标停在这里，等用户接着写）
-   */
+  private decorateMemoSources(body: HTMLElement, memo: Memo): void {
+    decorateSourceLinks(body, this.app, memo.file, this.settings.folder, (file) => {
+      if (file.includes("/_insights/")) {
+        new InsightHistoryModal(this.app, {
+          settings: this.settings,
+          initialFile: file,
+          openMemo: (path) => this.revealMemo({ file: path }),
+          quoteSource: (path) => this.quoteSource(path),
+        }).open();
+      } else {
+        this.revealMemo({ file });
+      }
+    });
+  }
+
+  /** Insert a compact source link; its preview reads the current source content. */
   private quoteMemo(memo: Memo): void {
+    this.quoteSource(memo.file);
+  }
+
+  private quoteSource(file: string): void {
+    void this.app.workspace.revealLeaf(this.leaf);
     // 先退出编辑模式（如果有）
     if (this.editingMemo) this.exitEditMode();
 
-    // 去掉保留标签（#置顶 #收藏），避免引用时带上
-    const cleaned = stripMemoTags(memo.content, RESERVED_TAGS).text.trim();
-
-    // 每一行都加 > 前缀
-    const quoted = cleaned
-      .split("\n")
-      .map((l) => (l.trim() === "" ? ">" : `> ${l}`))
-      .join("\n");
-
-    const block = `> [!quote] [[${memoLinkName(memo.file)}]]\n${quoted}\n\n`;
+    const block = `[[${file.replace(/\.md$/, "")}|↗]]\n\n`;
 
     // 如果输入框已有内容，追加；否则直接填入
     // v2.1.0-iter8: 用 setTextareaValue 保留 undo（用户能 Ctrl+Z 撤销引用插入）

@@ -1,5 +1,5 @@
 import { App, Component, MarkdownRenderer, setIcon } from "obsidian";
-import { decorateCitations, type CitationRef } from "./citation-ui";
+import { decorateCitations, decorateSourceLinks, type CitationRef } from "./citation-ui";
 
 /** 一条洞察的"文档视图"：结果页和历史详情共用同一套结构与样式，
  *  差别只在动作按钮和是否显示返回按钮。 */
@@ -131,6 +131,8 @@ export interface InsightDocBodyOptions {
   citations?: CitationRef[];
   /** 点引用时回到 Mote 界面；缺省打开 memo 的 md 文件。 */
   onOpenMemo?: (file: string) => void;
+  sourceFolder?: string;
+  onOpenInsight?: (file: string) => void;
 }
 
 /** 渲染正文；渲染失败时退化为纯文本。 */
@@ -153,6 +155,12 @@ export async function renderDocBody(
     body.setText(markdown);
   }
   if (body.isConnected) {
+    if (options.sourceFolder && options.onOpenMemo) {
+      decorateSourceLinks(body, options.app, options.sourcePath, options.sourceFolder, (file) => {
+        if (file.includes("/_insights/")) options.onOpenInsight?.(file);
+        else options.onOpenMemo?.(file);
+      });
+    }
     decorateCitations(
       body,
       options.app,

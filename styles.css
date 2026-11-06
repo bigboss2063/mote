@@ -5853,7 +5853,7 @@ body.sc-style-context-background-image
   background: var(--memoria-warning-subtle);
   color: var(--memoria-text-1);
 }
-.memoria-insight-result button.memoria-insight-cite {
+button.memoria-insight-cite {
   /* 引用角标：12px 右上箭头，随文内联，hover 出浮窗，点击跳原文 */
   display: inline-flex;
   align-items: center;
@@ -5878,8 +5878,8 @@ body.sc-style-context-background-image
   height: 12px;
   stroke-width: 2.2;
 }
-.memoria-insight-result button.memoria-insight-cite:hover,
-.memoria-insight-result button.memoria-insight-cite:focus-visible {
+button.memoria-insight-cite:hover,
+button.memoria-insight-cite:focus-visible {
   color: var(--memoria-accent-solid);
 }
 .memoria-insight-cite:focus-visible {

@@ -54,6 +54,7 @@ export interface InsightModalOptions {
   scopeFilter?: InsightScopeFilter;
   scopeDescription: string;
   openMemo: (target: MemoTarget) => void;
+  quoteSource?: (file: string) => void;
 }
 
 interface SettingsApi {
@@ -1382,7 +1383,12 @@ export class InsightModal extends Modal {
         id: source.id,
         file: source.memo.file,
       })),
-      onOpenMemo: (file) => this.options.openMemo({ file }),
+      sourceFolder: this.settings.folder,
+      onOpenMemo: (file) => {
+        this.close();
+        this.options.openMemo({ file });
+      },
+      onOpenInsight: (file) => this.openHistory(file),
     });
     if (!this.resultWrapEl.isConnected) return;
 
@@ -1448,10 +1454,19 @@ export class InsightModal extends Modal {
     }
   }
 
-  private openHistory(): void {
+  private openHistory(file?: string): void {
+    if (file) this.close();
     new InsightHistoryModal(this.app, {
       settings: this.settings,
-      openMemo: (file) => this.options.openMemo({ file }),
+      initialFile: file,
+      quoteSource: this.options.quoteSource ? (path) => {
+        this.close();
+        this.options.quoteSource?.(path);
+      } : undefined,
+      openMemo: (file) => {
+        this.close();
+        this.options.openMemo({ file });
+      },
     }).open();
   }
 

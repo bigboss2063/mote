@@ -88,3 +88,24 @@ test("card rendering keeps URL fragments out of its tag pills", () => {
   assert.equal(strip(link + " #rd").text, link);
   assert.deepEqual([...strip(link + " #rd").tags], ["rd"]);
 });
+
+test("quoting memo or insight inserts a compact full-path link and preserves the draft", () => {
+  const module = {exports: {}};
+  vm.runInNewContext(bundle.outputFiles[0].text, {
+    module, exports: module.exports, Event,
+    require: () => obsidianStub({ItemView: class {}}),
+  });
+  for (const file of ["Mote/2026/2026-11-06 10.00.md", "Mote/_insights/Pattern.md"]) {
+    const input = {
+      value: "Draft text  ", focus() {}, setSelectionRange() {}, dispatchEvent() {},
+    };
+    let revealed = false;
+    module.exports.MemoriaView.prototype.quoteSource.call({
+      inputEl: input,
+      app: {workspace: {revealLeaf() { revealed = true; }}},
+      autoResizeInput() {}, syncInputCardContentState() {},
+    }, file);
+    assert.equal(input.value, `Draft text\n\n[[${file.slice(0, -3)}|↗]]\n\n`);
+    assert.equal(revealed, true);
+  }
+});
