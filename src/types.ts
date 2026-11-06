@@ -102,6 +102,12 @@ export interface MemoriaSettings {
   aiApiKey: string;
   /** 模型名，例如 gpt-4o-mini / deepseek-chat */
   aiModel: string;
+  /** 可选的 embedding 服务：单独一套地址/密钥，因为对话服务（如 DeepSeek）
+   *  未必提供 embedding。留空则不建立语义索引，相关笔记只用关键词 + 标签。 */
+  aiEmbeddingBaseUrl: string;
+  aiEmbeddingApiKey: string;
+  /** 可选的 embedding 模型，例如 text-embedding-3-small / nomic-embed-text。 */
+  aiEmbeddingModel: string;
   /** 用户已确认：生成时会选中笔记正文发送到上面配置的服务。 */
   aiConsent: boolean;
 }
@@ -145,6 +151,9 @@ export const DEFAULT_SETTINGS: MemoriaSettings = {
   aiBaseUrl: "",
   aiApiKey: "",
   aiModel: "",
+  aiEmbeddingBaseUrl: "",
+  aiEmbeddingApiKey: "",
+  aiEmbeddingModel: "",
   aiConsent: false,
 };
 

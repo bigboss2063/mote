@@ -99,11 +99,11 @@ function weightedJaccard(a: Set<string>, b: Set<string>, idf: Map<string, number
   return union > 0 ? intersection / union : 0;
 }
 
-function tagsOf(memo: Memo): string[] {
+export function tagsOf(memo: Memo): string[] {
   return memo.tags.filter((tag) => !RESERVED_TAGS.has(tag)).map((tag) => tag.toLowerCase());
 }
 
-function expandedTags(tags: string[]): Set<string> {
+export function expandedTags(tags: string[]): Set<string> {
   const result = new Set<string>();
   for (const tag of tags) {
     const parts = tag.split("/");

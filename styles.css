@@ -1889,6 +1889,72 @@
   text-overflow: ellipsis;
 }
 
+/* ================== 相关笔记弹窗 ================== */
+.memoria-related-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+}
+.memoria-related-item {
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--memoria-radius-control);
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+.memoria-related-item:hover {
+  background: var(--background-modifier-hover);
+}
+.memoria-related-meta {
+  font-size: var(--memoria-font-xs);
+  color: var(--text-muted);
+}
+.memoria-related-text {
+  margin-top: 4px;
+  font-size: var(--memoria-font-body);
+  line-height: 1.55;
+  color: var(--text-normal);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+.memoria-related-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.memoria-related-chip {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: var(--memoria-font-xs);
+  color: var(--text-muted);
+  background: var(--background-modifier-hover);
+}
+.memoria-related-chip.is-tag,
+.memoria-related-chip.is-link,
+.memoria-related-chip.is-semantic {
+  color: var(--text-accent);
+}
+.memoria-related-empty {
+  padding: 18px 4px;
+  font-size: var(--memoria-font-body);
+  color: var(--text-muted);
+  text-align: center;
+}
+.memoria-related-foot {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+  font-size: var(--memoria-font-xs);
+  color: var(--text-faint);
+}
+
 /* ========== Callout 与卡片协调 ========== */
 .memoria-card-body .callout {
   margin: 0.5em 0;

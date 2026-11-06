@@ -11,6 +11,7 @@ import {
   TFile,
   Platform,
   debounce,
+  normalizePath,
 } from "obsidian";
 import { Memo, MemoriaSettings, MemoTarget, RESERVED_TAGS, VIEW_TYPE_MEMORIA, VIEW_TYPE_MEMORIA_STATS, VIEW_TYPE_MEMORIA_YEAR } from "./types";
 import { MemoStore } from "./store";
@@ -38,6 +39,9 @@ import { InsightHistoryModal } from "./ai/history-modal";
 import { loadInsightRecords, stripLeadingTitle } from "./ai/insight-file";
 import { decorateSourceLinks, dismissCitationPreview } from "./ai/citation-ui";
 import type { InsightScopeFilter, ScopeType } from "./ai/scope";
+import { buildLexicalIndex, findRelated, type LexicalIndex } from "./ai/related";
+import { SemanticIndex, embeddingConfig } from "./ai/embedding";
+import { RelatedNotesModal } from "./related-modal";
 
 interface Filter {
   tag: string | null;
@@ -103,6 +107,10 @@ export class MemoriaView extends ItemView {
   private tagsExpanded = false;
   private tagSuggest: TagSuggest | null = null;
   private quoteSuggest: QuoteSuggest | null = null;
+  /** 相关笔记：全文索引按 store 变更版本缓存，避免每次打开都重新分词全库。 */
+  private storeVersion = 0;
+  private relatedIndexCache: { version: number; index: LexicalIndex } | null = null;
+  private semanticIndex: SemanticIndex | null = null;
   /** 侧栏顶部视图：热力图 / 月历 / 宠物（v2.1.0 新增 buddy）
    *  v2.0.20: 初始值从 settings.defaultOverviewMode 读（老用户默认 heatmap 不变）
    *  在 constructor 里设置实际初值，这里只给类型 */
@@ -167,7 +175,10 @@ export class MemoriaView extends ItemView {
     private store: MemoStore,
     private settings: MemoriaSettings,
     /** v2.0.0: 持有 plugin 引用，用于在设置变化时 saveSettings */
-    private plugin: { saveSettings(): Promise<void> }
+    private plugin: {
+      saveSettings(): Promise<void>;
+      manifest?: { dir?: string };
+    }
   ) {
     super(leaf);
     // v1.1.14: pageLimit 初值从设置读取（之前硬编码 50，导致设置页的 pageSize 滑块完全无效）
@@ -199,7 +210,11 @@ export class MemoriaView extends ItemView {
     this.syncSidebarLayout();
     this.layoutObserver = new ResizeObserver(() => this.syncSidebarLayout());
     this.layoutObserver.observe(this.contentEl);
-    this.unsubscribe = this.store.onChange(() => this.renderAll());
+    this.unsubscribe = this.store.onChange(() => {
+      // 相关笔记的索引/引用图按这个版本号失效
+      this.storeVersion++;
+      this.renderAll();
+    });
 
     // v2.0.14: Obsidian 内置命令「在新标签页中打开光标处链接」默认占用 Ctrl+Enter。
     //   v2.0.17: 发送快捷键改为 sendHotkey 可配置，两种模式互斥：
@@ -3762,6 +3777,12 @@ export class MemoriaView extends ItemView {
         .setIcon("pencil")
         .onClick(() => this.enterEditMode(memo))
     );
+    menu.addItem((item) =>
+      item
+        .setTitle(t("card.related"))
+        .setIcon("network")
+        .onClick(() => this.openRelated(memo))
+    );
     // v1.2.1: 菜单里的"引用"已删除 —— 卡片右上角已有常驻"引用"按钮，避免重复
     menu.addItem((item) =>
       item
@@ -3823,6 +3844,67 @@ export class MemoriaView extends ItemView {
         })
     );
     menu.showAtMouseEvent(evt);
+  }
+
+  // ================= 相关笔记 =================
+
+  private getRelatedIndex(): LexicalIndex {
+    if (this.relatedIndexCache?.version !== this.storeVersion) {
+      this.relatedIndexCache = {
+        version: this.storeVersion,
+        index: buildLexicalIndex(this.store.getAll()),
+      };
+    }
+    return this.relatedIndexCache.index;
+  }
+
+  /** 用 Obsidian 已解析的链接表，避免自己解析 [[...]]（含别名/相对路径）。 */
+  private getRelatedLinks(): Map<string, Set<string>> {
+    const files = new Set(this.store.getAll().map((memo) => memo.file));
+    const links = new Map<string, Set<string>>();
+    for (const [source, targets] of Object.entries(this.app.metadataCache.resolvedLinks)) {
+      if (!files.has(source)) continue;
+      const set = new Set(Object.keys(targets).filter((target) => files.has(target)));
+      if (set.size > 0) links.set(source, set);
+    }
+    return links;
+  }
+
+  private getSemanticIndex(): SemanticIndex {
+    if (!this.semanticIndex) {
+      const dir = this.plugin.manifest?.dir ?? `${this.app.vault.configDir}/plugins/mote`;
+      const cacheFile = normalizePath(`${dir}/embeddings.json`);
+      this.semanticIndex = new SemanticIndex({
+        config: () => embeddingConfig(this.settings),
+        load: async () => {
+          try {
+            return await this.app.vault.adapter.read(cacheFile);
+          } catch {
+            return null;
+          }
+        },
+        save: (data) => this.app.vault.adapter.write(cacheFile, data),
+      });
+    }
+    return this.semanticIndex;
+  }
+
+  private openRelated(memo: Memo): void {
+    const semantic = this.getSemanticIndex();
+    new RelatedNotesModal(this.app, {
+      semantic,
+      items: () =>
+        findRelated(memo, this.getRelatedIndex(), {
+          vectors: semantic.vectors(),
+          links: this.getRelatedLinks(),
+          limit: 6,
+        }),
+      openMemo: (target) => this.revealMemo({ file: target.file }),
+    }).open();
+    // sync() 内部会 ensureLoaded()，这里不必先加载。
+    void semantic.sync(this.store.getAll()).catch((err: unknown) => {
+      console.error("[Mote] Semantic index sync failed:", err);
+    });
   }
 
   /**

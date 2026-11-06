@@ -300,6 +300,45 @@ export class MemoriaSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName(t("settings.ai.embeddingBaseUrl.name"))
+      .setDesc(t("settings.ai.embeddingBaseUrl.desc"))
+      .addText((tx) =>
+        tx
+          .setPlaceholder("https://api.openai.com/v1")
+          .setValue(this.plugin.settings.aiEmbeddingBaseUrl)
+          .onChange(async (v) => {
+            this.plugin.settings.aiEmbeddingBaseUrl = v.trim();
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName(t("settings.ai.embeddingApiKey.name"))
+      .setDesc(t("settings.ai.embeddingApiKey.desc"))
+      .addText((tx) => {
+        tx.inputEl.type = "password";
+        tx.setPlaceholder("sk-...")
+          .setValue(this.plugin.settings.aiEmbeddingApiKey)
+          .onChange(async (v) => {
+            this.plugin.settings.aiEmbeddingApiKey = v.trim();
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName(t("settings.ai.embedding.name"))
+      .setDesc(t("settings.ai.embedding.desc"))
+      .addText((tx) =>
+        tx
+          .setPlaceholder("text-embedding-3-small / nomic-embed-text")
+          .setValue(this.plugin.settings.aiEmbeddingModel)
+          .onChange(async (v) => {
+            this.plugin.settings.aiEmbeddingModel = v.trim();
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
       .setName(t("settings.ai.consent.name"))
       .setDesc(t("settings.ai.consent.desc"))
       .addToggle((tg) =>
