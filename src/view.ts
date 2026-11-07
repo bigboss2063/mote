@@ -3646,8 +3646,9 @@ export class MemoriaView extends ItemView {
    *           这样不论有没有图片/标签，按钮都在"卡片最后一行"的右边。
    */
   private applyCollapseIfNeeded(body: HTMLElement, card: HTMLElement): void {
+    const compact = this.settings.density === "compact";
     const lineLimit = this.settings.collapseLineLimit || 0;
-    if (lineLimit <= 0) return;
+    if (!compact && lineLimit <= 0) return;
 
     // 等两帧让 markdown / 代码块 / 表格 都 layout 完
     window.requestAnimationFrame(() => {
@@ -3660,7 +3661,10 @@ export class MemoriaView extends ItemView {
         if (!isFinite(lineH) || lineH <= 0) lineH = 24;
 
         const full = body.scrollHeight;
-        const thresholdPx = lineH * lineLimit;
+        // Compact previews use 6em, but share the same expand/collapse state.
+        const thresholdPx = compact
+          ? (parseFloat(style.fontSize) || 14) * 6
+          : lineH * lineLimit;
         if (full <= thresholdPx + 12) return;
 
         // 触发折叠

@@ -62,6 +62,78 @@ test("mobile leaves long-press and double-tap selection to the system", () => {
   }
 });
 
+for (const [density, limit, height, threshold] of [
+  ["compact", 8, 180, 96], // Clipped in compact mode, below the cozy threshold.
+  ["compact", 0, 180, 96], // Compact previews still need a way to expand.
+  ["compact", 4, 360, 96],
+  ["compact", 8, 72, null],
+  ["cozy", 8, 180, null],
+  ["cozy", 8, 360, 192],
+  ["cozy", 0, 360, null],
+]) {
+  test(`${density} memo folding: limit=${limit}, height=${height}`, () => {
+    const module = {exports: {}};
+    const classes = new Set(), properties = new Map(), spans = [];
+    let click, button, scrolled = false, icon;
+    vm.runInNewContext(bundle.outputFiles[0].text, {
+      module, exports: module.exports,
+      require: () => obsidianStub({ItemView: class {}, setIcon: (_, value) => {icon = value;}}),
+      window: {
+        requestAnimationFrame: callback => callback(),
+        getComputedStyle: () => ({lineHeight: "24px", fontSize: "16px"}),
+      },
+      createEl: (_, options) => {
+        button = {
+          ...options,
+          createSpan(options) {
+            const span = {...options, setText(text) {this.text = text;}};
+            spans.push(span);
+            return span;
+          },
+          addEventListener(event, callback) {assert.equal(event, "click"); click = callback;},
+        };
+        return button;
+      },
+    });
+    const body = {
+      scrollHeight: height,
+      addClass: cls => classes.add(cls),
+      removeClass: cls => classes.delete(cls),
+      style: {setProperty: (key, value) => properties.set(key, value)},
+    };
+    const card = {
+      querySelector: () => null,
+      appendChild: child => assert.equal(child, button),
+      scrollIntoView() {scrolled = true;},
+    };
+    module.exports.MemoriaView.prototype.applyCollapseIfNeeded.call(
+      {settings: {density, collapseLineLimit: limit}}, body, card
+    );
+    if (threshold === null) {
+      assert.equal(button, undefined, "Unclipped text needs no expand button");
+      assert.equal(classes.has("is-collapsed"), false);
+      return;
+    }
+    assert.equal(properties.get("--memoria-collapse-max"), `${threshold}px`);
+    assert.equal(classes.has("is-collapsed"), true);
+    const expandLabel = spans[0].text;
+    assert.equal(icon, "chevron-down");
+    let stopped = 0;
+    const event = {stopPropagation() {stopped++;}};
+    click(event);
+    assert.equal(classes.has("is-collapsed"), false);
+    assert.notEqual(spans[0].text, expandLabel);
+    assert.equal(icon, "chevron-up");
+    assert.equal(scrolled, false);
+    click(event);
+    assert.equal(classes.has("is-collapsed"), true);
+    assert.equal(spans[0].text, expandLabel);
+    assert.equal(icon, "chevron-down");
+    assert.equal(scrolled, true);
+    assert.equal(stopped, 2);
+  });
+}
+
 test("active tag is appended when its only occurrence is a URL fragment", () => {
   const module = {exports: {}};
   vm.runInNewContext(bundle.outputFiles[0].text, {

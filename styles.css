@@ -4143,21 +4143,9 @@
   border-radius: var(--memoria-radius-cell);
 }
 
-/* 紧凑视图模式：限制每张卡片正文高度 + 图片缩小 */
-.memoria-list.is-compact .memoria-card-body {
-  max-height: 6em;
-  overflow: hidden;
-  position: relative;
-}
-.memoria-list.is-compact .memoria-card-body::after {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
+/* 紧凑视图模式：正文高度由共用的 .is-collapsed 状态控制，展开时解除限制。 */
+.memoria-list.is-compact .memoria-card-body.is-collapsed::after {
   height: 2em;
-  pointer-events: none;
-  content: "";
-  background: linear-gradient(to bottom, transparent, var(--background-primary));
 }
 .memoria-list.is-compact .memoria-card {
   padding: 10px 14px;
