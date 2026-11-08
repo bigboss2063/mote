@@ -14,12 +14,16 @@ import {
   VIEW_TYPE_MEMORIA,
   VIEW_TYPE_MEMORIA_STATS,
   VIEW_TYPE_MEMORIA_YEAR,
+  VIEW_TYPE_MEMORIA_INSIGHT,
 } from "./types";
 import { MemoStore } from "./store";
 import { MemoriaView } from "./view";
 import { MemoriaSettingTab } from "./settings";
 import { StatsView } from "./stats";
 import { YearPanoramaView } from "./year-panorama";
+import { InsightView } from "./ai/insight-view";
+import { openInsightPage } from "./ai/insight-open";
+import { DEFAULT_SCOPE_FILTER, describeScopeFilter } from "./ai/scope";
 import { initLocale, t } from "./i18n";
 import { createMainLeaf, openMemoriaView } from "./workspace";
 
@@ -50,6 +54,10 @@ export default class MemoriaPlugin extends Plugin {
       VIEW_TYPE_MEMORIA_YEAR,
       (leaf: WorkspaceLeaf) => new YearPanoramaView(leaf, this.store, this.settings)
     );
+    this.registerView(
+      VIEW_TYPE_MEMORIA_INSIGHT,
+      (leaf: WorkspaceLeaf) => new InsightView(leaf, this.store, this.settings)
+    );
 
     // Ribbon 按钮
     this.addRibbonIcon("feather", t("ribbon.openMote"), () => {
@@ -78,6 +86,14 @@ export default class MemoriaPlugin extends Plugin {
       name: t("command.openYear"),
       callback: () => {
         void this.activateYearView();
+      },
+    });
+
+    this.addCommand({
+      id: "open-memoria-insight",
+      name: t("command.openInsight"),
+      callback: () => {
+        void this.activateInsightView();
       },
     });
 
@@ -221,6 +237,25 @@ export default class MemoriaPlugin extends Plugin {
       active: true,
     });
     await this.app.workspace.revealLeaf(leaf);
+  }
+
+  async activateInsightView(): Promise<void> {
+    if (!this.settings.aiEnabled) {
+      new Notice(t("insight.setup.disabled"));
+      return;
+    }
+    const existing = this.app.workspace.getLeavesOfType(
+      VIEW_TYPE_MEMORIA_INSIGHT
+    );
+    if (existing.length) {
+      await this.app.workspace.revealLeaf(existing[0]);
+      return;
+    }
+    await openInsightPage(this.app, {
+      scopeMemos: this.store.getAll(),
+      scopeFilter: { ...DEFAULT_SCOPE_FILTER },
+      scopeDescription: describeScopeFilter(DEFAULT_SCOPE_FILTER),
+    });
   }
 
   private async quickCapture(): Promise<void> {

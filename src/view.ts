@@ -34,8 +34,7 @@ import {
   setTextareaValue,
   WrapHandler,
 } from "./textarea-utils";
-import { InsightModal } from "./ai/insight-modal";
-import { InsightHistoryModal } from "./ai/history-modal";
+import { openInsightPage } from "./ai/insight-open";
 import { loadInsightRecords, stripLeadingTitle } from "./ai/insight-file";
 import { decorateSourceLinks, dismissCitationPreview } from "./ai/citation-ui";
 import type { InsightScopeFilter, ScopeType } from "./ai/scope";
@@ -4030,16 +4029,16 @@ export class MemoriaView extends ItemView {
       new Notice(t("insight.setup.disabled"));
       return;
     }
-    new InsightModal(this.app, this.store, this.settings, {
+    void openInsightPage(this.app, {
       seed,
       scopeMemos,
       scopeFilter: seed ? undefined : this.getInsightScopeFilter(),
       scopeDescription: seed
         ? t("insight.scope.single")
         : this.describeInsightScope(),
-      openMemo: (target) => this.revealMemo(target),
-      quoteSource: (file) => this.quoteSource(file),
-    }).open();
+    }).catch((err: unknown) => {
+      console.error("[Mote] Failed to open insight:", err);
+    });
   }
 
   /** Snapshot of the list filter, mapped to the scope editor's fields. The
@@ -4120,12 +4119,15 @@ export class MemoriaView extends ItemView {
   private decorateMemoSources(body: HTMLElement, memo: Memo): void {
     decorateSourceLinks(body, this.app, memo.file, this.settings.folder, (file) => {
       if (file.includes("/_insights/")) {
-        new InsightHistoryModal(this.app, {
-          settings: this.settings,
-          initialFile: file,
-          openMemo: (path) => this.revealMemo({ file: path }),
-          quoteSource: (path) => this.quoteSource(path),
-        }).open();
+        void openInsightPage(this.app, {
+          scopeMemos: this.getInsightScopeMemos(),
+          scopeFilter: this.getInsightScopeFilter(),
+          scopeDescription: this.describeInsightScope(),
+          historyFile: file,
+          keepCurrent: true,
+        }).catch((err: unknown) => {
+          console.error("[Mote] Failed to open insight:", err);
+        });
       } else {
         this.revealMemo({ file });
       }
@@ -4165,7 +4167,7 @@ export class MemoriaView extends ItemView {
     return [...memos, ...insights].sort((a, b) => b.time - a.time);
   }
 
-  private quoteSource(file: string): void {
+  public quoteSource(file: string): void {
     void this.app.workspace.revealLeaf(this.leaf);
     // 先退出编辑模式（如果有）
     if (this.editingMemo) this.exitEditMode();

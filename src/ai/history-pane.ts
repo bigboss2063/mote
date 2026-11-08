@@ -1,4 +1,4 @@
-import { App, Component, Modal, Notice, TFile, setIcon } from "obsidian";
+import { App, Component, Notice, TFile, setIcon } from "obsidian";
 import type { MemoriaSettings } from "../types";
 import type { InsightRecord } from "./types";
 import { getCurrentLocale, t } from "../i18n";
@@ -27,7 +27,7 @@ function resolveCitations(app: App, names: string[]): CitationRef[] {
   });
 }
 
-export interface InsightHistoryModalOptions {
+export interface InsightHistoryPaneOptions {
   settings: MemoriaSettings;
   /** 点引用时回到 Mote 界面。 */
   openMemo?: (file: string) => void;
@@ -47,24 +47,31 @@ function formatCreatedAt(record: InsightRecord): string {
   }
 }
 
-export class InsightHistoryModal extends Modal {
+export class InsightHistoryPane {
   private component = new Component();
   private records: InsightRecord[] = [];
   private selectedFile: string | null = null;
+  /** 窄屏一次只显示列表或正文。没有指定某篇时先给列表。 */
+  private showingList: boolean;
   private loading = true;
   private confirmDeleteFile: string | null = null;
   private confirmTimer: number | null = null;
+  private compactQuery: MediaQueryList | null = null;
+  private renderSeq = 0;
 
-  constructor(app: App, private options: InsightHistoryModalOptions) {
-    super(app);
+  constructor(
+    private app: App,
+    private host: HTMLElement,
+    private options: InsightHistoryPaneOptions
+  ) {
     this.selectedFile = options.initialFile ?? null;
+    this.showingList = !options.initialFile;
   }
 
-  onOpen(): void {
-    this.modalEl.addClass("memoria-insight-history-modal");
-    this.modalEl.addClass("mod-scrollable-content");
-    this.titleEl.setText(t("insight.history"));
-    this.contentEl.empty();
+  /** 把历史列表画进宿主容器。标题由洞察页自己的顶栏负责。 */
+  mount(): void {
+    this.bindCompactQuery();
+    this.host.empty();
     this.component.load();
     this.render();
     void this.load();
@@ -84,11 +91,26 @@ export class InsightHistoryModal extends Modal {
     this.render();
   }
 
-  onClose(): void {
+  unmount(): void {
+    this.renderSeq++;
+    this.compactQuery?.removeEventListener("change", this.onCompactChange);
+    this.compactQuery = null;
     this.stopConfirmTimer();
     dismissCitationPreview();
     this.component.unload();
-    this.contentEl.empty();
+    this.host.empty();
+  }
+
+  /** 窄屏阅读正文时，返回先回到列表。已经在列表上则交给页面退出历史。 */
+  backToList(): boolean {
+    if (!this.isCompact() || this.showingList || this.loading) return false;
+    if (this.records.length === 0) return false;
+    this.showingList = true;
+    this.render();
+    this.host
+      .querySelector(".memoria-insight-history-item.is-active")
+      ?.scrollIntoView({ block: "nearest" });
+    return true;
   }
 
   private stopConfirmTimer(): void {
@@ -108,7 +130,33 @@ export class InsightHistoryModal extends Modal {
     this.stopConfirmTimer();
     this.confirmDeleteFile = null;
     this.selectedFile = file;
+    const openArticle = this.isCompact();
+    this.showingList = false;
     this.render();
+    if (openArticle) this.scrollPageToTop();
+  }
+
+  private bindCompactQuery(): void {
+    const view = this.host.ownerDocument.defaultView;
+    if (!view) return;
+    this.compactQuery = view.matchMedia("(max-width: 680px)");
+    this.compactQuery.addEventListener("change", this.onCompactChange);
+  }
+
+  private readonly onCompactChange = (): void => {
+    this.render();
+  };
+
+  private isCompact(): boolean {
+    return (
+      this.compactQuery?.matches === true ||
+      this.host.ownerDocument.body.classList.contains("is-mobile")
+    );
+  }
+
+  private scrollPageToTop(): void {
+    const scroller = this.host.closest<HTMLElement>(".memoria-insight-body");
+    if (scroller) scroller.scrollTop = 0;
   }
 
   private requestDelete(file: string, button: HTMLButtonElement): void {
@@ -161,8 +209,8 @@ export class InsightHistoryModal extends Modal {
   }
 
   private render(): void {
-    this.contentEl.empty();
-    const shell = this.contentEl.createDiv({ cls: "memoria-insight-history" });
+    this.host.empty();
+    const shell = this.host.createDiv({ cls: "memoria-insight-history" });
 
     if (this.loading) {
       const loading = shell.createDiv({
@@ -192,7 +240,19 @@ export class InsightHistoryModal extends Modal {
       this.selectedFile = this.records[0].file;
     }
 
+    const compact = this.isCompact();
+    const showList = !compact || this.showingList;
+    const showDetail = !compact || !this.showingList;
+    if (compact) shell.addClass(this.showingList ? "is-picking" : "is-reading");
+
     const body = shell.createDiv({ cls: "memoria-insight-history-body" });
+    if (!showList) {
+      const detail = body.createDiv({ cls: "memoria-insight-history-detail" });
+      const record = this.records.find((item) => item.file === this.selectedFile);
+      if (record) void this.renderDetail(detail, record);
+      return;
+    }
+
     const list = body.createDiv({ cls: "memoria-insight-history-list" });
     for (const record of this.records) {
       const item = list.createEl("button", {
@@ -222,6 +282,7 @@ export class InsightHistoryModal extends Modal {
       item.addEventListener("click", () => this.select(record.file));
     }
 
+    if (!showDetail) return;
     const detail = body.createDiv({ cls: "memoria-insight-history-detail" });
     const record = this.records.find(
       (item) => item.file === this.selectedFile
@@ -233,6 +294,7 @@ export class InsightHistoryModal extends Modal {
     parent: HTMLElement,
     record: InsightRecord
   ): Promise<void> {
+    const seq = ++this.renderSeq;
     const createdAt = formatCreatedAt(record);
 
     renderDocHead(parent, {
@@ -265,11 +327,11 @@ export class InsightHistoryModal extends Modal {
       citations: resolveCitations(this.app, record.sources),
       sourceFolder: this.options.settings.folder,
       onOpenMemo: (file) => {
-        this.close();
         this.options.openMemo?.(file);
       },
       onOpenInsight: (file) => this.select(file),
     });
+    if (seq !== this.renderSeq || !parent.isConnected) return;
 
     // 正文收口：分割线 + 右下角纯图标操作（复制 / 删除），与结果页同风格
     renderDocFoot(parent, [
@@ -277,7 +339,6 @@ export class InsightHistoryModal extends Modal {
         label: t("toolbar.quote"),
         icon: "quote",
         onClick: () => {
-          this.close();
           this.options.quoteSource?.(record.file);
         },
       }] : []),

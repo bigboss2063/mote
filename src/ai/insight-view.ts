@@ -1,15 +1,18 @@
 import {
   App,
   Component,
-  Modal,
+  ItemView,
   Notice,
   Platform,
+  WorkspaceLeaf,
   debounce,
   setIcon,
 } from "obsidian";
-import { RESERVED_TAGS } from "../types";
-import type { Memo, MemoriaSettings, MemoTarget } from "../types";
+import { RESERVED_TAGS, VIEW_TYPE_MEMORIA_INSIGHT } from "../types";
+import type { Memo, MemoriaSettings } from "../types";
 import type { MemoStore } from "../store";
+import { MemoriaView } from "../view";
+import { openMemoriaView } from "../workspace";
 import { getCurrentLocale, t } from "../i18n";
 import { PERSPECTIVES, getPerspective } from "./prompt";
 import {
@@ -35,7 +38,11 @@ import {
   scopeStats,
   scopeTypeLabel,
 } from "./scope";
-import { InsightHistoryModal } from "./history-modal";
+import { InsightHistoryPane } from "./history-pane";
+import {
+  takeInsightSession,
+  type InsightSession,
+} from "./insight-open";
 import {
   leadingHeading,
   renderDocBody,
@@ -47,15 +54,6 @@ import {
 import { saveInsightRecord, stripLeadingTitle } from "./insight-file";
 import { dismissCitationPreview } from "./citation-ui";
 import { memoLinkName } from "../parser";
-
-export interface InsightModalOptions {
-  seed?: Memo;
-  scopeMemos: Memo[];
-  scopeFilter?: InsightScopeFilter;
-  scopeDescription: string;
-  openMemo: (target: MemoTarget) => void;
-  quoteSource?: (file: string) => void;
-}
 
 interface SettingsApi {
   open(): void;
@@ -241,11 +239,18 @@ function openInsightMenu(input: {
   window.addEventListener("resize", close);
 }
 
-export class InsightModal extends Modal {
+type InsightScreen = "home" | "result" | "setup";
+
+export class InsightView extends ItemView {
   private perspective: PerspectiveId = "insight";
-  private scopeFilter: InsightScopeFilter;
-  private scopeMemos: Memo[];
+  private scopeFilter: InsightScopeFilter = { ...DEFAULT_SCOPE_FILTER };
+  private scopeMemos: Memo[] = [];
+  private seed: Memo | undefined;
+  private seedScopeDescription = "";
   private scopeOpen = false;
+  /** 工作区恢复时笔记可能还没加载完，空范围先占位，数据到了再补上。 */
+  private usingDefaultScope = false;
+  private unsubscribe: (() => void) | null = null;
 
   private generating = false;
   private requestSeq = 0;
@@ -256,8 +261,13 @@ export class InsightModal extends Modal {
 
   private resultComponent = new Component();
 
+  private rootEl!: HTMLElement;
+  private titleEl!: HTMLElement;
+  private bodyEl!: HTMLElement;
   private homeEl!: HTMLElement;
-  private scopeStatsEl!: HTMLElement;
+  private setupEl: HTMLElement | null = null;
+  private scopeStatsEl: HTMLElement | null = null;
+  private titleNameEl: HTMLElement | null = null;
   private scopeToggleBtn: HTMLButtonElement | null = null;
   private scopePanelEl!: HTMLElement;
   private perspectiveRowEl!: HTMLElement;
@@ -275,7 +285,11 @@ export class InsightModal extends Modal {
   private streamBodyEl: HTMLElement | null = null;
   private progressLabelEl: HTMLElement | null = null;
   private resultWrapEl!: HTMLElement;
+  private historyHost: HTMLElement | null = null;
+  private historyPane: InsightHistoryPane | null = null;
   private historyBtn: HTMLButtonElement | null = null;
+  private screen: InsightScreen = "home";
+  private screenBeforeHistory: InsightScreen = "home";
 
   private result: InsightResult | null = null;
   private resultPerspective: PerspectiveId | null = null;
@@ -289,70 +303,154 @@ export class InsightModal extends Modal {
   private startedAt = 0;
 
   constructor(
-    app: App,
+    leaf: WorkspaceLeaf,
     private store: MemoStore,
-    private settings: MemoriaSettings,
-    private options: InsightModalOptions
+    private settings: MemoriaSettings
   ) {
-    super(app);
-    const filter = options.scopeFilter ?? DEFAULT_SCOPE_FILTER;
-    this.scopeFilter = { ...filter };
-    this.scopeMemos = [...options.scopeMemos];
+    super(leaf);
   }
 
-  onOpen(): void {
-    this.modalEl.addClass("memoria-insight-modal");
-    this.modalEl.addClass("mod-scrollable-content");
+  getViewType(): string {
+    return VIEW_TYPE_MEMORIA_INSIGHT;
+  }
 
+  getDisplayText(): string {
+    return t("insight.title");
+  }
+
+  getIcon(): string {
+    return "sparkles";
+  }
+
+  async onOpen(): Promise<void> {
     this.contentEl.empty();
+    this.rootEl = this.contentEl.createDiv({ cls: "memoria-insight-view" });
+    const header = this.rootEl.createDiv({ cls: "memoria-insight-header" });
+    this.titleEl = header.createDiv({ cls: "memoria-insight-title" });
+    this.bodyEl = this.rootEl.createDiv({ cls: "memoria-insight-body" });
     this.resultComponent.load();
-    this.modalEl.addEventListener("keydown", this.onKeydown);
-    this.renderScreen();
-  }
+    this.rootEl.addEventListener("keydown", this.onKeydown);
 
-  /** 按配置状态渲染整屏：未配置显示引导卡，配置完成进入洞察首页。
-   *  "打开设置"不再关闭本弹窗，设置期间补齐配置后由引导卡自动切入首页。 */
-  private renderScreen(): void {
-    this.contentEl.empty();
-    const problem = this.configProblem();
-    this.renderHeader(!problem);
-    this.setResultMode(false);
-    if (problem) {
-      this.renderSetup(problem);
-      return;
+    const session = takeInsightSession();
+    if (session) this.applySession(session);
+    else {
+      this.applySession(this.defaultSession());
+      this.usingDefaultScope = true;
     }
-
-    this.renderHome();
-    this.statusEl = this.contentEl.createDiv({
-      cls: "memoria-insight-status is-hidden",
-      attr: { role: "status", "aria-live": "polite" },
-    });
-    this.progressEl = this.contentEl.createDiv({
-      cls: "memoria-insight-thinking is-hidden",
-    });
-    this.resultWrapEl = this.contentEl.createDiv({
-      cls: "memoria-insight-result-wrap is-hidden",
-    });
-    this.updateScopeStats();
-    this.syncPerspectiveSelection();
-    this.updateGenerateState();
+    this.unsubscribe = this.store.onChange(() => this.adoptLoadedNotes());
   }
 
-  onClose(): void {
+  async onClose(): Promise<void> {
     this.requestSeq++;
     this.mainAbort?.abort();
     this.mainAbort = null;
-    this.modalEl.removeEventListener("keydown", this.onKeydown);
+    this.rootEl?.removeEventListener("keydown", this.onKeydown);
     this.stopTimer();
     this.stopSetupWatch();
     this.cancelLiveRender();
     closeInsightMenu();
     dismissCitationPreview();
+    this.historyPane?.unmount();
+    this.historyPane = null;
+    this.unsubscribe?.();
+    this.unsubscribe = null;
     this.resultComponent.unload();
     this.contentEl.empty();
   }
 
-  /** 标题区：徽标 + 标题 + 范围摘要，替代默认的纯文本标题。 */
+  /** 工具栏、单条笔记或命令再次打开时，复用同一个页面并换上新范围。 */
+  applySession(session: InsightSession): void {
+    this.usingDefaultScope = false;
+    this.requestSeq++;
+    this.mainAbort?.abort();
+    this.mainAbort = null;
+    this.generating = false;
+    this.userStopped = false;
+    this.stopTimer();
+    this.stopSetupWatch();
+    this.cancelLiveRender();
+    closeInsightMenu();
+    dismissCitationPreview();
+    this.historyPane?.unmount();
+    this.historyPane = null;
+    this.seed = session.seed;
+    this.seedScopeDescription = session.scopeDescription;
+    this.scopeFilter = { ...(session.scopeFilter ?? DEFAULT_SCOPE_FILTER) };
+    this.scopeMemos = [...session.scopeMemos];
+    this.perspective = "insight";
+    this.scopeOpen = false;
+    this.result = null;
+    this.resultPerspective = null;
+    this.resultMarkdown = "";
+    this.resultReasoning = "";
+    this.resultScopeDescription = "";
+    this.lastPlan = null;
+    this.renderScreen();
+    if (session.historyFile) this.showHistory(session.historyFile);
+  }
+
+  private defaultSession(): InsightSession {
+    return {
+      scopeMemos: this.store.getAll(),
+      scopeFilter: { ...DEFAULT_SCOPE_FILTER },
+      scopeDescription: describeScopeFilter(DEFAULT_SCOPE_FILTER),
+    };
+  }
+
+  /** 页面被工作区恢复时，笔记索引可能晚于视图打开。 */
+  private adoptLoadedNotes(): void {
+    if (!this.usingDefaultScope || this.scopeMemos.length > 0) return;
+    const memos = this.store.getAll();
+    if (memos.length === 0) return;
+    this.scopeMemos = memos;
+    this.scopeFilter = { ...DEFAULT_SCOPE_FILTER };
+    if (
+      this.screen === "home" &&
+      !this.rootEl.hasClass("is-history") &&
+      this.scopeStatsEl?.isConnected
+    ) {
+      this.updateScopeStats();
+      this.updateGenerateState();
+    }
+  }
+
+  /** 按配置状态渲染整屏：未配置显示引导卡，配置完成进入洞察首页。
+   *  打开设置不再离开本页，补齐配置后由引导卡自动切入首页。 */
+  private renderScreen(): void {
+    this.historyPane?.unmount();
+    this.historyPane = null;
+    this.bodyEl.removeClass("is-showing-history");
+    this.bodyEl.empty();
+    this.historyHost = null;
+    this.setupEl = null;
+    const problem = this.configProblem();
+    this.renderHeader(!problem);
+    this.setScreenMode("home");
+    this.screen = problem ? "setup" : "home";
+    if (problem) {
+      this.renderSetup(problem);
+    } else {
+      this.renderHome();
+      this.statusEl = this.bodyEl.createDiv({
+        cls: "memoria-insight-status is-hidden",
+        attr: { role: "status", "aria-live": "polite" },
+      });
+      this.progressEl = this.bodyEl.createDiv({
+        cls: "memoria-insight-thinking is-hidden",
+      });
+      this.resultWrapEl = this.bodyEl.createDiv({
+        cls: "memoria-insight-result-wrap is-hidden",
+      });
+      this.updateScopeStats();
+      this.syncPerspectiveSelection();
+      this.updateGenerateState();
+    }
+    this.historyHost = this.bodyEl.createDiv({
+      cls: "memoria-insight-history-host is-hidden",
+    });
+  }
+
+  /** 标题区：徽标 + 标题 + 范围摘要，和原来的弹窗头部同一套结构。 */
   private renderHeader(withStats: boolean): void {
     this.titleEl.empty();
     this.titleEl.addClass("memoria-insight-title");
@@ -362,7 +460,14 @@ export class InsightModal extends Modal {
       attr: { type: "button", "aria-label": t("insight.back") },
     });
     setIcon(this.backBtn, "arrow-left");
-    this.backBtn.addEventListener("click", () => this.showHome());
+    this.backBtn.addEventListener("click", () => {
+      if (this.rootEl.hasClass("is-history")) {
+        if (this.historyPane?.backToList()) return;
+        this.closeHistory();
+      } else {
+        this.showHome();
+      }
+    });
     setIcon(
       this.titleEl.createSpan({ cls: "memoria-insight-title-badge" }),
       "sparkles"
@@ -370,10 +475,12 @@ export class InsightModal extends Modal {
     const text = this.titleEl.createSpan({
       cls: "memoria-insight-title-text",
     });
-    text.createSpan({
+    this.titleNameEl = text.createSpan({
       cls: "memoria-insight-title-name",
       text: t("insight.title"),
     });
+    this.scopeStatsEl = null;
+    this.headActionsEl = null;
     if (withStats) {
       this.scopeStatsEl = text.createSpan({
         cls: "memoria-insight-scope-stats",
@@ -382,7 +489,7 @@ export class InsightModal extends Modal {
   }
 
   private renderHome(): void {
-    this.homeEl = this.contentEl.createDiv({ cls: "memoria-insight-home" });
+    this.homeEl = this.bodyEl.createDiv({ cls: "memoria-insight-home" });
 
     // 两个低频动作进头部右侧，正文直接从视角开始，不再单独占一行。
     const headActions = this.titleEl.createDiv({
@@ -405,7 +512,7 @@ export class InsightModal extends Modal {
       return button;
     };
 
-    if (!this.options.seed) {
+    if (!this.seed) {
       this.scopeToggleBtn = headIconBtn(
         "memoria-insight-scope-toggle",
         "sliders-horizontal",
@@ -423,7 +530,7 @@ export class InsightModal extends Modal {
       "memoria-insight-history-btn",
       "history",
       t("insight.history"),
-      () => this.openHistory()
+      () => this.showHistory()
     );
 
     headIconBtn(
@@ -720,14 +827,16 @@ export class InsightModal extends Modal {
 
   private applyScopeChange(): void {
     this.scopeMemos = filterScopeMemos(this.store.getAll(), this.scopeFilter);
+    this.usingDefaultScope = false;
     this.updateScopeStats();
     this.updateGenerateState();
     this.syncPerspectiveSelection();
   }
 
   private updateScopeStats(): void {
-    if (this.options.seed) {
-      const date = this.options.seed.date;
+    if (!this.scopeStatsEl) return;
+    if (this.seed) {
+      const date = this.seed.date;
       this.scopeStatsEl.setText(
         date
           ? t("insight.scope.singleWithDate", { date })
@@ -765,7 +874,7 @@ export class InsightModal extends Modal {
 
   private updateGenerateState(): void {
     if (!this.generateBtn) return;
-    const empty = !this.options.seed && this.scopeMemos.length === 0;
+    const empty = !this.seed && this.scopeMemos.length === 0;
     this.generateBtn.disabled = this.generating || empty;
     if (!this.generating) {
       this.generateLabelEl?.setText(t("insight.generate"));
@@ -796,19 +905,26 @@ export class InsightModal extends Modal {
     this.resultWrapEl.addClass("is-hidden");
     this.streamBodyEl = null;
     this.clearDoc();
-    this.setResultMode(false);
+    this.setScreenMode("home");
+    this.screen = "home";
     if (this.historyBtn) this.historyBtn.disabled = false;
     this.syncPerspectiveSelection();
     this.updateGenerateState();
-    this.contentEl.scrollTop = 0;
+    this.bodyEl.scrollTop = 0;
   }
 
-  /** 结果页把弹窗头部收成一条窄导航条：只留返回和关闭，
-   *  品牌标题与"调整范围 / 洞察历史"在这个页面不再出现。 */
-  private setResultMode(on: boolean): void {
-    this.modalEl.toggleClass("is-result", on);
-    this.backBtn?.toggleClass("is-hidden", !on);
-    this.headActionsEl?.toggleClass("is-hidden", on);
+  /** 结果页把页头收成一条窄导航：只留返回。
+   *  品牌标题与"调整范围 / 洞察历史"在这个页面不再出现。
+   *  离开本页由工作区自己的返回/关闭完成。 */
+  private setScreenMode(mode: "home" | "result" | "history"): void {
+    this.rootEl.toggleClass("is-result", mode === "result");
+    this.rootEl.toggleClass("is-history", mode === "history");
+    this.backBtn?.toggleClass("is-hidden", mode === "home");
+    this.headActionsEl?.toggleClass("is-hidden", mode !== "home");
+    this.scopeStatsEl?.toggleClass("is-hidden", mode !== "home");
+    this.titleNameEl?.setText(
+      mode === "history" ? t("insight.history") : t("insight.title")
+    );
   }
 
   /** 结果页和历史详情共用同一套"文档视图"：标题 + 元信息 + 动作 + 正文。
@@ -816,8 +932,9 @@ export class InsightModal extends Modal {
   private showResultScreen(): void {
     this.homeEl.addClass("is-hidden");
     this.statusEl.addClass("is-hidden");
-    this.setResultMode(true);
-    this.contentEl.scrollTop = 0;
+    this.setScreenMode("result");
+    this.screen = "result";
+    this.bodyEl.scrollTop = 0;
 
     this.resultWrapEl.empty();
     this.resultWrapEl.removeClass("is-hidden");
@@ -869,7 +986,8 @@ export class InsightModal extends Modal {
   /** 未配置态：居中的引导卡（徽标 + 标题 + 说明 + 配置清单 + CTA），
    *  沿用标题徽标、范围面板与主按钮的同一套视觉词汇。 */
   private renderSetup(problem: SetupProblem): void {
-    const box = this.contentEl.createDiv({ cls: "memoria-insight-setup" });
+    this.setupEl = this.bodyEl.createDiv({ cls: "memoria-insight-setup" });
+    const box = this.setupEl;
     const icon = box.createDiv({ cls: "memoria-insight-setup-icon" });
     setIcon(icon, "settings-2");
     box.createEl("p", {
@@ -1102,7 +1220,7 @@ export class InsightModal extends Modal {
       this.renderError(new InsightError("config"), false);
       return;
     }
-    if (!this.options.seed && this.scopeMemos.length === 0) {
+    if (!this.seed && this.scopeMemos.length === 0) {
       this.renderError(new InsightError("empty_scope"), false);
       return;
     }
@@ -1119,12 +1237,12 @@ export class InsightModal extends Modal {
     let plan: InsightPlan;
     try {
       plan = buildInsightPlan({
-        seed: this.options.seed,
+        seed: this.seed,
         scopeMemos: this.scopeMemos,
         allMemos: this.store.getAll(),
         perspective: this.perspective,
-        scopeDescription: this.options.seed
-          ? this.options.scopeDescription
+        scopeDescription: this.seed
+          ? this.seedScopeDescription
           : describeScopeFilter(this.scopeFilter),
         locale: getCurrentLocale(),
       });
@@ -1139,8 +1257,8 @@ export class InsightModal extends Modal {
     }
 
     this.lastPlan = plan;
-    this.resultScopeDescription = this.options.seed
-      ? this.options.scopeDescription
+    this.resultScopeDescription = this.seed
+      ? this.seedScopeDescription
       : describeScopeFilter(this.scopeFilter);
     this.showResultScreen();
     this.renderProgress();
@@ -1319,9 +1437,9 @@ export class InsightModal extends Modal {
     const content = this.live.content.trim();
     if (content && this.streamBodyEl) {
       const stickToBottom =
-        this.contentEl.scrollHeight -
-          this.contentEl.scrollTop -
-          this.contentEl.clientHeight <
+        this.bodyEl.scrollHeight -
+          this.bodyEl.scrollTop -
+          this.bodyEl.clientHeight <
         64;
       // 模型开头就是 `# 标题`：边流边把标题顶到头部，正文里不再重复一遍。
       const heading = leadingHeading(content);
@@ -1329,7 +1447,7 @@ export class InsightModal extends Modal {
       this.streamBodyEl.setText(streamedText(stripLeadingTitle(content)));
       // 流式光标：紧跟正文尾部的强调色游标，提示仍在生成
       this.streamBodyEl.createSpan({ cls: "memoria-insight-caret" });
-      if (stickToBottom) this.contentEl.scrollTop = this.contentEl.scrollHeight;
+      if (stickToBottom) this.bodyEl.scrollTop = this.bodyEl.scrollHeight;
     }
   }
 
@@ -1385,10 +1503,9 @@ export class InsightModal extends Modal {
       })),
       sourceFolder: this.settings.folder,
       onOpenMemo: (file) => {
-        this.close();
-        this.options.openMemo({ file });
+        void this.openSourceMemo(file);
       },
-      onOpenInsight: (file) => this.openHistory(file),
+      onOpenInsight: (file) => this.showHistory(file),
     });
     if (!this.resultWrapEl.isConnected) return;
 
@@ -1454,20 +1571,61 @@ export class InsightModal extends Modal {
     }
   }
 
-  private openHistory(file?: string): void {
-    if (file) this.close();
-    new InsightHistoryModal(this.app, {
+  /** 历史和结果叠在同一页里：底下的首页或结果还在，返回时原样露出来。 */
+  showHistory(file?: string): void {
+    this.stopSetupWatch();
+    if (!this.rootEl.hasClass("is-history")) {
+      this.screenBeforeHistory = this.screen;
+    }
+    this.bodyEl.addClass("is-showing-history");
+    this.setScreenMode("history");
+    const host = this.ensureHistoryHost();
+    host.removeClass("is-hidden");
+    this.historyPane?.unmount();
+    this.historyPane = new InsightHistoryPane(this.app, host, {
       settings: this.settings,
       initialFile: file,
-      quoteSource: this.options.quoteSource ? (path) => {
-        this.close();
-        this.options.quoteSource?.(path);
-      } : undefined,
-      openMemo: (file) => {
-        this.close();
-        this.options.openMemo({ file });
+      openMemo: (path) => {
+        void this.openSourceMemo(path);
       },
-    }).open();
+      quoteSource: (path) => {
+        void this.quoteSourceFile(path);
+      },
+    });
+    this.historyPane.mount();
+    this.bodyEl.scrollTop = 0;
+  }
+
+  private closeHistory(): void {
+    this.historyPane?.unmount();
+    this.historyPane = null;
+    this.historyHost?.empty();
+    this.historyHost?.addClass("is-hidden");
+    this.bodyEl.removeClass("is-showing-history");
+    const previous = this.screenBeforeHistory;
+    this.screen = previous;
+    this.setScreenMode(previous === "result" ? "result" : "home");
+    if (previous === "setup") this.startSetupWatch();
+    this.bodyEl.scrollTop = 0;
+  }
+
+  private ensureHistoryHost(): HTMLElement {
+    if (!this.historyHost?.isConnected) {
+      this.historyHost = this.bodyEl.createDiv({
+        cls: "memoria-insight-history-host is-hidden",
+      });
+    }
+    return this.historyHost;
+  }
+
+  private async openSourceMemo(file: string): Promise<void> {
+    const leaf = await openMemoriaView(this.app, this.settings);
+    if (leaf.view instanceof MemoriaView) leaf.view.revealMemo({ file });
+  }
+
+  private async quoteSourceFile(file: string): Promise<void> {
+    const leaf = await openMemoriaView(this.app, this.settings);
+    if (leaf.view instanceof MemoriaView) leaf.view.quoteSource(file);
   }
 
   private async copyResult(): Promise<void> {

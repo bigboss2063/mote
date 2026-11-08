@@ -36,7 +36,7 @@
 .memoria-year-view,
 .memoria-modal,
 .memoria-modal-backdrop,
-.memoria-insight-modal,
+.memoria-insight-view,
 .memoria-insight-history-modal,
 .memoria-lightbox,
 .memoria-tag-suggest,
@@ -122,7 +122,7 @@
 .theme-light .memoria-year-view,
 .theme-light .workspace-leaf-content[data-type^="memoria"] .view-content,
 .theme-light .memoria-modal,
-.theme-light .memoria-insight-modal,
+.theme-light .memoria-insight-view,
 .theme-light .memoria-insight-history-modal,
 .theme-light .memoria-modal-backdrop,
 .theme-light .memoria-tag-suggest,
@@ -221,7 +221,7 @@
 .theme-dark .memoria-year-view,
 .theme-dark .workspace-leaf-content[data-type^="memoria"] .view-content,
 .theme-dark .memoria-modal,
-.theme-dark .memoria-insight-modal,
+.theme-dark .memoria-insight-view,
 .theme-dark .memoria-insight-history-modal,
 .theme-dark .memoria-modal-backdrop,
 .theme-dark .memoria-tag-suggest,
@@ -5167,45 +5167,59 @@ body.sc-style-context-background-image
   background: transparent;
 }
 
-/* ================== AI 洞察 ================== */
+/* ================== AI 洞察（独立页面） ================== */
 /* 只用 Slate 面板 + Green 强调：范围与视角是"设置"，结果才是内容。
- * 所有描边 0.5px，圆角只用 control / container 两档。 */
-.memoria-insight-modal,
-.memoria-insight-history-modal {
-  --modal-background: var(--memoria-surface-1);
-  --modal-border-width: 0.5px;
-  --modal-border-color: var(--memoria-border);
-  --modal-radius: var(--memoria-radius-container);
+ * 页面铺满工作区，内容列宽沿用原来弹窗的 760 / 880 / 1040。 */
+.workspace-leaf-content[data-type="memoria-insight-view"] .view-content {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--memoria-surface-1);
+  box-sizing: border-box;
 }
-.memoria-insight-modal {
-  width: min(880px, 94vw);
-  max-width: min(880px, 94vw);
+.memoria-insight-view {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  width: min(760px, 100%);
+  min-height: 0;
+  margin: 0 auto;
+  background: var(--memoria-surface-1);
 }
-.memoria-insight-modal:not(.is-result) {
-  width: min(760px, 94vw);
-  max-width: min(760px, 94vw);
+.memoria-insight-view.is-result {
+  width: min(880px, 100%);
 }
-.memoria-insight-history-modal {
-  width: min(1040px, 96vw);
-  max-width: min(1040px, 96vw);
+.memoria-insight-view.is-history {
+  width: min(1040px, 100%);
 }
-.memoria-insight-history-modal .modal-title {
-  font-size: var(--memoria-font-title);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+.is-mobile .memoria-insight-view,
+.is-mobile .memoria-insight-view.is-result,
+.is-mobile .memoria-insight-view.is-history {
+  width: 100%;
+}
+.is-mobile .memoria-insight-view .memoria-insight-header,
+.is-mobile .memoria-insight-view.is-result .memoria-insight-header,
+.is-mobile .memoria-insight-view.is-history .memoria-insight-header,
+.is-mobile .memoria-insight-view .memoria-insight-body {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.is-mobile .memoria-insight-view .memoria-insight-body {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* ---------- 弹窗头部：图标徽标 + 标题 + 范围摘要 ----------
+/* ---------- 页头：图标徽标 + 标题 + 范围摘要 ----------
  * 标题区承担"这是什么"和"分析什么"，用一条细分隔线收口，
  * 让正文从干净的一行开始，而不是顶着统计文字。 */
-.memoria-insight-modal .modal-header,
-.memoria-insight-modal.mod-scrollable-content .modal-header {
+.memoria-insight-view .memoria-insight-header {
+  display: flex;
+  flex: 0 0 auto;
   align-items: flex-start;
   padding: 18px 22px 14px;
   border-bottom: 0.5px solid var(--memoria-border-subtle);
-  margin-bottom: 0;
 }
-.memoria-insight-modal .modal-title {
+.memoria-insight-view .memoria-insight-title {
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
@@ -5216,28 +5230,17 @@ body.sc-style-context-background-image
   padding: 0;
   line-height: 1.3;
 }
-.memoria-insight-modal.mod-scrollable-content .modal-title {
-  padding: 0;
+.memoria-insight-view .memoria-insight-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 22px 0;
 }
-.memoria-insight-modal .modal-close-button,
-.memoria-insight-modal .modal-close-button.clickable-icon,
-.memoria-insight-modal .modal-header-button.clickable-icon,
-.memoria-insight-history-modal .modal-close-button,
-.memoria-insight-history-modal .modal-close-button.clickable-icon,
-.memoria-insight-history-modal .modal-header-button.clickable-icon {
-  color: var(--memoria-text-3);
-  /* 兼容 Obsidian 新旧版本的关闭按钮类名。 */
-  cursor: pointer;
+.memoria-insight-body.is-showing-history > :not(.memoria-insight-history-host) {
+  display: none;
 }
-.memoria-insight-modal .modal-close-button:hover,
-.memoria-insight-modal .modal-header-button.clickable-icon:hover,
-.memoria-insight-history-modal .modal-close-button:hover,
-.memoria-insight-history-modal .modal-header-button.clickable-icon:hover {
-  color: var(--memoria-text-1);
-}
-.memoria-insight-modal .modal-close-button {
-  top: 15px;
-  right: 14px;
+.memoria-insight-history-host.is-hidden {
+  display: none;
 }
 .memoria-insight-title-badge {
   display: none;
@@ -5269,9 +5272,8 @@ body.sc-style-context-background-image
 .memoria-insight-scope-stats.is-empty {
   color: var(--memoria-danger-text);
 }
-.memoria-insight-modal .modal-content,
-.memoria-insight-modal.mod-scrollable-content .modal-content {
-  padding: 14px 22px 0;
+.memoria-insight-scope-stats.is-hidden {
+  display: none;
 }
 
 /* ---------- 首页：范围与视角 ---------- */
@@ -5291,22 +5293,22 @@ body.sc-style-context-background-image
   margin-bottom: -5px;
 }
 
-/* 结果页：头部收成一条窄导航条，只留返回键和关闭键。
+/* 结果页：头部收成一条窄导航，只留返回。
  * 正文自带标题，这里再重复一遍"AI 洞察"只会多出一个同字号的大标题。 */
-.memoria-insight-modal.is-result .modal-header {
+.memoria-insight-view.is-result .memoria-insight-header,
+.memoria-insight-view.is-history .memoria-insight-header {
   padding: 12px 22px;
+}
+.memoria-insight-view.is-result .memoria-insight-header {
   border-bottom: none;
 }
-.memoria-insight-modal.is-result .modal-close-button {
-  top: 13px;
-}
-.memoria-insight-modal.is-result .memoria-insight-title-badge,
-.memoria-insight-modal.is-result .memoria-insight-title-text {
+.memoria-insight-view.is-result .memoria-insight-title-badge,
+.memoria-insight-view.is-result .memoria-insight-title-text {
   display: none;
 }
 /* 文字按钮：Obsidian 默认 button 有背景和描边，这里必须点名 button 才压得住 */
-.memoria-insight-modal button.memoria-insight-text-btn,
-.memoria-insight-history-modal button.memoria-insight-text-btn {
+.memoria-insight-view button.memoria-insight-text-btn,
+.memoria-insight-view button.memoria-insight-text-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -5328,14 +5330,14 @@ body.sc-style-context-background-image
     border-color var(--memoria-motion),
     color var(--memoria-motion);
 }
-.memoria-insight-modal button.memoria-insight-text-btn:hover,
-.memoria-insight-history-modal button.memoria-insight-text-btn:hover {
+.memoria-insight-view button.memoria-insight-text-btn:hover,
+.memoria-insight-view button.memoria-insight-text-btn:hover {
   border-color: var(--memoria-border-subtle);
   background: var(--memoria-surface-2);
   color: var(--memoria-text-1);
 }
-.memoria-insight-modal button.memoria-insight-text-btn:disabled,
-.memoria-insight-history-modal button.memoria-insight-text-btn:disabled {
+.memoria-insight-view button.memoria-insight-text-btn:disabled,
+.memoria-insight-view button.memoria-insight-text-btn:disabled {
   opacity: 0.5;
   cursor: default;
 }
@@ -5352,7 +5354,7 @@ body.sc-style-context-background-image
   color: var(--memoria-text-1);
 }
 /* 头部纯图标按钮：去掉文字后收成正方形，图标居中 */
-.memoria-insight-modal button.memoria-insight-text-btn.memoria-insight-icon-btn {
+.memoria-insight-view button.memoria-insight-text-btn.memoria-insight-icon-btn {
   justify-content: center;
   width: 26px;
   padding: 0;
@@ -5369,7 +5371,7 @@ body.sc-style-context-background-image
   grid-template-columns: 1fr;
   gap: 4px;
 }
-.memoria-insight-modal button.memoria-insight-perspective {
+.memoria-insight-view button.memoria-insight-perspective {
   position: relative;
   display: flex;
   align-items: center;
@@ -5389,13 +5391,13 @@ body.sc-style-context-background-image
     background var(--memoria-motion),
     color var(--memoria-motion);
 }
-.memoria-insight-modal button.memoria-insight-perspective:hover {
+.memoria-insight-view button.memoria-insight-perspective:hover {
   background: var(--memoria-surface-2);
 }
-.memoria-insight-modal button.memoria-insight-perspective.is-active {
+.memoria-insight-view button.memoria-insight-perspective.is-active {
   background: var(--memoria-accent-subtle);
 }
-.memoria-insight-modal button.memoria-insight-perspective:disabled {
+.memoria-insight-view button.memoria-insight-perspective:disabled {
   opacity: 0.6;
   cursor: default;
 }
@@ -5504,7 +5506,7 @@ body.sc-style-context-background-image
   line-height: 1.3;
   white-space: nowrap;
 }
-.memoria-insight-modal button.mod-cta {
+.memoria-insight-view button.mod-cta {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -5524,7 +5526,7 @@ body.sc-style-context-background-image
     background var(--memoria-motion),
     border-color var(--memoria-motion);
 }
-.memoria-insight-modal button.mod-cta .svg-icon {
+.memoria-insight-view button.mod-cta .svg-icon {
   width: 15px;
   height: 15px;
   stroke-width: 1.9;
@@ -5536,11 +5538,11 @@ body.sc-style-context-background-image
   width: 15px;
   height: 15px;
 }
-.memoria-insight-modal button.mod-cta:hover {
+.memoria-insight-view button.mod-cta:hover {
   border-color: var(--memoria-accent-solid-hover);
   background: var(--memoria-accent-solid-hover);
 }
-.memoria-insight-modal button.mod-cta:disabled {
+.memoria-insight-view button.mod-cta:disabled {
   opacity: 0.5;
   cursor: default;
 }
@@ -5560,7 +5562,7 @@ body.sc-style-context-background-image
   font-size: var(--memoria-font-xs);
   font-weight: 600;
 }
-.memoria-insight-modal button.memoria-insight-scope-reset {
+.memoria-insight-view button.memoria-insight-scope-reset {
   margin-right: -6px;
 }
 .memoria-insight-scope-grid {
@@ -5582,7 +5584,7 @@ body.sc-style-context-background-image
   font-size: var(--memoria-font-xs);
   line-height: 1.4;
 }
-.memoria-insight-modal .memoria-insight-scope-control {
+.memoria-insight-view .memoria-insight-scope-control {
   width: 100%;
   height: 32px;
   padding: 0 10px;
@@ -5595,7 +5597,7 @@ body.sc-style-context-background-image
   font-size: var(--memoria-font-xs);
   line-height: 1;
 }
-.memoria-insight-modal .memoria-insight-scope-control:hover {
+.memoria-insight-view .memoria-insight-scope-control:hover {
   border-color: var(--memoria-border-strong);
 }
 .memoria-insight-select-wrap {
@@ -5604,7 +5606,7 @@ body.sc-style-context-background-image
   align-items: center;
   width: 100%;
 }
-.memoria-insight-modal button.memoria-insight-select-trigger {
+.memoria-insight-view button.memoria-insight-select-trigger {
   position: relative;
   display: flex;
   align-items: center;
@@ -5623,7 +5625,7 @@ body.sc-style-context-background-image
   text-align: left;
   cursor: pointer;
 }
-.memoria-insight-modal button.memoria-insight-select-trigger:hover {
+.memoria-insight-view button.memoria-insight-select-trigger:hover {
   border-color: var(--memoria-border-strong);
 }
 .memoria-insight-select-value {
@@ -5696,7 +5698,7 @@ body.sc-style-context-background-image
   font-size: var(--memoria-font-body);
   line-height: 1.5;
 }
-.memoria-insight-modal button.memoria-insight-error-banner-retry {
+.memoria-insight-view button.memoria-insight-error-banner-retry {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -5713,7 +5715,7 @@ body.sc-style-context-background-image
   line-height: 1;
   cursor: pointer;
 }
-.memoria-insight-modal button.memoria-insight-error-banner-retry:hover {
+.memoria-insight-view button.memoria-insight-error-banner-retry:hover {
   background: var(--memoria-surface-2);
 }
 .memoria-insight-error-banner-retry .svg-icon {
@@ -5804,7 +5806,7 @@ body.sc-style-context-background-image
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
-.memoria-insight-modal button.memoria-insight-stop {
+.memoria-insight-view button.memoria-insight-stop {
   height: 24px;
   padding: 0 8px;
   border: 0.5px solid var(--memoria-border);
@@ -5816,11 +5818,11 @@ body.sc-style-context-background-image
   line-height: 1;
   cursor: pointer;
 }
-.memoria-insight-modal button.memoria-insight-stop:hover {
+.memoria-insight-view button.memoria-insight-stop:hover {
   border-color: var(--memoria-border-strong);
   color: var(--memoria-text-1);
 }
-.memoria-insight-modal button.memoria-insight-stop:disabled {
+.memoria-insight-view button.memoria-insight-stop:disabled {
   opacity: 0.6;
   cursor: default;
 }
@@ -6167,8 +6169,7 @@ button.memoria-insight-cite:focus-visible {
   margin-left: 0;
 }
 
-.memoria-insight-modal :is(button, select, input, textarea):focus-visible,
-.memoria-insight-history-modal :is(button, select, input, textarea):focus-visible {
+.memoria-insight-view :is(button, select, input, textarea):focus-visible {
   outline: 2px solid var(--memoria-accent-solid);
   outline-offset: 2px;
 }
@@ -6228,7 +6229,7 @@ button.memoria-insight-cite:focus-visible {
   overflow-x: hidden;
   padding-right: 8px;
 }
-.memoria-insight-history-modal button.memoria-insight-history-item {
+.memoria-insight-view button.memoria-insight-history-item {
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -6246,10 +6247,10 @@ button.memoria-insight-cite:focus-visible {
   cursor: pointer;
   transition: background var(--memoria-motion);
 }
-.memoria-insight-history-modal button.memoria-insight-history-item:hover {
+.memoria-insight-view button.memoria-insight-history-item:hover {
   background: var(--memoria-surface-2);
 }
-.memoria-insight-history-modal button.memoria-insight-history-item.is-active {
+.memoria-insight-view button.memoria-insight-history-item.is-active {
   background: var(--memoria-accent-subtle);
 }
 .memoria-insight-history-item-title {
@@ -6338,7 +6339,7 @@ button.memoria-insight-cite:focus-visible {
   gap: 8px;
   padding-top: 4px;
 }
-.memoria-insight-modal button.memoria-insight-back {
+.memoria-insight-view button.memoria-insight-back {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -6358,7 +6359,7 @@ button.memoria-insight-cite:focus-visible {
     background var(--memoria-motion),
     color var(--memoria-motion);
 }
-.memoria-insight-modal button.memoria-insight-back:hover {
+.memoria-insight-view button.memoria-insight-back:hover {
   background: var(--memoria-surface-3);
   color: var(--memoria-text-1);
 }
@@ -6366,8 +6367,8 @@ button.memoria-insight-cite:focus-visible {
   width: 16px;
   height: 16px;
 }
-.memoria-insight-modal button.memoria-insight-doc-action,
-.memoria-insight-history-modal button.memoria-insight-doc-action {
+.memoria-insight-view button.memoria-insight-doc-action,
+.memoria-insight-view button.memoria-insight-doc-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -6390,28 +6391,28 @@ button.memoria-insight-cite:focus-visible {
   width: 14px;
   height: 14px;
 }
-.memoria-insight-modal button.memoria-insight-doc-action:hover,
-.memoria-insight-history-modal button.memoria-insight-doc-action:hover {
+.memoria-insight-view button.memoria-insight-doc-action:hover,
+.memoria-insight-view button.memoria-insight-doc-action:hover {
   background: var(--memoria-surface-3);
   color: var(--memoria-text-1);
 }
-.memoria-insight-modal button.memoria-insight-doc-action.is-danger,
-.memoria-insight-history-modal button.memoria-insight-doc-action.is-danger {
+.memoria-insight-view button.memoria-insight-doc-action.is-danger,
+.memoria-insight-view button.memoria-insight-doc-action.is-danger {
   color: var(--memoria-danger-text);
 }
-.memoria-insight-modal button.memoria-insight-doc-action.is-danger:hover,
-.memoria-insight-history-modal button.memoria-insight-doc-action.is-danger:hover {
+.memoria-insight-view button.memoria-insight-doc-action.is-danger:hover,
+.memoria-insight-view button.memoria-insight-doc-action.is-danger:hover {
   background: var(--memoria-danger-subtle);
   color: var(--memoria-danger-text);
 }
-.memoria-insight-modal button.memoria-insight-doc-action.is-danger.is-confirm,
-.memoria-insight-history-modal button.memoria-insight-doc-action.is-danger.is-confirm {
+.memoria-insight-view button.memoria-insight-doc-action.is-danger.is-confirm,
+.memoria-insight-view button.memoria-insight-doc-action.is-danger.is-confirm {
   background: var(--memoria-danger-subtle);
   color: var(--memoria-danger-text);
 }
 /* 二次确认态：图标按钮就地展开成「图标 + 确认删除」，避免首击毫无反馈 */
-.memoria-insight-modal button.memoria-insight-doc-action.is-confirm,
-.memoria-insight-history-modal button.memoria-insight-doc-action.is-confirm {
+.memoria-insight-view button.memoria-insight-doc-action.is-confirm,
+.memoria-insight-view button.memoria-insight-doc-action.is-confirm {
   width: auto;
   gap: 5px;
   padding: 0 9px;
@@ -6431,29 +6432,36 @@ button.memoria-insight-cite:focus-visible {
 .memoria-insight-thinking.is-hidden,
 .memoria-insight-result-wrap.is-hidden,
 .memoria-insight-reasoning-body.is-hidden,
-.memoria-insight-modal button.memoria-insight-back.is-hidden,
+.memoria-insight-view button.memoria-insight-back.is-hidden,
 .memoria-insight-head-actions.is-hidden {
   display: none;
 }
 
 @media (max-width: 680px) {
-  .memoria-insight-modal,
-  .memoria-insight-history-modal {
-    width: 94vw;
-    max-width: 94vw;
+  .memoria-insight-view,
+  .memoria-insight-view.is-result,
+  .memoria-insight-view.is-history {
+    width: 100%;
+  }
+  .memoria-insight-view .memoria-insight-header,
+  .memoria-insight-view.is-result .memoria-insight-header,
+  .memoria-insight-view.is-history .memoria-insight-header,
+  .memoria-insight-view .memoria-insight-body {
+    padding-left: 16px;
+    padding-right: 16px;
   }
   .memoria-insight-scope-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   /* 触屏上把偏小的文字按钮补到可稳定点中的高度 */
-  .memoria-insight-modal button.memoria-insight-text-btn {
+  .memoria-insight-view button.memoria-insight-text-btn {
     height: 30px;
     padding: 0 8px;
   }
-  .memoria-insight-modal button.memoria-insight-text-btn.memoria-insight-icon-btn {
+  .memoria-insight-view button.memoria-insight-text-btn.memoria-insight-icon-btn {
     width: 30px;
   }
-  .memoria-insight-modal button.memoria-insight-doc-action {
+  .memoria-insight-view button.memoria-insight-doc-action {
     width: 32px;
     height: 32px;
   }
@@ -6468,23 +6476,43 @@ button.memoria-insight-cite:focus-visible {
     gap: 8px;
     justify-content: flex-end;
   }
+  /* 窄屏一次只看列表或正文，避免 200px 把一行切成两半、标题又重复一遍。 */
   .memoria-insight-history-body {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 0;
+    min-height: 0;
   }
-  .memoria-insight-history-list {
-    max-height: 200px;
-    padding-right: 0;
-    padding-bottom: 8px;
-  }
+  .memoria-insight-history-list,
   .memoria-insight-history-detail {
     max-height: none;
+    overflow: visible;
+    padding-right: 0;
   }
+  .memoria-insight-view button.memoria-insight-history-item {
+    min-height: 52px;
+    padding: 12px;
+  }
+}
+
+.is-mobile .memoria-insight-history-body {
+  grid-template-columns: 1fr;
+  gap: 0;
+  min-height: 0;
+}
+.is-mobile .memoria-insight-history-list,
+.is-mobile .memoria-insight-history-detail {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+.is-mobile .memoria-insight-view button.memoria-insight-history-item {
+  min-height: 52px;
+  padding: 12px;
 }
 
 @media (max-width: 560px) {
   /* 窄屏保持列表密度，说明文字按可用宽度换行。 */
-  .memoria-insight-modal button.memoria-insight-perspective {
+  .memoria-insight-view button.memoria-insight-perspective {
     align-items: flex-start;
     min-height: 64px;
   }
