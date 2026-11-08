@@ -4,6 +4,7 @@ import {
   ItemView,
   Notice,
   Platform,
+  TFile,
   WorkspaceLeaf,
   debounce,
   setIcon,
@@ -19,7 +20,9 @@ import {
   buildInsightPlan,
   extractInsightTitle,
   finalizeInsight,
+  withNoteReferences,
 } from "./insight";
+import type { ReferenceLookup } from "./references";
 import { requestChatCompletionRich } from "./client";
 import { InsightError } from "./errors";
 import type {
@@ -64,6 +67,26 @@ interface SettingsApi {
 type SetupProblem = "disabled" | "missing" | "consent";
 
 const INSIGHT_TIMEOUT_MS = 180_000;
+
+/** Resolve a memo's wikilinks to markdown in the vault. Failures stay empty. */
+function vaultReferenceLookup(app: App): ReferenceLookup {
+  return {
+    resolve(linkpath, sourcePath) {
+      const dest = app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath);
+      if (!(dest instanceof TFile) || dest.extension !== "md") return null;
+      return dest.path;
+    },
+    async read(file) {
+      const target = app.vault.getAbstractFileByPath(file);
+      if (!(target instanceof TFile)) return null;
+      try {
+        return await app.vault.cachedRead(target);
+      } catch {
+        return null;
+      }
+    },
+  };
+}
 
 const SCOPE_TYPES: ScopeType[] = [
   "all",
@@ -1236,7 +1259,7 @@ export class InsightView extends ItemView {
 
     let plan: InsightPlan;
     try {
-      plan = buildInsightPlan({
+      const input = {
         seed: this.seed,
         scopeMemos: this.scopeMemos,
         allMemos: this.store.getAll(),
@@ -1245,7 +1268,12 @@ export class InsightView extends ItemView {
           ? this.seedScopeDescription
           : describeScopeFilter(this.scopeFilter),
         locale: getCurrentLocale(),
-      });
+      };
+      plan = await withNoteReferences(
+        buildInsightPlan(input),
+        input,
+        vaultReferenceLookup(this.app)
+      );
     } catch (error) {
       this.generating = false;
       this.generateBtn.disabled = false;

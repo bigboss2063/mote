@@ -10,11 +10,22 @@ export type PerspectiveId =
   | "second-order"
   | "cbt";
 
+/** Excerpt from a vault note a memo explicitly linked or embedded. */
+export interface NoteReference {
+  /** Wikilink target without the alias, so it lines up with `[[...]]` in the note. */
+  link: string;
+  text: string;
+  /** A previously saved insight. The prompt treats it as background only. */
+  kind?: "insight";
+}
+
 /** A memo prepared for the model, with its 1-based citation id. */
 export interface PromptNote {
   id: number;
   memo: Memo;
   text: string;
+  /** One-hop excerpts for links in this memo. Omitted when there are none. */
+  references?: NoteReference[];
 }
 
 export interface ChatMessage {

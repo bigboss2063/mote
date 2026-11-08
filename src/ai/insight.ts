@@ -3,6 +3,7 @@ import type { Locale } from "./prompt";
 import { buildInsightMessages } from "./prompt";
 import { validateCitations } from "./citations";
 import { InsightError } from "./errors";
+import { attachNoteReferences, type ReferenceLookup } from "./references";
 import { selectRelatedNotes, selectScopeNotes } from "./retrieve";
 import type {
   InsightPlan,
@@ -35,6 +36,31 @@ export function buildInsightPlan(input: InsightInput): InsightPlan {
     messages: buildInsightMessages({
       notes,
       focusNoteId,
+      perspective: input.perspective,
+      scopeDescription: input.scopeDescription,
+      scopeTotal,
+      locale: input.locale,
+    }),
+  };
+}
+
+/** Re-read one hop of wikilinks on the selected notes and rebuild the prompt. */
+export async function withNoteReferences(
+  plan: InsightPlan,
+  input: InsightInput,
+  lookup: ReferenceLookup
+): Promise<InsightPlan> {
+  const notes = await attachNoteReferences(plan.notes, lookup, {
+    focusNoteId: plan.focusNoteId,
+  });
+  if (!notes.some((note) => note.references?.length)) return plan;
+  const scopeTotal = input.seed ? input.allMemos.length : input.scopeMemos.length;
+  return {
+    notes,
+    focusNoteId: plan.focusNoteId,
+    messages: buildInsightMessages({
+      notes,
+      focusNoteId: plan.focusNoteId,
       perspective: input.perspective,
       scopeDescription: input.scopeDescription,
       scopeTotal,
