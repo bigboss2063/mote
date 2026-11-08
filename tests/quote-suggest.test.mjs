@@ -30,6 +30,8 @@ test("trigger fires on @ at a word boundary, skips emails", () => {
   assert.equal(findQuoteTrigger("a@b", 2), null, "identifier");
   assert.equal(findQuoteTrigger("@a\nb", 4), null, "newline ends the query");
   assert.equal(findQuoteTrigger("no at here", 11), null);
+  assert.equal(findQuoteTrigger("[[@memo", 7), null, "unclosed wikilink owns @");
+  assert.deepEqual(trigger("[[done]] @x", 11), {start: 9, query: "x"});
 });
 
 test("candidates need every token; title hits outrank body hits; newest first", () => {

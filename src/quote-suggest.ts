@@ -30,12 +30,22 @@ export interface QuoteTrigger {
 export function findQuoteTrigger(text: string, pos: number): QuoteTrigger | null {
   const open = text.lastIndexOf("@", pos);
   if (open < 0) return null;
+  // 未闭合的 `[[` 交给文章联想，避免和 memo 下拉叠在一起
+  if (insideUnclosedWiki(text, open)) return null;
   const query = text.slice(open + 1, pos);
   // 换行表示这段已经写完了，不再补全
   if (query.includes("\n")) return null;
   // `@` 紧跟在英文/数字后面多半是邮箱或代码，不弹；中文、标点、空白前都算
   if (open > 0 && /[A-Za-z0-9._%+-]/.test(text[open - 1])) return null;
   return { start: open, query };
+}
+
+/** `@` 是否落在同一行、尚未写出 `]` 的 `[[` 里面。 */
+function insideUnclosedWiki(text: string, index: number): boolean {
+  const open = text.lastIndexOf("[[", index);
+  if (open < 0 || open + 2 > index) return false;
+  const between = text.slice(open + 2, index);
+  return !between.includes("\n") && !between.includes("]");
 }
 
 /**

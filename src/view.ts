@@ -19,6 +19,7 @@ import { extractTags, stripMemoTags } from "./parser";
 import { createMainLeaf } from "./workspace";
 import { TagSuggest } from "./tag-suggest";
 import { QuoteSuggest, type QuoteCandidate } from "./quote-suggest";
+import { WikiSuggest } from "./wiki-suggest";
 import { extractImages, renderImageGrid, openLightbox } from "./image-grid";
 import { renderCalendar } from "./calendar";
 import { parseSearchQuery, matchesQuery, SearchQuery, EMPTY_QUERY } from "./search";
@@ -106,6 +107,7 @@ export class MemoriaView extends ItemView {
   private tagsExpanded = false;
   private tagSuggest: TagSuggest | null = null;
   private quoteSuggest: QuoteSuggest | null = null;
+  private wikiSuggest: WikiSuggest | null = null;
   /** 相关笔记：全文索引按 store 变更版本缓存，避免每次打开都重新分词全库。 */
   private storeVersion = 0;
   private relatedIndexCache: { version: number; index: LexicalIndex } | null = null;
@@ -229,7 +231,13 @@ export class MemoriaView extends ItemView {
           active instanceof HTMLElement && this.contentEl.contains(active);
         if (!insideView) return;
         // 联想下拉开着时，Enter 是"选候选"，不是发送
-        if (this.tagSuggest?.isOpen() || this.quoteSuggest?.isOpen()) return;
+        if (
+          this.tagSuggest?.isOpen() ||
+          this.quoteSuggest?.isOpen() ||
+          this.wikiSuggest?.isOpen()
+        ) {
+          return;
+        }
         if (this.shouldSendOnKeydown(evt)) {
           evt.preventDefault();
           evt.stopPropagation();
@@ -271,6 +279,10 @@ export class MemoriaView extends ItemView {
     if (this.quoteSuggest) {
       this.quoteSuggest.destroy();
       this.quoteSuggest = null;
+    }
+    if (this.wikiSuggest) {
+      this.wikiSuggest.destroy();
+      this.wikiSuggest = null;
     }
     this.childComponent.unload();
   }
@@ -676,6 +688,8 @@ export class MemoriaView extends ItemView {
     this.tagSuggest = new TagSuggest(this.app, this.inputEl);
     // 引用联想：打 @ 或点工具栏"引用"按钮，搜 memo / 洞察后插入紧凑双链
     this.quoteSuggest = new QuoteSuggest(this.inputEl, () => this.collectQuoteCandidates());
+    // 文章联想：打 [[ 搜库里的笔记（memo 目录除外），插入普通双链
+    this.wikiSuggest = new WikiSuggest(this.app, this.inputEl, () => this.settings.folder);
     this.inputEl.addEventListener("keydown", (e) => {
       // v2.0.16: 发送快捷键按 sendHotkey 配置决定，含 IME 保护。
       //   前面 contentEl 的 capture 监听已经响应过了；这里是 bubble 阶段兜底
