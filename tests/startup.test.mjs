@@ -8,10 +8,13 @@ const bundle = await build({
   entryPoints: ["src/main.ts"], bundle: true, write: false,
   platform: "node", format: "cjs", external: ["obsidian"],
   plugins: [{ name: "headless-views", setup(build) {
-    build.onResolve({filter: /^\.\/(view|settings|stats|year-panorama)$/}, args =>
-      ({path: args.path, namespace: "ui-stub"}));
+    build.onResolve({filter: /^\.\/(view|settings|stats|year-panorama|ai\/insight-view)$/}, args => {
+      const importer = args.importer.replaceAll("\\", "/");
+      if (!importer.endsWith("/src/main.ts")) return null;
+      return {path: args.path, namespace: "ui-stub"};
+    });
     build.onLoad({filter: /.*/, namespace: "ui-stub"}, () => ({contents:
-      "export class MemoriaView {} export class MemoriaSettingTab {} export class StatsView {} export class YearPanoramaView {}"}));
+      "export class MemoriaView {} export class MemoriaSettingTab {} export class StatsView {} export class YearPanoramaView {} export class InsightView {}"}));
   }}],
 });
 
