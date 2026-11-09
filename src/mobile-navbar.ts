@@ -1,7 +1,10 @@
 import { Platform } from "obsidian";
 
-/** 贴底控件和导航顶边之间留出的空隙。 */
-export const MOBILE_NAVBAR_GAP = 8;
+/**
+ * 贴底控件和导航顶边之间留出的空隙。
+ * 手机底部导航是悬浮条，8px 会让加号、生成洞察和正文操作贴着菜单。
+ */
+export const MOBILE_NAVBAR_GAP = 24;
 
 export interface NavbarBox {
   top: number;
@@ -12,7 +15,8 @@ export interface NavbarBox {
 /**
  * 把贴底 UI 抬到会挡住它的导航上方。
  * `targetBottom` 是被挡住的那一块的底边（和 `navbar.top` 同一坐标系）。
- * 底边已经在导航上方、或导航不可测时返回 0，避免在本来就没被挡住时再空出一条。
+ * 底边刚好贴在导航顶上时也要留出 `gap`，否则按钮会贴着菜单。
+ * 底边已经高出导航至少 `gap`、或导航不可测时返回 0，避免再空出一条。
  */
 export function navbarClearancePx(
   targetBottom: number,
@@ -21,7 +25,7 @@ export function navbarClearancePx(
 ): number {
   if (!navbar || navbar.height <= 0 || navbar.width <= 0) return 0;
   const overlap = targetBottom - navbar.top;
-  if (overlap <= 0) return 0;
+  if (overlap <= -gap) return 0;
   return Math.round(overlap + gap);
 }
 
@@ -44,16 +48,18 @@ function readNavbar(doc: Document): { box: NavbarBox | null; ready: boolean } {
 }
 
 /**
- * 把 `--mote-mobile-navbar-clearance` 写到视图根上，供贴底按钮避让
- * Obsidian 手机底部导航。导航收起或移出视口后数值回到 0。
- * 桌面端不改，沿用样式表里的 0。
+ * 把导航避让写到视图根上。
+ * `--mote-mobile-navbar-clearance` 给文档流里的贴底内容（相对视图底边）。
+ * `--mote-mobile-navbar-fixed-clearance` 给 `position: fixed` 的加号和输入卡片
+ * （相对视口底边）。视图如果已经停在导航上方，两者不一样：加号仍要从视口底抬过整条导航。
+ * 导航收起或移出视口后数值回到 0。桌面端不改，沿用样式表里的 0。
  */
 export function bindMobileNavbarClearance(root: HTMLElement): () => void {
   const doc = root.ownerDocument;
   const view = doc.defaultView;
   if (!view || !Platform.isMobile) return () => {};
 
-  let last = -1;
+  let last = "";
   let followUp = 0;
   const navbarObserved = new WeakSet<HTMLElement>();
   let resizeObserver: ResizeObserver | null = null;
@@ -68,12 +74,21 @@ export function bindMobileNavbarClearance(root: HTMLElement): () => void {
     // 导航还没挂上、或还没布局时，保留样式表里的保守高度。
     const reading = readNavbar(doc);
     if (!reading.ready) return;
-    // 用视图边框底边，而不是视口底边：导航如果本来就在工作区外面，
-    // 边框底边不会伸进导航，这里得到 0。边框盒含 padding，重复测量不会越加越大。
-    const px = navbarClearancePx(root.getBoundingClientRect().bottom, reading.box);
-    if (px === last) return;
-    last = px;
-    root.setCssProps({ "--mote-mobile-navbar-clearance": `${px}px` });
+    // 边框盒含 padding，重复测量不会越加越大。
+    // 视图底边已经在导航上方时，文档流只补空隙；fixed 按钮仍按视口底边计算。
+    const viewport = view.visualViewport;
+    const viewportBottom = viewport
+      ? viewport.offsetTop + viewport.height
+      : view.innerHeight;
+    const inFlow = navbarClearancePx(root.getBoundingClientRect().bottom, reading.box);
+    const fixed = navbarClearancePx(viewportBottom, reading.box);
+    const next = `${inFlow}/${fixed}`;
+    if (next === last) return;
+    last = next;
+    root.setCssProps({
+      "--mote-mobile-navbar-clearance": `${inFlow}px`,
+      "--mote-mobile-navbar-fixed-clearance": `${fixed}px`,
+    });
   };
 
   resizeObserver = new view.ResizeObserver(() => {

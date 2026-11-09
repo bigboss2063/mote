@@ -34,10 +34,15 @@
   background: var(--background-primary);
 }
 
-/* 导航还没量到之前的保守高度。进页面后 bindMobileNavbarClearance 会按
- * .mobile-navbar 的真实位置改写；导航收起时改写为 0。 */
+/* 导航还没量到之前的保守高度。手机导航条高默认 80px，再留 24px 空隙。
+ * 悬浮条还会在高度之外加 bottom offset，fixed 按钮用同一套保守值先抬起来。
+ * 进页面后 bindMobileNavbarClearance 会按 .mobile-navbar 的真实位置改写；
+ * 导航收起时改写为 0。 */
 body.is-phone {
-  --mote-mobile-navbar-clearance: calc(52px + env(safe-area-inset-bottom, 0px));
+  --mote-mobile-navbar-clearance: calc(
+    var(--navbar-height, 80px) + var(--navbar-bottom-offset, 0px) + 24px
+  );
+  --mote-mobile-navbar-fixed-clearance: var(--mote-mobile-navbar-clearance);
 }
 
 .memoria-root,
@@ -4664,11 +4669,12 @@ body.is-phone {
     display: flex;
     position: fixed;
     right: 20px;
-    /* v2.3.0: bottom 从 20px → 72px。
-       原 20px 时 FAB 被 Obsidian 移动端底部原生工具栏（mobile navbar，
-       高约 48px）遮住大半。抬高到 72px 让 FAB 完整浮在工具栏上方。
-       env(safe-area-inset-bottom) 继续叠加，自动避开 iOS home indicator。 */
-    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    /* 72px 盖不住约 80px 的手机导航，圆按钮下沿会被切掉一截。
+       fixed 相对视口，不用文档流那份 padding。 */
+    bottom: var(
+      --mote-mobile-navbar-fixed-clearance,
+      calc(var(--navbar-height, 80px) + var(--navbar-bottom-offset, 0px) + 24px)
+    );
     width: 52px;
     height: 52px;
     align-items: center;
@@ -4741,8 +4747,8 @@ body.is-phone {
     left: 8px;
     right: 8px;
     /* 键盘收起时底部导航盖住 bottom:0 的确认/发送按钮。
-       变量由导航实测；导航收起或还没量到时回落到 0 / 样式表保守值。 */
-    bottom: var(--mote-mobile-navbar-clearance, 0px);
+       这张卡片是 position:fixed，跟加号共用相对视口的避让。 */
+    bottom: var(--mote-mobile-navbar-fixed-clearance, var(--mote-mobile-navbar-clearance, 0px));
     margin: 0 0 8px;
     max-height: 60vh;
     opacity: 1;
@@ -6491,6 +6497,12 @@ button.memoria-insight-cite:focus-visible {
   .memoria-insight-foot {
     gap: 8px;
     justify-content: flex-end;
+    /* 导航避让在视图上，这里再留一截，避免「生成洞察」贴着菜单。 */
+    padding-bottom: 20px;
+  }
+  .memoria-insight-doc {
+    /* 复制、删除、重试贴在正文末尾，窄屏上多留一截，别顶到菜单。 */
+    padding-bottom: 28px;
   }
   /* 窄屏一次只看列表或正文，避免 200px 把一行切成两半、标题又重复一遍。 */
   .memoria-insight-history-body {
