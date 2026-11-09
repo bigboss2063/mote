@@ -6,6 +6,7 @@
 import { App, getAllTags, setIcon } from "obsidian";
 import { replaceTextareaRange } from "./textarea-utils";
 import { caretAnchor, placePopup } from "./caret-position";
+import { visibleViewport } from "./mobile-navbar";
 
 export class TagSuggest {
   private dropdown: HTMLElement | null = null;
@@ -245,7 +246,7 @@ export class TagSuggest {
     const placement = placePopup(
       caretAnchor(this.textarea),
       { width: this.dropdown.offsetWidth, height: this.dropdown.offsetHeight },
-      { width: window.innerWidth, height: window.innerHeight }
+      visibleViewport(this.textarea.ownerDocument)
     );
     this.dropdown.style.top = `${placement.top}px`;
     this.dropdown.style.left = `${placement.left}px`;

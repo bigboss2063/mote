@@ -17,7 +17,7 @@ vm.runInNewContext(bundle.outputFiles[0].text, {
   exports: module.exports,
   require: () => ({ Platform: { isMobile: true } }),
 });
-const { navbarClearancePx } = module.exports;
+const { navbarClearancePx, clearancePx } = module.exports;
 
 const bar = (top, height = 52, width = 390) => ({ top, height, width });
 
@@ -35,6 +35,17 @@ test("keeps a gap when the view ends flush with the navbar", () => {
 test("returns 0 when the navbar is already clear of the view", () => {
   assert.equal(navbarClearancePx(844, bar(900)), 0);
   assert.equal(navbarClearancePx(720, bar(758)), 0);
+});
+
+test("uses the highest cover when the keyboard sits above the navbar", () => {
+  // 视口底 800，导航顶 720，键盘顶 500：以键盘为准。
+  assert.equal(clearancePx(800, [720, 500]), 324);
+});
+
+test("ignores a cover that sits below the target", () => {
+  assert.equal(clearancePx(700, [900]), 0);
+  // 导航在下面，键盘才挡住。
+  assert.equal(clearancePx(800, [900, 640]), 184);
 });
 
 test("returns 0 when there is no measurable navbar", () => {

@@ -42,7 +42,7 @@ import type { InsightScopeFilter, ScopeType } from "./ai/scope";
 import { buildLexicalIndex, findRelated, type LexicalIndex } from "./ai/related";
 import { SemanticIndex, embeddingConfig } from "./ai/embedding";
 import { RelatedNotesModal } from "./related-modal";
-import { bindMobileNavbarClearance } from "./mobile-navbar";
+import { bindMobileNavbarClearance, visibleViewport } from "./mobile-navbar";
 
 interface Filter {
   tag: string | null;
@@ -530,24 +530,16 @@ export class MemoriaView extends ItemView {
       this.handleVimKey(e);
     });
 
-    // v2.2.0: 移动端 FAB 浮动入口按钮
-    //   挂在 contentEl 末尾（不是 main），避免被 main 的 flex / overflow 影响。
-    //   可见性由 CSS 控制：仅 (hover: none) and (pointer: coarse) + .memoria-input-fab-mode
-    //   时才显示。桌面端永远 display: none，零运行时成本。
-    this.buildFab();
+    // 加号挂在主栏里，跟着已经避开导航的内容盒走，而不是相对视口写死 bottom。
+    this.buildFab(main);
   }
 
-  /** v2.2.0: 创建移动端 FAB 浮动按钮 + 关闭按钮，并初始化 root 模式 class。
-   *  整体策略：
-   *    - FAB 按钮挂在 contentEl 末尾（position: fixed 全局定位）
-   *    - 输入卡片右上角加 close-btn（仅 fab 模式 + 已展开时可见）
-   *    - 模式切换通过 root 上的 .memoria-input-fab-mode 类（CSS 控制可见性）
-   *    - 展开/收起通过 root 上的 .is-fab-expanded 类
-   *  CSS 全部用 (hover: none) and (pointer: coarse) 媒体查询包裹，桌面零影响。
+  /** 创建移动端加号和编辑卡片的关闭按钮。
+   *  加号放在主栏内（absolute），编辑卡片留在文档流里占满剩余高度。
+   *  两者都不相对视口定位，导航和键盘只通过视图 padding 影响它们。
    */
-  private buildFab(): void {
-    // FAB 按钮
-    this.fabEl = this.contentEl.createEl("button", {
+  private buildFab(anchor: HTMLElement): void {
+    this.fabEl = anchor.createEl("button", {
       cls: "memoria-fab",
       attr: { "aria-label": t("fab.aria") },
     });
@@ -599,14 +591,13 @@ export class MemoriaView extends ItemView {
   /** v2.2.0: 展开 FAB 触发的输入框（点击 ➕ 时调用）*/
   private expandFabInput(): void {
     this.contentEl.addClass("is-fab-expanded");
+    // 展开后高度由主栏的剩余空间决定，清掉按内容撑高的 inline height。
+    this.inputEl?.setCssStyles({ height: "" });
     // 等待 CSS 过渡帧再聚焦，让动画与键盘弹起更同步
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         this.inputEl?.focus();
-        // v2.3.3: 展开长草稿时把光标移到末尾（接着上次写）。
-        //   定位不再靠 JS scrollIntoView —— 改用 CSS 把 FAB 展开态的输入卡片
-        //   position: fixed 贴屏幕底部 + textarea 内部滚动，从根上避免"卡片被
-        //   键盘遮 / 滚动抖动 / ✕ 被滚出视口"三个问题（见 styles.css v2.3.3 注释）。
+        // 展开长草稿时把光标移到末尾。文本在卡片内部滚动，不滚整页。
         if (this.inputEl) {
           const len = this.inputEl.value.length;
           this.inputEl.setSelectionRange(len, len);
@@ -656,6 +647,7 @@ export class MemoriaView extends ItemView {
     }
     this.contentEl.removeClass("is-fab-expanded");
     this.inputEl?.blur();
+    this.autoResizeInput();
   }
 
   private buildInputCard(parent: HTMLElement): void {
@@ -741,15 +733,10 @@ export class MemoriaView extends ItemView {
       if (!this.editingMemo) this.saveDraft(this.inputEl.value);
       this.autoResizeInput();
       this.syncInputCardContentState();
-      // v2.3.3: 移除上一版的 scrollIntoView（它在 iOS 上每次打字 smooth 滚动
-      //   导致界面抖动频闪，还把 ✕ 按钮滚出视口）。FAB 展开态改用 fixed 贴底 +
-      //   textarea 内部滚动后，内容变长不再需要滚整个页面，问题从根上消除。
+      // 手机编辑态文本在卡片内部滚动，不把整页滚走。
     });
-    // v2.3.3: 移除 v2.0.10 的 focus → scrollIntoView 逻辑。
-    //   FAB 展开态现在用 position: fixed 贴屏幕底部 + textarea 内部滚动（见
-    //   styles.css），输入卡片永远固定在键盘上方，不需要靠滚动页面来定位；
-    //   常驻模式（always-visible）的 textarea 本身有 max-height 上限不会无限
-    //   撑高，也不需要。彻底去掉 scrollIntoView，根除 iOS 上的抖动频闪问题。
+    // 常驻模式的 textarea 有 max-height，手机编辑态则占满主栏剩余高度，
+    // 都不靠 scrollIntoView 把页面滚到输入框。
     // 粘贴图片 + v2.0.0: 富文本 → Markdown 转换
     this.inputEl.addEventListener("paste", (e) => {
       void (async () => {
@@ -941,6 +928,14 @@ export class MemoriaView extends ItemView {
   private autoResizeInput(): void {
     const el = this.inputEl;
     if (!el) return;
+    // 手机编辑态占满主栏剩余高度，文本在框内滚动，不能按内容把卡片撑出屏幕。
+    if (
+      this.contentEl.hasClass("memoria-input-fab-mode") &&
+      this.contentEl.hasClass("is-fab-expanded")
+    ) {
+      el.setCssStyles({ height: "" });
+      return;
+    }
     // v2.0.17: 给 height 设 inline 值时临时禁用 transition，避免 0.7s 慢动画拖住打字手感
     //   （CSS 里的 transition 覆盖 min-height + height 两者，下一帧恢复）。
     el.classList.add("memoria-no-transition");
@@ -1344,9 +1339,12 @@ export class MemoriaView extends ItemView {
     //   - 手机：直接屏幕居中（原来贴按钮，按钮在工具栏中右部，弹层会溢出屏幕右边）
     //   都要等一帧再测量（让 grid 渲染完拿到真实尺寸）
     if (isMobile) {
+      // 在导航上方的可见区域里居中，而不是整屏正中（正中会把格子压进菜单）。
+      const visible = visibleViewport(activeDocument);
+      const inset = Math.max(0, window.innerHeight - visible.height);
       pop.setCssStyles({
         left: "50%",
-        top: "50%",
+        top: `calc(50% - ${Math.round(inset / 2)}px)`,
         transform: "translate(-50%, -50%)",
       });
     } else {
@@ -1359,8 +1357,9 @@ export class MemoriaView extends ItemView {
       // 下一帧根据实际尺寸夹紧（避免右侧溢出）
       window.requestAnimationFrame(() => {
         const pr = pop.getBoundingClientRect();
-        const vw = activeDocument.documentElement.clientWidth;
-        const vh = activeDocument.documentElement.clientHeight;
+        const visible = visibleViewport(activeDocument);
+        const vw = visible.width;
+        const vh = visible.height;
         if (pr.right > vw - 8) {
           pop.setCssStyles({ left: `${Math.max(8, vw - pr.width - 8)}px` });
         }

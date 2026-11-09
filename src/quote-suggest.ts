@@ -6,6 +6,7 @@
 import { setIcon } from "obsidian";
 import { replaceTextareaRange } from "./textarea-utils";
 import { caretAnchor, placePopup } from "./caret-position";
+import { visibleViewport } from "./mobile-navbar";
 
 export interface QuoteCandidate {
   /** 完整 vault 路径 */
@@ -294,7 +295,7 @@ export class QuoteSuggest {
     const placement = placePopup(
       caretAnchor(this.textarea),
       { width: this.dropdown.offsetWidth, height: this.dropdown.offsetHeight },
-      { width: window.innerWidth, height: window.innerHeight }
+      visibleViewport(this.textarea.ownerDocument)
     );
     this.dropdown.style.top = `${placement.top}px`;
     this.dropdown.style.left = `${placement.left}px`;

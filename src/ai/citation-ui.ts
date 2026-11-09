@@ -3,6 +3,7 @@ import { memoFileInfo, parseMemoFile } from "../parser";
 import { RESERVED_TAGS } from "../types";
 import { t } from "../i18n";
 import { readInsightRecord, stripLeadingTitle } from "./insight-file";
+import { visibleViewport } from "../mobile-navbar";
 
 /** 正文里的一条引用：`[n]` → 对应的 memo 文件路径。 */
 export interface CitationRef {
@@ -204,12 +205,13 @@ function openCitationCard(anchor: HTMLElement, memo: { title: string; content: s
     margin,
     Math.min(rect.left + rect.width / 2 - width / 2, win.innerWidth - width - margin)
   );
+  const visible = visibleViewport(doc);
   const above = rect.top - height - margin;
   const below = rect.bottom + margin;
   const top =
     above >= margin
       ? above
-      : Math.max(margin, Math.min(below, win.innerHeight - height - margin));
+      : Math.max(margin, Math.min(below, visible.height - height - margin));
   card.style.left = `${left}px`;
   card.style.top = `${top}px`;
 

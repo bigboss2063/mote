@@ -57,7 +57,7 @@ import {
 import { saveInsightRecord, stripLeadingTitle } from "./insight-file";
 import { dismissCitationPreview } from "./citation-ui";
 import { memoLinkName } from "../parser";
-import { bindMobileNavbarClearance } from "../mobile-navbar";
+import { bindMobileNavbarClearance, visibleViewport } from "../mobile-navbar";
 
 interface SettingsApi {
   open(): void;
@@ -240,7 +240,8 @@ function openInsightMenu(input: {
     )}px`,
   });
   const desiredHeight = Math.min(menu.scrollHeight, 280);
-  const below = window.innerHeight - rect.bottom - 8;
+  const visible = visibleViewport(menu.ownerDocument);
+  const below = visible.height - rect.bottom - 8;
   const above = rect.top - 8;
   if (below < Math.min(desiredHeight, 160) && above > below) {
     menu.setCssProps({

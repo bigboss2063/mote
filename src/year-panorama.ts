@@ -8,6 +8,7 @@ import { VIEW_TYPE_MEMORIA_YEAR, MemoriaSettings } from "./types";
 import { openMemoriaView } from "./workspace";
 import { MemoriaView } from "./view";
 import { t } from "./i18n";
+import { bindMobileNavbarClearance } from "./mobile-navbar";
 
 /** 星期几简称，走 i18n（中: 日一二三四五六 / 英: SMTWTFS） */
 function weekdayShort(dow: number): string {
@@ -39,6 +40,7 @@ export class YearPanoramaView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
+    this.register(bindMobileNavbarClearance(this.contentEl));
     this.render();
     // 数据变了重绘（用户在 Memoria 主视图记录笔记后，这里也要同步高亮）
     this.unsubscribe = this.store.onChange(() => this.render());
