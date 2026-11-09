@@ -1,4 +1,0 @@
-{
-  "name": "Mote",
-  "install": "set -euo pipefail\nexport NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"\n. \"$NVM_DIR/nvm.sh\"\nnvm install 24\nnvm alias default 24\nnvm use 24\nhash -r\nnpm ci"
-}
