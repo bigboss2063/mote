@@ -42,6 +42,7 @@ import type { InsightScopeFilter, ScopeType } from "./ai/scope";
 import { buildLexicalIndex, findRelated, type LexicalIndex } from "./ai/related";
 import { SemanticIndex, embeddingConfig } from "./ai/embedding";
 import { RelatedNotesModal } from "./related-modal";
+import { bindMobileNavbarClearance } from "./mobile-navbar";
 
 interface Filter {
   tag: string | null;
@@ -208,6 +209,7 @@ export class MemoriaView extends ItemView {
     this.workspaceLeafEl?.addClass("memoria-workspace-leaf");
     this.contentEl.addClass("memoria-root");
     this.buildLayout();
+    this.register(bindMobileNavbarClearance(this.contentEl));
     this.syncSidebarLayout();
     this.layoutObserver = new ResizeObserver(() => this.syncSidebarLayout());
     this.layoutObserver.observe(this.contentEl);

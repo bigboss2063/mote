@@ -57,6 +57,7 @@ import {
 import { saveInsightRecord, stripLeadingTitle } from "./insight-file";
 import { dismissCitationPreview } from "./citation-ui";
 import { memoLinkName } from "../parser";
+import { bindMobileNavbarClearance } from "../mobile-navbar";
 
 interface SettingsApi {
   open(): void;
@@ -347,6 +348,7 @@ export class InsightView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.contentEl.empty();
+    this.register(bindMobileNavbarClearance(this.contentEl));
     this.rootEl = this.contentEl.createDiv({ cls: "memoria-insight-view" });
     const header = this.rootEl.createDiv({ cls: "memoria-insight-header" });
     this.titleEl = header.createDiv({ cls: "memoria-insight-title" });

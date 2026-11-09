@@ -21,13 +21,23 @@
   box-shadow: none;
 }
 
-/* 让视图的 contentEl 填满整个面板，清除 Obsidian 默认 padding */
+/* 让视图的 contentEl 填满整个面板，清除 Obsidian 默认 padding。
+ * 手机底部导航盖住贴底区域时，padding-bottom 用测量值把整列（含编辑框）抬上去。
+ * border-box 让这份 padding 吃进 height:100%，而不是把内容再撑出一截。 */
 .workspace-leaf-content[data-type="memoria-view"] .view-content {
   padding: 0;
+  padding-bottom: var(--mote-mobile-navbar-clearance, 0px);
+  box-sizing: border-box;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--background-primary);
+}
+
+/* 导航还没量到之前的保守高度。进页面后 bindMobileNavbarClearance 会按
+ * .mobile-navbar 的真实位置改写；导航收起时改写为 0。 */
+body.is-phone {
+  --mote-mobile-navbar-clearance: calc(52px + env(safe-area-inset-bottom, 0px));
 }
 
 .memoria-root,
@@ -4730,7 +4740,9 @@
     position: fixed;
     left: 8px;
     right: 8px;
-    bottom: 0;
+    /* 键盘收起时底部导航盖住 bottom:0 的确认/发送按钮。
+       变量由导航实测；导航收起或还没量到时回落到 0 / 样式表保守值。 */
+    bottom: var(--mote-mobile-navbar-clearance, 0px);
     margin: 0 0 8px;
     max-height: 60vh;
     opacity: 1;
@@ -5172,6 +5184,9 @@ body.sc-style-context-background-image
  * 页面铺满工作区，内容列宽沿用原来弹窗的 760 / 880 / 1040。 */
 .workspace-leaf-content[data-type="memoria-insight-view"] .view-content {
   padding: 0;
+  /* 开始洞察、以及正文底部的复制/删除/重试，都贴在这块滚动区的底边上。
+     只留 safe-area 清不掉 Obsidian 手机底部导航。 */
+  padding-bottom: var(--mote-mobile-navbar-clearance, 0px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -5206,7 +5221,8 @@ body.sc-style-context-background-image
   padding-right: 16px;
 }
 .is-mobile .memoria-insight-view .memoria-insight-body {
-  padding-bottom: env(safe-area-inset-bottom);
+  /* 导航避让已经加在 view-content 上，这里只留一点正文收尾空隙。 */
+  padding-bottom: 16px;
 }
 
 /* ---------- 页头：图标徽标 + 标题 + 范围摘要 ----------
