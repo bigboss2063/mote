@@ -229,18 +229,18 @@ function openInsightMenu(input: {
   };
 
   const rect = input.anchor.getBoundingClientRect();
-  const maxWidth = Math.min(320, window.innerWidth - 16);
+  const visible = visibleViewport(menu.ownerDocument);
+  const maxWidth = Math.min(320, visible.width - 16);
   menu.addClass("is-measuring");
   menu.setCssProps({
     minWidth: `${Math.max(rect.width, 180)}px`,
     maxWidth: `${maxWidth}px`,
     left: `${Math.min(
       Math.max(8, rect.left),
-      window.innerWidth - maxWidth - 8
+      visible.width - maxWidth - 8
     )}px`,
   });
   const desiredHeight = Math.min(menu.scrollHeight, 280);
-  const visible = visibleViewport(menu.ownerDocument);
   const below = visible.height - rect.bottom - 8;
   const above = rect.top - 8;
   if (below < Math.min(desiredHeight, 160) && above > below) {

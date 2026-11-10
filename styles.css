@@ -6504,20 +6504,9 @@ button.memoria-insight-cite:focus-visible {
     padding-left: 16px;
     padding-right: 16px;
   }
+  /* 窄屏把范围面板收成两列，宽度留给主动作 */
   .memoria-insight-scope-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  /* 触屏上把偏小的文字按钮补到可稳定点中的高度 */
-  .memoria-insight-view button.memoria-insight-text-btn {
-    height: 30px;
-    padding: 0 8px;
-  }
-  .memoria-insight-view button.memoria-insight-text-btn.memoria-insight-icon-btn {
-    width: 30px;
-  }
-  .memoria-insight-view button.memoria-insight-doc-action {
-    width: 32px;
-    height: 32px;
   }
   /* 窄屏藏掉快捷键提示，把宽度留给主动作 */
   .memoria-insight-foot-hint {
@@ -6530,31 +6519,25 @@ button.memoria-insight-cite:focus-visible {
     gap: 8px;
     justify-content: flex-end;
   }
-  /* 窄屏一次只看列表或正文，避免 200px 把一行切成两半、标题又重复一遍。 */
-  .memoria-insight-history-body {
-    grid-template-columns: 1fr;
-    gap: 0;
-    min-height: 0;
-  }
-  .memoria-insight-history-list,
-  .memoria-insight-history-detail {
-    max-height: none;
-    overflow: visible;
-    padding-right: 0;
-  }
-  .memoria-insight-view button.memoria-insight-history-item {
-    min-height: 52px;
-    padding: 12px;
-  }
 }
 
-.is-mobile .memoria-insight-history-body {
+/* 窄面板一次只看列表或正文，避免 200px 把一行切成两半、标题又重复一遍。
+   历史面板在紧凑态会给根加 is-picking / is-reading 并只渲染其中一列，
+   这里把网格收成单列，否则那一列仍被钉在 300px 的固定轨道上。
+   body.is-mobile 覆盖平板全屏，is-picking/is-reading 覆盖分屏与桌面侧边 pane。 */
+.is-mobile .memoria-insight-history-body,
+.memoria-insight-history.is-picking .memoria-insight-history-body,
+.memoria-insight-history.is-reading .memoria-insight-history-body {
   grid-template-columns: 1fr;
   gap: 0;
   min-height: 0;
 }
 .is-mobile .memoria-insight-history-list,
-.is-mobile .memoria-insight-history-detail {
+.is-mobile .memoria-insight-history-detail,
+.memoria-insight-history.is-picking .memoria-insight-history-list,
+.memoria-insight-history.is-picking .memoria-insight-history-detail,
+.memoria-insight-history.is-reading .memoria-insight-history-list,
+.memoria-insight-history.is-reading .memoria-insight-history-detail {
   max-height: none;
   overflow: visible;
   padding-right: 0;
@@ -6562,6 +6545,40 @@ button.memoria-insight-cite:focus-visible {
 .is-mobile .memoria-insight-view button.memoria-insight-history-item {
   min-height: 52px;
   padding: 12px;
+}
+
+/* 触屏上把偏小的控件补到能点中的尺寸。按 body.is-mobile 而不是宽度断点：
+   平板一样是手指，但宽度都大于 680，原来那套规则刚好把平板漏掉，
+   头部按钮在 iPad 上反而只有 26px。 */
+body.is-mobile .memoria-insight-view button.memoria-insight-text-btn {
+  height: 36px;
+  padding: 0 10px;
+}
+body.is-mobile
+  .memoria-insight-view
+  button.memoria-insight-text-btn.memoria-insight-icon-btn {
+  width: 36px;
+  padding: 0;
+}
+body.is-mobile .memoria-insight-view button.memoria-insight-doc-action {
+  width: 36px;
+  height: 36px;
+}
+body.is-mobile .memoria-insight-view button.memoria-insight-back {
+  width: 36px;
+  height: 36px;
+}
+/* 引用角标是内联在正文里的 [n]，撑大按钮会顶乱行距，
+   所以只扩热区，图标本身不变形。 */
+body.is-mobile .memoria-insight-view button.memoria-insight-cite {
+  position: relative;
+  width: 16px;
+  height: 16px;
+}
+body.is-mobile .memoria-insight-view button.memoria-insight-cite::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
 }
 
 @media (max-width: 560px) {
