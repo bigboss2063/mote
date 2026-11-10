@@ -53,12 +53,18 @@ export function navbarClearancePx(
   return clearancePx(targetBottom, [navbar.top], gap);
 }
 
-/** `ready: false` 表示导航还没挂上或还没布局，调用方应保留样式表里的保守高度。 */
+/**
+ * `ready: false` 只表示导航刚挂上、还没布局，调用方应保留样式表里的保守高度。
+ * 导航根本不在页面里不算这一种：键盘弹起时 Obsidian 会把整个导航 detach 掉
+ * （`MobileNavbar.show()` 在 `mobileSoftKeyboardVisible` 为真时直接返回，
+ * `hide()` 还会 `containerEl.detach()`）。一直等它就永远等不到，
+ * 样式表里那份保守高度也就永不撤销 —— 输入卡会被顶到键盘上方一大截。
+ */
 function readNavbar(doc: Document): { box: NavbarBox | null; ready: boolean } {
   const navbar = doc.querySelector(".mobile-navbar");
-  if (!(navbar instanceof HTMLElement)) return { box: null, ready: false };
+  if (!(navbar instanceof HTMLElement)) return { box: null, ready: true };
   const view = doc.defaultView;
-  if (!view) return { box: null, ready: false };
+  if (!view) return { box: null, ready: true };
   const style = view.getComputedStyle(navbar);
   if (style.display === "none" || style.visibility === "hidden") {
     return { box: null, ready: true };
@@ -71,18 +77,30 @@ function readNavbar(doc: Document): { box: NavbarBox | null; ready: boolean } {
   };
 }
 
-/** 导航顶边，加上键盘（视觉视口明显短于布局视口时）的顶边。 */
-function coverTops(view: Window, navbar: NavbarBox | null): number[] {
-  const tops: number[] = [];
-  if (navbar && navbar.height > 0 && navbar.width > 0) tops.push(navbar.top);
+/**
+ * 当前真正的遮挡：键盘优先，导航其次。
+ *
+ * - 键盘弹起：内容已经被压到键盘顶边，卡片自己的 margin 就是那段空隙，
+ *   再叠一个 24px 只会在键盘上方留白（用户看到的就是这块空白）。
+ * - 只有导航：留 24px，让贴底控件不贴着菜单。
+ */
+function coverOf(
+  view: Window,
+  navbar: NavbarBox | null
+): { top: number; gap: number } | null {
   const viewport = view.visualViewport;
   if (viewport) {
     const visualBottom = viewport.offsetTop + viewport.height;
     if (view.innerHeight - visualBottom > KEYBOARD_COVER_THRESHOLD) {
-      tops.push(visualBottom);
+      // 键盘决定了可用区域的底边；导航这时要么已被摘掉，要么正被键盘盖住，
+      // 它的 top 只会更靠下，参考它没有意义。
+      return { top: visualBottom, gap: 0 };
     }
   }
-  return tops;
+  if (navbar && navbar.height > 0 && navbar.width > 0) {
+    return { top: navbar.top, gap: MOBILE_NAVBAR_GAP };
+  }
+  return null;
 }
 
 /**
@@ -118,9 +136,11 @@ export function bindMobileNavbarClearance(root: HTMLElement): () => void {
     const rootRect = root.getBoundingClientRect();
     // 隐藏的标签页量出来是 0，不能把正在显示的视图的避让清掉。
     if (rootRect.width === 0 && rootRect.height === 0) return;
-    const tops = coverTops(view, reading.box);
-    const inFlow = clearancePx(rootRect.bottom, tops);
-    const fixed = clearancePx(view.innerHeight, tops);
+    const cover = coverOf(view, reading.box);
+    const tops = cover ? [cover.top] : [];
+    const gap = cover ? cover.gap : MOBILE_NAVBAR_GAP;
+    const inFlow = clearancePx(rootRect.bottom, tops, gap);
+    const fixed = clearancePx(view.innerHeight, tops, gap);
     const next = `${inFlow}/${fixed}`;
     if (next === last) return;
     last = next;
