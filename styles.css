@@ -661,6 +661,40 @@ body.is-phone {
   display: none;
 }
 
+/* 触屏上 28px 的图标按钮点不准，统一放大热区但不改变图标大小。
+   用 body.is-mobile（Obsidian 的手机/平板外壳）而不是 (hover: none)：
+   带触摸屏的桌面也是 hover: none，但那边不该被重新排版。 */
+body.is-mobile .memoria-root button.memoria-icon-btn {
+  width: 36px;
+  height: 36px;
+}
+body.is-mobile .memoria-root button.memoria-icon-btn .svg-icon {
+  width: 17px;
+  height: 17px;
+}
+body.is-mobile .memoria-root button.memoria-tool-btn .svg-icon {
+  width: 17px;
+  height: 17px;
+}
+/* 侧栏每一项也是主要入口，给到能稳定点中的高度。 */
+body.is-mobile .memoria-nav-item {
+  min-height: 40px;
+}
+
+/* 输入区的工具按钮有 7 个，36px 会在 320px 上顶出卡片，单独留一档。 */
+body.is-mobile .memoria-root button.memoria-tool-btn {
+  width: 34px;
+  height: 34px;
+}
+/* 320px 上 7 个 34px 按钮 + 发送按钮仍然超宽，再收一档，
+   正好一行放下；再窄就交给上面的 flex-wrap 兜底。 */
+@media (max-width: 340px) {
+  body.is-mobile .memoria-root button.memoria-tool-btn {
+    width: 30px;
+    height: 30px;
+  }
+}
+
 /* v1.1.2: 刷新按钮点击后转圈动画 */
 .memoria-root button.memoria-icon-btn.is-spinning {
   pointer-events: none;
@@ -842,7 +876,9 @@ body.is-phone {
 .memoria-input-tools {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 2px;
+  min-width: 0;
 }
 .memoria-root button.memoria-tool-btn {
   width: 28px;
@@ -1180,14 +1216,22 @@ body.is-phone {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.2px;
 }
+/* 卡片的操作按钮在触屏上一直显示：没有 hover 就没有第二次机会。
+   宽度断点管不到平板，所以这里按输入方式判断。 */
 .memoria-card-actions {
   display: flex;
   gap: 2px;
   opacity: 0;
   transition: opacity var(--memoria-motion);
 }
-.memoria-card:hover .memoria-card-actions {
+.memoria-card:hover .memoria-card-actions,
+.memoria-card:focus-within .memoria-card-actions {
   opacity: 1;
+}
+@media (hover: none) {
+  .memoria-card-actions {
+    opacity: 1;
+  }
 }
 .memoria-card-body {
   font-size: var(--memoria-font-body);
@@ -1286,6 +1330,14 @@ body.is-phone {
 .memoria-card-body pre > button:focus,
 .memoria-card-body pre .code-copy-button:focus {
   opacity: 1;
+}
+/* 触屏没有 hover，复制按钮必须常显，否则永远点不到。 */
+@media (hover: none) {
+  .memoria-card-body pre .copy-code-button,
+  .memoria-card-body pre > button,
+  .memoria-card-body pre .code-copy-button {
+    opacity: 0.5;
+  }
 }
 
 .memoria-card-body img {
@@ -2118,20 +2170,29 @@ body.is-phone {
   .memoria-main {
     width: 100%;
   }
-  /* 顶部紧凑 */
+  /* 顶部紧凑：只有搜索框可以压缩，图标按钮一律不缩，
+     否则 320px 上侧栏开关会被压成 14px、工具区还会溢出视口。 */
   .memoria-topbar {
     padding: 8px 12px;
     gap: 6px;
   }
+  .memoria-topbar > * {
+    flex-shrink: 0;
+  }
   .memoria-brand {
     display: none;
   }
+  /* 手机上标题只是装饰，让给搜索框；320px 否则只剩 54px。 */
+  .memoria-topbar-title {
+    display: none;
+  }
   .memoria-search-wrap {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
   }
   .memoria-search {
     width: 100%;
-    min-width: 80px;
+    min-width: 0;
   }
   /* v1.1.19: 手机端输入卡片贴底 —— flex order 让 input-card 出现在 list 之后，
    *   input-card 作为 flex item 天然停在 main 底部（flex-direction: column，main overflow:hidden）。
@@ -3582,8 +3643,8 @@ body.is-phone {
   width: 13px;
   height: 13px;
 }
-@media (max-width: 680px) {
-  /* 手机没有 hover，常显但柔和 */
+@media (hover: none) {
+  /* 触屏没有 hover，引用按钮常显但柔和。宽度断点管不到平板。 */
   .memoria-card-quote {
     opacity: 0.45;
   }
@@ -4510,10 +4571,10 @@ body.is-phone {
  *   桌面（即使在小窗口下也是 hover: hover, pointer: fine）。
  *
  * 注意：
- *   只复制最关键的几条（字渲染 padding + appearance），不复制 min-height/
- *   font-size，那些是手机紧凑布局，不是字渲染必须的（iPad 大屏不需要紧凑）。
- *   原 @media (max-width: 680px) 内的同名规则保持不变，二者特异性相同，
- *   后定义的（这一段）覆盖前面，对手机也无害（值完全一致）。
+ *   只复制最关键的几条（字渲染 padding + appearance），不复制 min-height，
+ *   那是手机紧凑布局，iPad 大屏不需要紧凑。
+ *   font-size 要一起复制：低于 16px 时 iOS 聚焦输入框会放大整页，
+ *   平板比手机宽，但一样会被放大。
  * ================================================================ */
 @media (hover: none) and (pointer: coarse) {
   .memoria-input {
@@ -4524,6 +4585,8 @@ body.is-phone {
     padding-bottom: 2px;
     -webkit-appearance: none;
     appearance: none;
+    /* 16px 是 iOS 聚焦输入框不再放大的最小字号 */
+    font-size: 16px;
   }
 }
 .memoria-buddy-stat-val {
@@ -4668,7 +4731,9 @@ body.is-phone {
   display: none;
 }
 
-@media (hover: none) and (pointer: coarse), (max-width: 680px) {
+/* 只有 JS 真的加上了 fab 模式（= 手机上的 fab 设置）才生效，
+   所以这里按输入方式判断即可，不再重复宽度断点。 */
+@media (hover: none) {
   /* 加号挂在主栏里，主栏已经被视图的 padding 抬到导航上方。
      所以这里只留一点边距，不写导航高度。 */
   .memoria-root.memoria-input-fab-mode .memoria-main {

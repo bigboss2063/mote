@@ -61,11 +61,12 @@ test("saving an edit restores the existing new-note draft without clearing it", 
   assert.equal(view.inputEl.value,"unsent draft");
 });
 
-for (const [name,mobile,width,windowWidth,narrow] of [
-  ["desktop side pane",false,360,1400,true],
-  ["desktop main area",false,1200,1400,false],
-  ["phone",true,390,390,true],
-  ["tablet split pane",true,500,1100,false],
+for (const [name,mobile,width,windowWidth,narrow,panel] of [
+  ["desktop side pane",false,360,1400,true,true],
+  ["desktop main area",false,1200,1400,false,false],
+  ["phone",true,390,390,true,false],
+  ["tablet split pane",true,500,1100,true,true],
+  ["tablet full screen",true,768,768,false,false],
 ]) {
   test(`sidebar mode matches its CSS breakpoint: ${name}`, () => {
     const classes = new Set();
@@ -78,6 +79,28 @@ for (const [name,mobile,width,windowWidth,narrow] of [
       syncFabMode(){},syncSidebarControls(){}};
     prototype(mobile).syncSidebarLayout.call(view);
     assert.equal(view.narrowSidebarLayout,narrow);
-    assert.equal(classes.has("memoria-narrow-panel"),narrow && !mobile);
+    // 面板窄但窗口宽：CSS 的窗口断点管不到，需要 narrow-panel 补丁。
+    assert.equal(classes.has("memoria-narrow-panel"),panel);
   });
 }
+
+test("FAB mode is limited to phones, so desktop keeps the growing input card", () => {
+  for (const [mobile, style, fab] of [
+    [true, "fab", true],
+    [false, "fab", false],
+    [true, "always-visible", false],
+  ]) {
+    const classes = new Set();
+    const root = {
+      addClass: (cls) => classes.add(cls),
+      removeClass: (cls) => classes.delete(cls),
+      hasClass: (cls) => classes.has(cls),
+    };
+    const view = {contentEl: root, settings: {mobileInputStyle: style}, isFabMode() {
+      return classes.has("memoria-input-fab-mode");
+    }};
+    prototype(mobile).syncFabMode.call(view);
+    assert.equal(classes.has("memoria-input-fab-mode"), fab, `${mobile}/${style}`);
+    assert.equal(view.isFabMode(), fab);
+  }
+});
