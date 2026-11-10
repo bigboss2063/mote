@@ -42,7 +42,7 @@ import type { InsightScopeFilter, ScopeType } from "./ai/scope";
 import { buildLexicalIndex, findRelated, type LexicalIndex } from "./ai/related";
 import { SemanticIndex, embeddingConfig } from "./ai/embedding";
 import { RelatedNotesModal } from "./related-modal";
-import { bindMobileNavbarClearance, visibleViewport } from "./mobile-navbar";
+import { bindMobileNavbarClearance, isNarrowPane, NARROW_PANE_WIDTH, visibleViewport } from "./mobile-navbar";
 
 interface Filter {
   tag: string | null;
@@ -967,9 +967,12 @@ export class MemoriaView extends ItemView {
     //
     //   - 内容高度 ≤ 展开态 min（空或 1-3 行）→ 不设 inline height，让 CSS min-height 决定视觉
     //   - 内容高度 > 展开态 min（≥ 4 行）→ 设 inline height = scrollHeight，让 textarea 撑高
-    //   展开态的 min-height 由样式表按断点决定（手机 56 / 桌面 96），这里直接读，
-    //   不再抄一份数字，改 CSS 不会失准。
-    const expandedMin = parseFloat(getComputedStyle(el).minHeight) || 0;
+    //   注意不能读 getComputedStyle().minHeight：那是**当前**状态的值，收起态只有 40px，
+    //   恢复草稿时会误判成"内容够高"，把两行草稿锁在 46px。读样式表里的展开态变量才准。
+    const expandedMin =
+      parseFloat(
+        getComputedStyle(el).getPropertyValue("--memoria-input-min")
+      ) || 0;
     if (contentHeight <= expandedMin) {
       // 内容不够撑高，让 CSS min-height 掌控（收起时 40，展开时 96）
       el.setCssStyles({ height: "" });
@@ -1673,16 +1676,14 @@ export class MemoriaView extends ItemView {
     if (!width) return; // Hidden tabs should keep their last measured layout.
     // 抽屉与否只看"面板有多宽"，因为面板才是真正被挤压的东西。
     // 手机和 iPad 全屏时面板=窗口；iPad 分屏时面板远窄于窗口。
-    const narrow = width <= 680;
-    const windowWidth =
-      this.contentEl.ownerDocument.defaultView?.innerWidth ?? width;
+    const narrow = width <= NARROW_PANE_WIDTH;
     if (narrow !== this.narrowSidebarLayout) {
       this.contentEl.removeClass("memoria-sidebar-open");
     }
     this.narrowSidebarLayout = narrow;
     // CSS 断点量的是窗口，窗口本身够窄时已经画成抽屉了；
     // 只有"面板窄、窗口不窄"（iPad 分屏、桌面侧边 pane）才需要这层补丁。
-    this.contentEl.toggleClass("memoria-narrow-panel", narrow && windowWidth > 680);
+    this.contentEl.toggleClass("memoria-narrow-panel", isNarrowPane(this.contentEl));
     if (!Platform.isMobile) {
       this.contentEl.toggleClass("memoria-sidebar-collapsed", !narrow && this.settings.sidebarCollapsed);
     } else if (narrow) {

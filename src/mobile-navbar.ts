@@ -178,3 +178,35 @@ export function visibleViewport(doc: Document): { width: number; height: number 
   const cut = Number.isFinite(inset) && inset > 0 ? inset : 0;
   return { width, height: Math.max(0, height - cut) };
 }
+
+/** 样式表里手机布局的断点，JS 判定要和它一致。 */
+export const NARROW_PANE_WIDTH = 680;
+
+/**
+ * 面板窄、窗口不窄：iPad 分屏、桌面侧边 pane。
+ * CSS 的宽度断点量的是窗口，这类布局会漏掉，需要一层窄面板补丁。
+ * 隐藏的标签页量出来是 0，不当作窄。
+ */
+export function isNarrowPane(root: HTMLElement): boolean {
+  const width = root.clientWidth;
+  if (!width) return false;
+  const windowWidth =
+    root.ownerDocument.defaultView?.innerWidth ?? width;
+  return width <= NARROW_PANE_WIDTH && windowWidth > NARROW_PANE_WIDTH;
+}
+
+/**
+ * 整页视图：跟着自己的宽度切换 .is-narrow-pane。
+ * 样式表只能看见窗口，分屏和桌面侧边 pane 得由这里补上。
+ */
+export function bindNarrowPane(root: HTMLElement): () => void {
+  const view = root.ownerDocument.defaultView;
+  if (!view) return () => {};
+  const publish = (): void => {
+    root.toggleClass("is-narrow-pane", isNarrowPane(root));
+  };
+  publish();
+  const observer = new view.ResizeObserver(publish);
+  observer.observe(root);
+  return () => observer.disconnect();
+}

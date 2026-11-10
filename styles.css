@@ -112,6 +112,11 @@ body.is-phone {
     0 24px 60px -16px var(--memoria-black-a-7),
     0 6px 16px -6px var(--memoria-black-a-5);
 
+  /* 输入框展开态的 min-height：JS 的 autoResizeInput 要拿它决定"内容够不够撑高"，
+     所以必须是唯一事实来源，不能再让 JS 抄一份数字。
+     手机紧凑一档（56），桌面 96；收起态另算 40，见下方的收起规则。 */
+  --memoria-input-min: 96px;
+
   --memoria-accent-subtle: var(--memoria-green-3);
   --memoria-accent-hover: var(--memoria-green-4);
   --memoria-accent-border: var(--memoria-green-7);
@@ -826,9 +831,10 @@ body.is-mobile .memoria-root button.memoria-tool-btn {
    *   + 字号较小不容易看出来；手机上字大、空间小就明显了。 */
   -webkit-appearance: none;
   appearance: none;
-  /* v2.0.17: min-height 由 96px 起步（比 v2.0.16 的 72px 多一行视觉缓冲），
-   *   收起态会被下方 :not(:hover):not(:focus-within)... 规则覆盖到 40px */
-  min-height: 96px;
+  /* v2.0.17: min-height 由变量给（桌面 96 / 手机 56），
+   *   收起态被下方 :not(...) 规则覆盖到 40px。
+   *   JS 读同一个变量决定何时接管高度，两边不会失准。 */
+  min-height: var(--memoria-input-min);
   /* v1.1.8: max-height 用 vh 自适应，避免小屏上输入框撑满整个视口 */
   max-height: 40vh;
   padding: 0;
@@ -2210,8 +2216,13 @@ body.is-mobile .memoria-root button.memoria-tool-btn {
     box-shadow: 0 -6px 16px -10px var(--memoria-black-a-5);
     border-radius: var(--memoria-radius-container);
   }
+  /* 手机紧凑一档。JS 的 autoResizeInput 读的就是这个变量，
+     所以手机/桌面的差异只在这里声明一次。 */
+  .memoria-container {
+    --memoria-input-min: 56px;
+  }
   .memoria-input {
-    min-height: 56px;
+    min-height: var(--memoria-input-min);
     /* 16px 是 iOS 聚焦输入框不再放大的最小字号 */
     font-size: 16px;
     /* v1.1.18: 防第三方 OB 主题给 textarea 加 text-indent / padding-left，
@@ -4210,6 +4221,40 @@ body.is-mobile .memoria-root button.memoria-tool-btn {
   .memoria-topbar-tools {
     margin-left: 4px;
   }
+}
+
+/* 面板窄、窗口不窄：iPad 分屏、桌面侧边 pane。
+ * 样式表里的阶梯断点量的是窗口，这类面板会拿到桌面的多列布局，
+ * 然后在 360px 里被压坏（四宫格一格 52px、标签轨道 0px、年份挤成 4 列）。
+ * shortcut: 统一用最窄一档（单列 / 2×2），600px 的面板会略空但不会坏；
+ * 真要按面板细分档位就得上容器查询，那需要 iOS 16+。 */
+.is-narrow-pane .memoria-stats-view .mstat-overview {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.is-narrow-pane .memoria-stats-view .mstat-hbar-row {
+  grid-template-columns: 22px 110px 1fr 30px;
+  gap: 8px;
+}
+.is-narrow-pane .memoria-stats-view .mstat-year-summary {
+  justify-content: space-between;
+}
+.is-narrow-pane .memoria-year-grid {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.is-narrow-pane .memoria-year-day {
+  max-width: 26px;
+  max-height: 26px;
+}
+/* 窄面板没有手机导航栏，但桌面留白 64/80 会吃掉大半宽度。
+   class 挂在 contentEl（=.view-content）上，用 :is() 把特异性提到
+   和上面按 data-type 写的桌面 padding 同级，靠顺序覆盖。 */
+.workspace-leaf-content[data-type="memoria-stats-view"] > .view-content.is-narrow-pane {
+  padding: 24px 16px 48px;
+}
+.workspace-leaf-content[data-type="memoria-year-view"] > .view-content.is-narrow-pane {
+  padding: 28px 20px 48px;
 }
 
 
