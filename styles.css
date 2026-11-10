@@ -873,7 +873,9 @@ body.is-mobile .memoria-root button.memoria-tool-btn {
 }
 .memoria-input-toolbar {
   display: flex;
-  align-items: center;
+  /* 顶部对齐，不是居中：右侧 submit-wrap 在窄屏会因时间框换行变成两行，
+     居中会把左边那排图标整体压低，和时间框的上边对不齐。 */
+  align-items: flex-start;
   justify-content: space-between;
   margin-top: 10px;
   padding-top: 8px;
@@ -1819,6 +1821,8 @@ body.is-mobile .memoria-root button.memoria-tool-btn {
  */
 .memoria-edit-datetime {
   padding: 4px 8px;
+  /* 和取消/发送按钮同高，单行布局时三者顶边才对得齐。 */
+  min-height: 32px;
   border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
@@ -1835,8 +1839,14 @@ body.is-mobile .memoria-root button.memoria-tool-btn {
   color: var(--text-normal);
 }
 
+/* 取消与发送同尺寸：两者并排，尺寸不一看着像没对齐。
+   min-width 锁到 48px（和发送按钮同宽同高，中英文文案都放得下），
+   不写死 width —— 将来换更长的语言时按钮会自己变宽，而不是把文字裁掉。 */
 .memoria-cancel-btn {
-  padding: 5px 14px;
+  box-sizing: border-box;
+  min-width: 48px;
+  height: 32px;
+  padding: 0;
   border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
@@ -1845,6 +1855,7 @@ body.is-mobile .memoria-root button.memoria-tool-btn {
   cursor: pointer;
   transition: background var(--memoria-motion), color var(--memoria-motion);
   box-shadow: none;
+  white-space: nowrap;
 }
 .memoria-cancel-btn:hover {
   background: var(--background-modifier-hover);
@@ -6386,7 +6397,7 @@ button.memoria-insight-cite:focus-visible {
 /* 文档视图：结果页与历史详情共用，正文到底部留一口气 */
 .memoria-insight-doc {
   min-width: 0;
-  padding-bottom: 18px;
+  /* 底部留白由 .memoria-insight-doc-foot 负责，结果页和历史页共用同一份。 */
 }
 .memoria-insight-doc-head {
   display: flex;
@@ -6437,6 +6448,9 @@ button.memoria-insight-cite:focus-visible {
   justify-content: flex-end;
   gap: 8px;
   padding-top: 4px;
+  /* 按钮到底边的留白放在这里，结果页和历史页才一致：
+     历史页的容器不是 .memoria-insight-doc，拿不到那份 padding-bottom。 */
+  padding-bottom: 18px;
 }
 .memoria-insight-view button.memoria-insight-back {
   display: inline-flex;
