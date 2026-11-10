@@ -21,13 +21,27 @@
   box-shadow: none;
 }
 
-/* 让视图的 contentEl 填满整个面板，清除 Obsidian 默认 padding */
+/* 让视图的 contentEl 填满整个面板，清除 Obsidian 默认 padding。
+ * 手机底部导航盖住贴底区域时，padding-bottom 用测量值把整列（含编辑框）抬上去。
+ * border-box 让这份 padding 吃进 height:100%，而不是把内容再撑出一截。 */
 .workspace-leaf-content[data-type="memoria-view"] .view-content {
   padding: 0;
+  padding-bottom: var(--mote-mobile-navbar-clearance, 0px);
+  box-sizing: border-box;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--background-primary);
+}
+
+/* 测量完成前的保守高度，用 Obsidian 自己的导航变量，不猜某台设备的像素。
+ * 进页面后按 .mobile-navbar 和键盘的真实位置改写；没有遮挡时改写为 0。
+ * fixed 那一份只给挂在 document 上的浮层，视图里的编辑框不读它。 */
+body.is-phone {
+  --mote-mobile-navbar-clearance: calc(
+    var(--navbar-height, 0px) + var(--navbar-bottom-offset, 0px) + 24px
+  );
+  --mote-mobile-navbar-fixed-clearance: var(--mote-mobile-navbar-clearance);
 }
 
 .memoria-root,
@@ -1368,6 +1382,9 @@
 .memoria-lightbox {
   position: fixed;
   inset: 0;
+  /* 全屏层：只把居中区域从导航上方让开，不改图片自己的布局。 */
+  padding-bottom: var(--mote-mobile-navbar-fixed-clearance, 0px);
+  box-sizing: border-box;
   background: var(--memoria-black-a-10);
   z-index: 10002;
   display: flex;
@@ -1490,6 +1507,9 @@
 .memoria-modal-backdrop {
   position: fixed;
   inset: 0;
+  /* 居中对话框：在可见区域里居中，而不是贴着被导航盖住的视口底边。 */
+  padding-bottom: var(--mote-mobile-navbar-fixed-clearance, 0px);
+  box-sizing: border-box;
   background: var(--memoria-black-a-8);
   z-index: 10000;
   display: flex;
@@ -2241,7 +2261,7 @@
   box-sizing: border-box;
 }
 .is-mobile .workspace-leaf-content[data-type="memoria-stats-view"] .view-content {
-  padding: 24px 16px 48px;
+  padding: 24px 16px calc(24px + var(--mote-mobile-navbar-clearance, 0px));
 }
 @media (max-width: 520px) {
   .workspace-leaf-content[data-type="memoria-stats-view"] .view-content {
@@ -3870,7 +3890,7 @@
   box-sizing: border-box;
 }
 .is-mobile .workspace-leaf-content[data-type="memoria-year-view"] .view-content {
-  padding: 32px 20px 56px;
+  padding: 32px 20px calc(24px + var(--mote-mobile-navbar-clearance, 0px));
 }
 
 .memoria-year-view {
@@ -4649,57 +4669,49 @@
 }
 
 @media (hover: none) and (pointer: coarse), (max-width: 680px) {
-  /* ============= FAB 按钮（仅 fab 模式 + 未展开时显示） ============= */
+  /* 加号挂在主栏里，主栏已经被视图的 padding 抬到导航上方。
+     所以这里只留一点边距，不写导航高度。 */
+  .memoria-root.memoria-input-fab-mode .memoria-main {
+    position: relative;
+  }
   .memoria-root.memoria-input-fab-mode .memoria-fab {
     display: flex;
-    position: fixed;
-    right: 20px;
-    /* v2.3.0: bottom 从 20px → 72px。
-       原 20px 时 FAB 被 Obsidian 移动端底部原生工具栏（mobile navbar，
-       高约 48px）遮住大半。抬高到 72px 让 FAB 完整浮在工具栏上方。
-       env(safe-area-inset-bottom) 继续叠加，自动避开 iOS home indicator。 */
-    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
     width: 52px;
     height: 52px;
     align-items: center;
     justify-content: center;
-    /* 跟主题色走 —— 用户要求的"➕ 颜色跟界面一致" */
     background: var(--interactive-accent);
     color: var(--text-on-accent);
     border: none;
     border-radius: 50%;
     box-shadow: var(--memoria-shadow-popover);
     cursor: pointer;
-    z-index: 100;
-    /* 出现/消失动画 */
+    z-index: 3;
     transform: scale(1);
     opacity: 1;
     transition: transform var(--memoria-motion), opacity var(--memoria-motion);
-    /* 防 iOS Safari 给原生 button 套灰边 */
     -webkit-appearance: none;
     appearance: none;
     -webkit-tap-highlight-color: transparent;
   }
   .memoria-root.memoria-input-fab-mode .memoria-fab:active {
-    /* 按下反馈：略缩 + 阴影变小，模拟"按下去"的物理感 */
     transform: scale(0.94);
     box-shadow: 0 2px 8px -4px var(--memoria-black-a-6);
   }
   .memoria-root.memoria-input-fab-mode .memoria-fab .svg-icon {
     width: 24px;
     height: 24px;
-    /* 用 stroke 表达图标线条粗细 */
     stroke-width: 2.4;
   }
+  /* 最后一条笔记要能滚到加号上面，这段跟按钮尺寸走，不跟屏幕高度走。 */
+  .memoria-root.memoria-input-fab-mode:not(.is-fab-expanded) .memoria-list {
+    padding-bottom: 84px;
+  }
 
-  /* ============= 输入卡片（仅 fab 模式 + 未展开时隐藏） =============
-     已展开 (is-fab-expanded) 时让输入卡片正常显示。
-     用 max-height + opacity 做滑入滑出动画（避开 display 切换不能 transition 的限制）。
-
-     注意：必须用 max-height 不能直接 height，因为输入框高度会随内容动态变化；
-     给 max-height 一个足够大的上限（500px），实际高度由内容决定。 */
   .memoria-root.memoria-input-fab-mode:not(.is-fab-expanded) .memoria-input-card {
-    /* 完全隐藏 + 不可交互（不占空间，不抢焦点）*/
     max-height: 0;
     min-height: 0;
     opacity: 0;
@@ -4708,51 +4720,35 @@
     border: none;
     overflow: hidden;
     pointer-events: none;
-    /* 防止子元素的 box-shadow 溢出 */
     box-shadow: none;
   }
-  .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input-card {
-    /* v2.3.3: 展开态改为 position: fixed 贴屏幕底部固定。
-     *
-     * 为什么要 fixed（解决 v2.3.2 真机暴露的 3 个问题）：
-     *   旧方案输入卡片在 flex 流里（order: 10），长内容时 textarea 撑高 →
-     *   整张卡片变高、顶部一直延伸到屏幕上方，底部（输入区/发送按钮）被键盘
-     *   遮住。v2.3.2 想靠 JS scrollIntoView 把它滚回来，但 iOS 上：
-     *     ① 重开长草稿时滚动时机不可控 → 仍被遮
-     *     ② input 每次打字 smooth 滚动 → 界面抖动频闪
-     *     ③ 滚动把卡片顶部连同 ✕ 按钮推出视口 → ✕ 消失
-     *
-     * fixed 贴底从根上解决：卡片固定吸附在屏幕底部（iOS 键盘弹起时 Obsidian
-     *   WebView 收缩 layout viewport，bottom: 0 自动落在键盘正上方，跟常驻底部
-     *   输入框一直好用同理），不再随内容增高而移动。内容超高由 textarea 内部
-     *   滚动消化（见下方 .memoria-input 的 max-height + overflow-y）。
-     *   ✕ 按钮 absolute 在固定卡片内，永远可见、不被滚走。 */
-    position: fixed;
-    left: 8px;
-    right: 8px;
-    bottom: 0;
-    margin: 0 0 8px;
-    max-height: 60vh;
-    opacity: 1;
-    z-index: 50;
-    background: var(--background-primary);
-    transition: opacity var(--memoria-motion);
+  /* 编辑是主栏里的一列，占满顶栏下面剩下的高度。
+     确认按钮是这列的最后一行，跟着视图的内容盒走，导航变高它就跟着上移。
+     不使用 vh：键盘把视图压矮时，文本框缩小，工具栏仍留在内容盒底部。 */
+  .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-list {
+    display: none;
   }
-
-  /* 已展开时 FAB 自身淡出 + 缩小消失（不是直接 display: none，留过渡感）*/
+  .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input-card {
+    position: relative;
+    inset: auto;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    max-height: none;
+    order: 10;
+    margin: 8px;
+    opacity: 1;
+    z-index: 2;
+    background: var(--background-primary);
+  }
   .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-fab {
     transform: scale(0.4);
     opacity: 0;
-    /* 动画结束后用 visibility:hidden 彻底退出 hit-test，避免被键盘遮住时还
-       能被误触触发。pointer-events 已经够用，但 visibility 双保险。 */
     pointer-events: none;
     visibility: hidden;
   }
 
-  /* ============= 输入卡片右上角的关闭按钮 =============
-     v2.3.0: 原 28×28 容器 + 16×16 图标，在移动端实际显示"针尖大小几乎看不见"。
-       放大为 36×36 容器 + 20×20 图标，并加一个常驻的淡背景圆底 + 更深的图标
-       颜色，让它在输入卡片右上角清晰可辨、好点。 */
   .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input-close {
     display: inline-flex;
     position: absolute;
@@ -4762,11 +4758,9 @@
     height: 36px;
     align-items: center;
     justify-content: center;
-    /* 常驻淡背景圆底，让按钮"看得见" */
     background: var(--background-modifier-hover);
     border: none;
     border-radius: 50%;
-    /* 用 text-normal 而非 text-muted，对比更高更显眼 */
     color: var(--text-normal);
     cursor: pointer;
     box-shadow: none;
@@ -4783,23 +4777,14 @@
     height: 20px;
     stroke-width: 2.4;
   }
-  /* v2.3.3: fixed 贴底的输入卡片用 flex 纵向布局，让 textarea 可伸缩、
-     工具栏行固定在底部。配合 textarea 的 max-height 内部滚动，整张卡片
-     高度被 max-height: 60vh 限制住，长内容在 textarea 内部滚动而不撑高卡片。 */
-  .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input-card {
-    display: flex;
-    flex-direction: column;
-  }
-  /* textarea 内部滚动：超过 38vh 就在 textarea 内滚，不再撑高整张卡片。
-     这样卡片总高（textarea + 工具栏 + padding）始终 ≤ max-height: 60vh，
-     底部工具栏/发送按钮永远贴在卡片底、跟着卡片 fixed 在键盘上方可见。 */
   .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input {
-    max-height: 38vh;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    height: auto;
     overflow-y: auto;
-    /* 给 ✕ 按钮（右上角 36px）让出空间，避免首行末尾文字被盖 */
     padding-right: 44px;
   }
-  /* 工具栏行不收缩，始终完整显示在卡片底部 */
   .memoria-root.memoria-input-fab-mode.is-fab-expanded .memoria-input-toolbar {
     flex-shrink: 0;
   }
@@ -5172,6 +5157,9 @@ body.sc-style-context-background-image
  * 页面铺满工作区，内容列宽沿用原来弹窗的 760 / 880 / 1040。 */
 .workspace-leaf-content[data-type="memoria-insight-view"] .view-content {
   padding: 0;
+  /* 开始洞察、以及正文底部的复制/删除/重试，都贴在这块滚动区的底边上。
+     只留 safe-area 清不掉 Obsidian 手机底部导航。 */
+  padding-bottom: var(--mote-mobile-navbar-clearance, 0px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -5206,7 +5194,8 @@ body.sc-style-context-background-image
   padding-right: 16px;
 }
 .is-mobile .memoria-insight-view .memoria-insight-body {
-  padding-bottom: env(safe-area-inset-bottom);
+  /* 导航避让已经加在 view-content 上，这里只留一点正文收尾空隙。 */
+  padding-bottom: 16px;
 }
 
 /* ---------- 页头：图标徽标 + 标题 + 范围摘要 ----------

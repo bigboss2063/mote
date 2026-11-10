@@ -57,6 +57,7 @@ import {
 import { saveInsightRecord, stripLeadingTitle } from "./insight-file";
 import { dismissCitationPreview } from "./citation-ui";
 import { memoLinkName } from "../parser";
+import { bindMobileNavbarClearance, visibleViewport } from "../mobile-navbar";
 
 interface SettingsApi {
   open(): void;
@@ -239,7 +240,8 @@ function openInsightMenu(input: {
     )}px`,
   });
   const desiredHeight = Math.min(menu.scrollHeight, 280);
-  const below = window.innerHeight - rect.bottom - 8;
+  const visible = visibleViewport(menu.ownerDocument);
+  const below = visible.height - rect.bottom - 8;
   const above = rect.top - 8;
   if (below < Math.min(desiredHeight, 160) && above > below) {
     menu.setCssProps({
@@ -347,6 +349,7 @@ export class InsightView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.contentEl.empty();
+    this.register(bindMobileNavbarClearance(this.contentEl));
     this.rootEl = this.contentEl.createDiv({ cls: "memoria-insight-view" });
     const header = this.rootEl.createDiv({ cls: "memoria-insight-header" });
     this.titleEl = header.createDiv({ cls: "memoria-insight-title" });
