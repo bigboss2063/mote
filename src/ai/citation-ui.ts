@@ -201,11 +201,11 @@ function openCitationCard(anchor: HTMLElement, memo: { title: string; content: s
   const margin = 8;
   const width = card.offsetWidth;
   const height = card.offsetHeight;
+  const visible = visibleViewport(doc);
   const left = Math.max(
     margin,
-    Math.min(rect.left + rect.width / 2 - width / 2, win.innerWidth - width - margin)
+    Math.min(rect.left + rect.width / 2 - width / 2, visible.width - width - margin)
   );
-  const visible = visibleViewport(doc);
   const above = rect.top - height - margin;
   const below = rect.bottom + margin;
   const top =

@@ -112,6 +112,11 @@ body.is-phone {
     0 24px 60px -16px var(--memoria-black-a-7),
     0 6px 16px -6px var(--memoria-black-a-5);
 
+  /* 输入框展开态的 min-height：JS 的 autoResizeInput 要拿它决定"内容够不够撑高"，
+     所以必须是唯一事实来源，不能再让 JS 抄一份数字。
+     手机紧凑一档（56），桌面 96；收起态另算 40，见下方的收起规则。 */
+  --memoria-input-min: 96px;
+
   --memoria-accent-subtle: var(--memoria-green-3);
   --memoria-accent-hover: var(--memoria-green-4);
   --memoria-accent-border: var(--memoria-green-7);
@@ -661,6 +666,40 @@ body.is-phone {
   display: none;
 }
 
+/* 触屏上 28px 的图标按钮点不准，统一放大热区但不改变图标大小。
+   用 body.is-mobile（Obsidian 的手机/平板外壳）而不是 (hover: none)：
+   带触摸屏的桌面也是 hover: none，但那边不该被重新排版。 */
+body.is-mobile .memoria-root button.memoria-icon-btn {
+  width: 36px;
+  height: 36px;
+}
+body.is-mobile .memoria-root button.memoria-icon-btn .svg-icon {
+  width: 17px;
+  height: 17px;
+}
+body.is-mobile .memoria-root button.memoria-tool-btn .svg-icon {
+  width: 17px;
+  height: 17px;
+}
+/* 侧栏每一项也是主要入口，给到能稳定点中的高度。 */
+body.is-mobile .memoria-nav-item {
+  min-height: 40px;
+}
+
+/* 输入区的工具按钮有 7 个，36px 会在 320px 上顶出卡片，单独留一档。 */
+body.is-mobile .memoria-root button.memoria-tool-btn {
+  width: 34px;
+  height: 34px;
+}
+/* 320px 上 7 个 34px 按钮 + 发送按钮仍然超宽，再收一档，
+   正好一行放下；再窄就交给上面的 flex-wrap 兜底。 */
+@media (max-width: 340px) {
+  body.is-mobile .memoria-root button.memoria-tool-btn {
+    width: 30px;
+    height: 30px;
+  }
+}
+
 /* v1.1.2: 刷新按钮点击后转圈动画 */
 .memoria-root button.memoria-icon-btn.is-spinning {
   pointer-events: none;
@@ -792,9 +831,10 @@ body.is-phone {
    *   + 字号较小不容易看出来；手机上字大、空间小就明显了。 */
   -webkit-appearance: none;
   appearance: none;
-  /* v2.0.17: min-height 由 96px 起步（比 v2.0.16 的 72px 多一行视觉缓冲），
-   *   收起态会被下方 :not(:hover):not(:focus-within)... 规则覆盖到 40px */
-  min-height: 96px;
+  /* v2.0.17: min-height 由变量给（桌面 96 / 手机 56），
+   *   收起态被下方 :not(...) 规则覆盖到 40px。
+   *   JS 读同一个变量决定何时接管高度，两边不会失准。 */
+  min-height: var(--memoria-input-min);
   /* v1.1.8: max-height 用 vh 自适应，避免小屏上输入框撑满整个视口 */
   max-height: 40vh;
   padding: 0;
@@ -833,7 +873,9 @@ body.is-phone {
 }
 .memoria-input-toolbar {
   display: flex;
-  align-items: center;
+  /* 顶部对齐，不是居中：右侧 submit-wrap 在窄屏会因时间框换行变成两行，
+     居中会把左边那排图标整体压低，和时间框的上边对不齐。 */
+  align-items: flex-start;
   justify-content: space-between;
   margin-top: 10px;
   padding-top: 8px;
@@ -842,7 +884,9 @@ body.is-phone {
 .memoria-input-tools {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 2px;
+  min-width: 0;
 }
 .memoria-root button.memoria-tool-btn {
   width: 28px;
@@ -1180,14 +1224,22 @@ body.is-phone {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.2px;
 }
+/* 卡片的操作按钮在触屏上一直显示：没有 hover 就没有第二次机会。
+   宽度断点管不到平板，所以这里按输入方式判断。 */
 .memoria-card-actions {
   display: flex;
   gap: 2px;
   opacity: 0;
   transition: opacity var(--memoria-motion);
 }
-.memoria-card:hover .memoria-card-actions {
+.memoria-card:hover .memoria-card-actions,
+.memoria-card:focus-within .memoria-card-actions {
   opacity: 1;
+}
+@media (hover: none) {
+  .memoria-card-actions {
+    opacity: 1;
+  }
 }
 .memoria-card-body {
   font-size: var(--memoria-font-body);
@@ -1286,6 +1338,14 @@ body.is-phone {
 .memoria-card-body pre > button:focus,
 .memoria-card-body pre .code-copy-button:focus {
   opacity: 1;
+}
+/* 触屏没有 hover，复制按钮必须常显，否则永远点不到。 */
+@media (hover: none) {
+  .memoria-card-body pre .copy-code-button,
+  .memoria-card-body pre > button,
+  .memoria-card-body pre .code-copy-button {
+    opacity: 0.5;
+  }
 }
 
 .memoria-card-body img {
@@ -1761,6 +1821,8 @@ body.is-phone {
  */
 .memoria-edit-datetime {
   padding: 4px 8px;
+  /* 和取消/发送按钮同高，单行布局时三者顶边才对得齐。 */
+  min-height: 32px;
   border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
@@ -1777,8 +1839,14 @@ body.is-phone {
   color: var(--text-normal);
 }
 
+/* 取消与发送同尺寸：两者并排，尺寸不一看着像没对齐。
+   min-width 锁到 48px（和发送按钮同宽同高，中英文文案都放得下），
+   不写死 width —— 将来换更长的语言时按钮会自己变宽，而不是把文字裁掉。 */
 .memoria-cancel-btn {
-  padding: 5px 14px;
+  box-sizing: border-box;
+  min-width: 48px;
+  height: 32px;
+  padding: 0;
   border: 0.5px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-muted);
@@ -1787,6 +1855,7 @@ body.is-phone {
   cursor: pointer;
   transition: background var(--memoria-motion), color var(--memoria-motion);
   box-shadow: none;
+  white-space: nowrap;
 }
 .memoria-cancel-btn:hover {
   background: var(--background-modifier-hover);
@@ -2118,20 +2187,29 @@ body.is-phone {
   .memoria-main {
     width: 100%;
   }
-  /* 顶部紧凑 */
+  /* 顶部紧凑：只有搜索框可以压缩，图标按钮一律不缩，
+     否则 320px 上侧栏开关会被压成 14px、工具区还会溢出视口。 */
   .memoria-topbar {
     padding: 8px 12px;
     gap: 6px;
   }
+  .memoria-topbar > * {
+    flex-shrink: 0;
+  }
   .memoria-brand {
     display: none;
   }
+  /* 手机上标题只是装饰，让给搜索框；320px 否则只剩 54px。 */
+  .memoria-topbar-title {
+    display: none;
+  }
   .memoria-search-wrap {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
   }
   .memoria-search {
     width: 100%;
-    min-width: 80px;
+    min-width: 0;
   }
   /* v1.1.19: 手机端输入卡片贴底 —— flex order 让 input-card 出现在 list 之后，
    *   input-card 作为 flex item 天然停在 main 底部（flex-direction: column，main overflow:hidden）。
@@ -2149,8 +2227,13 @@ body.is-phone {
     box-shadow: 0 -6px 16px -10px var(--memoria-black-a-5);
     border-radius: var(--memoria-radius-container);
   }
+  /* 手机紧凑一档。JS 的 autoResizeInput 读的就是这个变量，
+     所以手机/桌面的差异只在这里声明一次。 */
+  .memoria-container {
+    --memoria-input-min: 56px;
+  }
   .memoria-input {
-    min-height: 56px;
+    min-height: var(--memoria-input-min);
     /* 16px 是 iOS 聚焦输入框不再放大的最小字号 */
     font-size: 16px;
     /* v1.1.18: 防第三方 OB 主题给 textarea 加 text-indent / padding-left，
@@ -3582,8 +3665,8 @@ body.is-phone {
   width: 13px;
   height: 13px;
 }
-@media (max-width: 680px) {
-  /* 手机没有 hover，常显但柔和 */
+@media (hover: none) {
+  /* 触屏没有 hover，引用按钮常显但柔和。宽度断点管不到平板。 */
   .memoria-card-quote {
     opacity: 0.45;
   }
@@ -4151,6 +4234,40 @@ body.is-phone {
   }
 }
 
+/* 面板窄、窗口不窄：iPad 分屏、桌面侧边 pane。
+ * 样式表里的阶梯断点量的是窗口，这类面板会拿到桌面的多列布局，
+ * 然后在 360px 里被压坏（四宫格一格 52px、标签轨道 0px、年份挤成 4 列）。
+ * shortcut: 统一用最窄一档（单列 / 2×2），600px 的面板会略空但不会坏；
+ * 真要按面板细分档位就得上容器查询，那需要 iOS 16+。 */
+.is-narrow-pane .memoria-stats-view .mstat-overview {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.is-narrow-pane .memoria-stats-view .mstat-hbar-row {
+  grid-template-columns: 22px 110px 1fr 30px;
+  gap: 8px;
+}
+.is-narrow-pane .memoria-stats-view .mstat-year-summary {
+  justify-content: space-between;
+}
+.is-narrow-pane .memoria-year-grid {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.is-narrow-pane .memoria-year-day {
+  max-width: 26px;
+  max-height: 26px;
+}
+/* 窄面板没有手机导航栏，但桌面留白 64/80 会吃掉大半宽度。
+   class 挂在 contentEl（=.view-content）上，用 :is() 把特异性提到
+   和上面按 data-type 写的桌面 padding 同级，靠顺序覆盖。 */
+.workspace-leaf-content[data-type="memoria-stats-view"] > .view-content.is-narrow-pane {
+  padding: 24px 16px 48px;
+}
+.workspace-leaf-content[data-type="memoria-year-view"] > .view-content.is-narrow-pane {
+  padding: 28px 20px 48px;
+}
+
 
 
 /* ==================== v2.0.0 新增样式 ==================== */
@@ -4510,10 +4627,10 @@ body.is-phone {
  *   桌面（即使在小窗口下也是 hover: hover, pointer: fine）。
  *
  * 注意：
- *   只复制最关键的几条（字渲染 padding + appearance），不复制 min-height/
- *   font-size，那些是手机紧凑布局，不是字渲染必须的（iPad 大屏不需要紧凑）。
- *   原 @media (max-width: 680px) 内的同名规则保持不变，二者特异性相同，
- *   后定义的（这一段）覆盖前面，对手机也无害（值完全一致）。
+ *   只复制最关键的几条（字渲染 padding + appearance），不复制 min-height，
+ *   那是手机紧凑布局，iPad 大屏不需要紧凑。
+ *   font-size 要一起复制：低于 16px 时 iOS 聚焦输入框会放大整页，
+ *   平板比手机宽，但一样会被放大。
  * ================================================================ */
 @media (hover: none) and (pointer: coarse) {
   .memoria-input {
@@ -4524,6 +4641,8 @@ body.is-phone {
     padding-bottom: 2px;
     -webkit-appearance: none;
     appearance: none;
+    /* 16px 是 iOS 聚焦输入框不再放大的最小字号 */
+    font-size: 16px;
   }
 }
 .memoria-buddy-stat-val {
@@ -4668,7 +4787,9 @@ body.is-phone {
   display: none;
 }
 
-@media (hover: none) and (pointer: coarse), (max-width: 680px) {
+/* 只有 JS 真的加上了 fab 模式（= 手机上的 fab 设置）才生效，
+   所以这里按输入方式判断即可，不再重复宽度断点。 */
+@media (hover: none) {
   /* 加号挂在主栏里，主栏已经被视图的 padding 抬到导航上方。
      所以这里只留一点边距，不写导航高度。 */
   .memoria-root.memoria-input-fab-mode .memoria-main {
@@ -6276,7 +6397,7 @@ button.memoria-insight-cite:focus-visible {
 /* 文档视图：结果页与历史详情共用，正文到底部留一口气 */
 .memoria-insight-doc {
   min-width: 0;
-  padding-bottom: 18px;
+  /* 底部留白由 .memoria-insight-doc-foot 负责，结果页和历史页共用同一份。 */
 }
 .memoria-insight-doc-head {
   display: flex;
@@ -6327,6 +6448,9 @@ button.memoria-insight-cite:focus-visible {
   justify-content: flex-end;
   gap: 8px;
   padding-top: 4px;
+  /* 按钮到底边的留白放在这里，结果页和历史页才一致：
+     历史页的容器不是 .memoria-insight-doc，拿不到那份 padding-bottom。 */
+  padding-bottom: 18px;
 }
 .memoria-insight-view button.memoria-insight-back {
   display: inline-flex;
@@ -6439,20 +6563,9 @@ button.memoria-insight-cite:focus-visible {
     padding-left: 16px;
     padding-right: 16px;
   }
+  /* 窄屏把范围面板收成两列，宽度留给主动作 */
   .memoria-insight-scope-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  /* 触屏上把偏小的文字按钮补到可稳定点中的高度 */
-  .memoria-insight-view button.memoria-insight-text-btn {
-    height: 30px;
-    padding: 0 8px;
-  }
-  .memoria-insight-view button.memoria-insight-text-btn.memoria-insight-icon-btn {
-    width: 30px;
-  }
-  .memoria-insight-view button.memoria-insight-doc-action {
-    width: 32px;
-    height: 32px;
   }
   /* 窄屏藏掉快捷键提示，把宽度留给主动作 */
   .memoria-insight-foot-hint {
@@ -6465,31 +6578,25 @@ button.memoria-insight-cite:focus-visible {
     gap: 8px;
     justify-content: flex-end;
   }
-  /* 窄屏一次只看列表或正文，避免 200px 把一行切成两半、标题又重复一遍。 */
-  .memoria-insight-history-body {
-    grid-template-columns: 1fr;
-    gap: 0;
-    min-height: 0;
-  }
-  .memoria-insight-history-list,
-  .memoria-insight-history-detail {
-    max-height: none;
-    overflow: visible;
-    padding-right: 0;
-  }
-  .memoria-insight-view button.memoria-insight-history-item {
-    min-height: 52px;
-    padding: 12px;
-  }
 }
 
-.is-mobile .memoria-insight-history-body {
+/* 窄面板一次只看列表或正文，避免 200px 把一行切成两半、标题又重复一遍。
+   历史面板在紧凑态会给根加 is-picking / is-reading 并只渲染其中一列，
+   这里把网格收成单列，否则那一列仍被钉在 300px 的固定轨道上。
+   body.is-mobile 覆盖平板全屏，is-picking/is-reading 覆盖分屏与桌面侧边 pane。 */
+.is-mobile .memoria-insight-history-body,
+.memoria-insight-history.is-picking .memoria-insight-history-body,
+.memoria-insight-history.is-reading .memoria-insight-history-body {
   grid-template-columns: 1fr;
   gap: 0;
   min-height: 0;
 }
 .is-mobile .memoria-insight-history-list,
-.is-mobile .memoria-insight-history-detail {
+.is-mobile .memoria-insight-history-detail,
+.memoria-insight-history.is-picking .memoria-insight-history-list,
+.memoria-insight-history.is-picking .memoria-insight-history-detail,
+.memoria-insight-history.is-reading .memoria-insight-history-list,
+.memoria-insight-history.is-reading .memoria-insight-history-detail {
   max-height: none;
   overflow: visible;
   padding-right: 0;
@@ -6497,6 +6604,40 @@ button.memoria-insight-cite:focus-visible {
 .is-mobile .memoria-insight-view button.memoria-insight-history-item {
   min-height: 52px;
   padding: 12px;
+}
+
+/* 触屏上把偏小的控件补到能点中的尺寸。按 body.is-mobile 而不是宽度断点：
+   平板一样是手指，但宽度都大于 680，原来那套规则刚好把平板漏掉，
+   头部按钮在 iPad 上反而只有 26px。 */
+body.is-mobile .memoria-insight-view button.memoria-insight-text-btn {
+  height: 36px;
+  padding: 0 10px;
+}
+body.is-mobile
+  .memoria-insight-view
+  button.memoria-insight-text-btn.memoria-insight-icon-btn {
+  width: 36px;
+  padding: 0;
+}
+body.is-mobile .memoria-insight-view button.memoria-insight-doc-action {
+  width: 36px;
+  height: 36px;
+}
+body.is-mobile .memoria-insight-view button.memoria-insight-back {
+  width: 36px;
+  height: 36px;
+}
+/* 引用角标是内联在正文里的 [n]，撑大按钮会顶乱行距，
+   所以只扩热区，图标本身不变形。 */
+body.is-mobile .memoria-insight-view button.memoria-insight-cite {
+  position: relative;
+  width: 16px;
+  height: 16px;
+}
+body.is-mobile .memoria-insight-view button.memoria-insight-cite::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
 }
 
 @media (max-width: 560px) {

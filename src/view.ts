@@ -42,7 +42,7 @@ import type { InsightScopeFilter, ScopeType } from "./ai/scope";
 import { buildLexicalIndex, findRelated, type LexicalIndex } from "./ai/related";
 import { SemanticIndex, embeddingConfig } from "./ai/embedding";
 import { RelatedNotesModal } from "./related-modal";
-import { bindMobileNavbarClearance, visibleViewport } from "./mobile-navbar";
+import { bindMobileNavbarClearance, isNarrowPane, NARROW_PANE_WIDTH, visibleViewport } from "./mobile-navbar";
 
 interface Filter {
   tag: string | null;
@@ -575,10 +575,10 @@ export class MemoriaView extends ItemView {
     this.syncContentWidth();
   }
 
-  /** Narrow desktop panels keep capture inline; mobile keeps its keyboard-safe FAB. */
+  /** FAB 只在手机上启用。桌面（含窄侧边 pane）保留常驻输入卡，
+   *  否则桌面开了 fab 设置后 textarea 不再随内容长高。 */
   private syncFabMode(): void {
-    const isFab = this.settings.mobileInputStyle === "fab" &&
-      !this.contentEl.hasClass("memoria-narrow-panel");
+    const isFab = this.settings.mobileInputStyle === "fab" && Platform.isMobile;
     if (isFab) {
       this.contentEl.addClass("memoria-input-fab-mode");
     } else {
@@ -586,6 +586,11 @@ export class MemoriaView extends ItemView {
       // 切回常驻模式时，强制清掉展开 class，避免遗留状态
       this.contentEl.removeClass("is-fab-expanded");
     }
+  }
+
+  /** FAB 模式是否真的生效。判定只看 root 的 class，不再各处重算设置。 */
+  private isFabMode(): boolean {
+    return this.contentEl.hasClass("memoria-input-fab-mode");
   }
 
   /** v2.2.0: 展开 FAB 触发的输入框（点击 ➕ 时调用）*/
@@ -929,10 +934,7 @@ export class MemoriaView extends ItemView {
     const el = this.inputEl;
     if (!el) return;
     // 手机编辑态占满主栏剩余高度，文本在框内滚动，不能按内容把卡片撑出屏幕。
-    if (
-      this.contentEl.hasClass("memoria-input-fab-mode") &&
-      this.contentEl.hasClass("is-fab-expanded")
-    ) {
+    if (this.isFabMode() && this.contentEl.hasClass("is-fab-expanded")) {
       el.setCssStyles({ height: "" });
       return;
     }
@@ -965,7 +967,12 @@ export class MemoriaView extends ItemView {
     //
     //   - 内容高度 ≤ 展开态 min（空或 1-3 行）→ 不设 inline height，让 CSS min-height 决定视觉
     //   - 内容高度 > 展开态 min（≥ 4 行）→ 设 inline height = scrollHeight，让 textarea 撑高
-    const expandedMin = Platform.isMobile ? 56 : 96;
+    //   注意不能读 getComputedStyle().minHeight：那是**当前**状态的值，收起态只有 40px，
+    //   恢复草稿时会误判成"内容够高"，把两行草稿锁在 46px。读样式表里的展开态变量才准。
+    const expandedMin =
+      parseFloat(
+        getComputedStyle(el).getPropertyValue("--memoria-input-min")
+      ) || 0;
     if (contentHeight <= expandedMin) {
       // 内容不够撑高，让 CSS min-height 掌控（收起时 40，展开时 96）
       el.setCssStyles({ height: "" });
@@ -1587,7 +1594,7 @@ export class MemoriaView extends ItemView {
       if (
         !wasEditing &&
         this.settings.clearAfterSave &&
-        this.settings.mobileInputStyle === "fab"
+        this.isFabMode()
       ) {
         // 强制收起（force=true 跳过"有内容则不收"的保护，因为我们刚清完内容）
         this.collapseFabInput(true);
@@ -1667,17 +1674,16 @@ export class MemoriaView extends ItemView {
   private syncSidebarLayout(): void {
     const width = this.contentEl.clientWidth;
     if (!width) return; // Hidden tabs should keep their last measured layout.
-    // Mobile drawer CSS follows the window breakpoint; desktop side panes have
-    // their own width independently of the application window.
-    const layoutWidth = Platform.isMobile
-      ? (this.contentEl.ownerDocument.defaultView?.innerWidth ?? width)
-      : width;
-    const narrow = layoutWidth <= 680;
+    // 抽屉与否只看"面板有多宽"，因为面板才是真正被挤压的东西。
+    // 手机和 iPad 全屏时面板=窗口；iPad 分屏时面板远窄于窗口。
+    const narrow = width <= NARROW_PANE_WIDTH;
     if (narrow !== this.narrowSidebarLayout) {
       this.contentEl.removeClass("memoria-sidebar-open");
     }
     this.narrowSidebarLayout = narrow;
-    this.contentEl.toggleClass("memoria-narrow-panel", narrow && !Platform.isMobile);
+    // CSS 断点量的是窗口，窗口本身够窄时已经画成抽屉了；
+    // 只有"面板窄、窗口不窄"（iPad 分屏、桌面侧边 pane）才需要这层补丁。
+    this.contentEl.toggleClass("memoria-narrow-panel", isNarrowPane(this.contentEl));
     if (!Platform.isMobile) {
       this.contentEl.toggleClass("memoria-sidebar-collapsed", !narrow && this.settings.sidebarCollapsed);
     } else if (narrow) {
@@ -1704,6 +1710,14 @@ export class MemoriaView extends ItemView {
   private toggleSidebar(open: boolean): void {
     this.contentEl.toggleClass("memoria-sidebar-open", open);
     this.syncSidebarControls();
+  }
+
+  /** 抽屉里选完筛选项就该把抽屉收起来，否则结果被抽屉盖住，
+   *  用户还得自己点一下蒙版。只对"抽屉"布局生效，桌面不碰。 */
+  private closeSidebarAfterPick(): void {
+    if (this.isMobileSidebarLayout() && this.contentEl.hasClass("memoria-sidebar-open")) {
+      this.toggleSidebar(false);
+    }
   }
 
   /** 收起桌面侧栏，让主内容区获得完整宽度 */
@@ -1883,7 +1897,7 @@ export class MemoriaView extends ItemView {
       this.editDateTimeEl.value = `${memo.date}T${memo.time}`;
     }
     // v2.2.0: 移动端 FAB 模式下，编辑某条卡片时输入框可能是隐藏的，先展开
-    if (this.settings.mobileInputStyle === "fab") {
+    if (this.isFabMode()) {
       this.contentEl.addClass("is-fab-expanded");
     }
     this.inputEl.focus();
@@ -1909,10 +1923,7 @@ export class MemoriaView extends ItemView {
     // v2.0.17: 恢复的草稿可能为空 → 收起态；非空 → 展开态
     this.syncInputCardContentState();
     // v2.2.0: 移动端 FAB 模式下，退出编辑且无草稿时收回 FAB 入口
-    if (
-      this.settings.mobileInputStyle === "fab" &&
-      !this.inputEl.value.trim()
-    ) {
+    if (this.isFabMode() && !this.inputEl.value.trim()) {
       this.collapseFabInput(true);
     }
   }
@@ -2173,6 +2184,7 @@ export class MemoriaView extends ItemView {
           this.filter.preset = "all";
           this.pageLimit = this.getInitialPageLimit();
           this.renderAll();
+          this.closeSidebarAfterPick();
         });
       }
     }
@@ -2232,6 +2244,7 @@ export class MemoriaView extends ItemView {
       if (key === "random") this.filter.randomSeed = Date.now();
       this.pageLimit = this.getInitialPageLimit();
       this.renderAll();
+      this.closeSidebarAfterPick();
     });
   }
 
@@ -2280,6 +2293,7 @@ export class MemoriaView extends ItemView {
           this.filter.preset = "all";
           this.pageLimit = this.getInitialPageLimit();
           this.renderList();
+          this.closeSidebarAfterPick();
         },
       }, shown.year, shown.month);
     } else {
@@ -2499,6 +2513,7 @@ export class MemoriaView extends ItemView {
       this.filter.date = null;
       this.pageLimit = this.getInitialPageLimit();
       this.renderAll();
+      this.closeSidebarAfterPick();
     });
     const bar = barWrap.createDiv({ cls: "memoria-daily-goal-bar" });
     const fill = bar.createDiv({ cls: "memoria-daily-goal-fill" });
@@ -2563,12 +2578,16 @@ export class MemoriaView extends ItemView {
         //   空格子用原生 title 只显示"日期 0 memos"，便宜又安静
         if (count > 0) {
           const dayMemos = memos.filter((m) => m.date === key);
-          cell.addEventListener("mouseenter", () => {
-            this.showHeatmapTooltip(cell, key, dayMemos);
-          });
-          cell.addEventListener("mouseleave", () => {
-            this.hideHeatmapTooltip();
-          });
+          // 触屏没有 hover：mouseenter 会被点按合成出来，但 mouseleave 永远不来，
+          // 浮层就永久糊在屏幕上。点一下本来就会跳到那天，这里直接不挂。
+          if (!Platform.isMobile) {
+            cell.addEventListener("mouseenter", () => {
+              this.showHeatmapTooltip(cell, key, dayMemos);
+            });
+            cell.addEventListener("mouseleave", () => {
+              this.hideHeatmapTooltip();
+            });
+          }
           // 点击跳到那天
           cell.addEventListener("click", () => {
             this.calendarDisplay = {
@@ -2578,6 +2597,7 @@ export class MemoriaView extends ItemView {
             this.filter.date = key;
             this.filter.preset = "all";
             this.renderList();
+            this.closeSidebarAfterPick();
           });
           cell.addClass("memoria-clickable");
         } else {
@@ -2714,6 +2734,7 @@ export class MemoriaView extends ItemView {
         this.filter.preset = "all";
         this.pageLimit = this.getInitialPageLimit();
         this.renderAll();
+        this.closeSidebarAfterPick();
       });
       if (c.children.size) this.renderTagTree(wrap, c, depth + 1);
     }

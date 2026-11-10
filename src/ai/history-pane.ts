@@ -57,6 +57,7 @@ export class InsightHistoryPane {
   private confirmDeleteFile: string | null = null;
   private confirmTimer: number | null = null;
   private compactQuery: MediaQueryList | null = null;
+  private hostObserver: ResizeObserver | null = null;
   private renderSeq = 0;
 
   constructor(
@@ -95,6 +96,8 @@ export class InsightHistoryPane {
     this.renderSeq++;
     this.compactQuery?.removeEventListener("change", this.onCompactChange);
     this.compactQuery = null;
+    this.hostObserver?.disconnect();
+    this.hostObserver = null;
     this.stopConfirmTimer();
     dismissCitationPreview();
     this.component.unload();
@@ -141,6 +144,10 @@ export class InsightHistoryPane {
     if (!view) return;
     this.compactQuery = view.matchMedia("(max-width: 680px)");
     this.compactQuery.addEventListener("change", this.onCompactChange);
+    // 窗口够宽但面板很窄（桌面侧边 pane、iPad 分屏）时，窗口断点不会触发，
+    // 只能盯面板自己的尺寸。
+    this.hostObserver = new view.ResizeObserver(() => this.onCompactChange());
+    this.hostObserver.observe(this.host);
   }
 
   private readonly onCompactChange = (): void => {
@@ -150,7 +157,8 @@ export class InsightHistoryPane {
   private isCompact(): boolean {
     return (
       this.compactQuery?.matches === true ||
-      this.host.ownerDocument.body.classList.contains("is-mobile")
+      this.host.ownerDocument.body.classList.contains("is-mobile") ||
+      (this.host.clientWidth > 0 && this.host.clientWidth <= 680)
     );
   }
 

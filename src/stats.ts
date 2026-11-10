@@ -11,7 +11,7 @@ import type { MemoStore } from "./store";
 import { t } from "./i18n";
 import { MemoriaView } from "./view";
 import { openMemoriaView } from "./workspace";
-import { bindMobileNavbarClearance } from "./mobile-navbar";
+import { bindMobileNavbarClearance, bindNarrowPane } from "./mobile-navbar";
 
 export class StatsView extends ItemView {
   private memos: Memo[] = [];
@@ -39,6 +39,7 @@ export class StatsView extends ItemView {
     this.workspaceLeafEl?.addClass("memoria-stats-workspace-leaf");
     this.contentEl.addClass("memoria-stats-view");
     this.register(bindMobileNavbarClearance(this.contentEl));
+    this.register(bindNarrowPane(this.contentEl));
     this.memos = this.store.getAll();
     this.render();
     this.unsubscribe = this.store.onChange(() => {
