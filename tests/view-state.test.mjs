@@ -104,3 +104,22 @@ test("FAB mode is limited to phones, so desktop keeps the growing input card", (
     assert.equal(view.isFabMode(), fab);
   }
 });
+
+test("picking a filter inside the drawer closes it, but desktop keeps its sidebar", () => {
+  const proto = prototype();
+  const run = (narrow, open) => {
+    const classes = new Set(open ? ["memoria-sidebar-open"] : []);
+    const view = Object.create(proto);
+    Object.assign(view, {
+      narrowSidebarLayout: narrow,
+      contentEl: {hasClass: (cls) => classes.has(cls),
+        toggleClass: (cls, on) => on ? classes.add(cls) : classes.delete(cls)},
+      syncSidebarControls() {},
+    });
+    view.closeSidebarAfterPick();
+    return classes.has("memoria-sidebar-open");
+  };
+  assert.equal(run(true, true), false, "drawer open on a phone closes after a pick");
+  assert.equal(run(true, false), false, "already closed stays closed");
+  assert.equal(run(false, true), true, "desktop sidebar is not a drawer");
+});
