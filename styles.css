@@ -34,14 +34,21 @@
   background: var(--background-primary);
 }
 
-/* 测量完成前的保守高度，用 Obsidian 自己的导航变量，不猜某台设备的像素。
- * 进页面后按 .mobile-navbar 和键盘的真实位置改写；没有遮挡时改写为 0。
- * fixed 那一份只给挂在 document 上的浮层，视图里的编辑框不读它。 */
+/* 测量完成前的兜底。必须是 0，不能猜导航多高。
+ *
+ * 这里原来写的是 `--navbar-height + --navbar-bottom-offset + 24px`，但
+ * Obsidian 根本不会设置这两个变量（app.css 里没有它们），于是 calc 里的
+ * 每一项都退回 0，只剩那 24px；更要命的是，导航栏不在页面里时测量一直没有
+ * 结果（见 mobile-navbar.ts 的 readNavbar），这份值就永远留在页面上。
+ * 键盘弹起时 Obsidian 会把导航 detach 掉，正文已经止于键盘顶边，
+ * 再叠一份 24px 就变成键盘上方那条空白。真机上测到的是 129px 的间隔 ——
+ * 比键盘顶边还高出一截，正是这份「保守高度」在起作用。
+ *
+ * 现在改成 0：真有遮挡时，bindMobileNavbarClearance 会按实测值改写；
+ * 没有导航可测，就老老实实不加。 */
 body.is-phone {
-  --mote-mobile-navbar-clearance: calc(
-    var(--navbar-height, 0px) + var(--navbar-bottom-offset, 0px) + 24px
-  );
-  --mote-mobile-navbar-fixed-clearance: var(--mote-mobile-navbar-clearance);
+  --mote-mobile-navbar-clearance: 0px;
+  --mote-mobile-navbar-fixed-clearance: 0px;
 }
 
 .memoria-root,
@@ -5315,8 +5322,11 @@ body.sc-style-context-background-image
   padding-right: 16px;
 }
 .is-mobile .memoria-insight-view .memoria-insight-body {
-  /* 导航避让已经加在 view-content 上，这里只留一点正文收尾空隙。 */
-  padding-bottom: 16px;
+  /* 导航避让已经加在 view-content 上。这里不能再留下内边距：
+     正文滚动区的底边就是操作条要盖住的那条线，多出的 16px 会让
+     最后一张视角卡从 sticky 操作条下方透出来（图二）。
+     收尾空隙改由 .memoria-insight-foot 自己的下内边距承担。 */
+  padding-bottom: 0;
 }
 
 /* ---------- 页头：图标徽标 + 标题 + 范围摘要 ----------
@@ -5580,7 +5590,11 @@ body.sc-style-context-background-image
 }
 
 /* 底部操作条：左侧快捷键提示，右侧唯一主动作，吸附在内容底部。
- * 长列表滚动时始终可见。 */
+ * 长列表滚动时始终可见。
+ *
+ * 下内边距要吃掉整块滚动区的底边：正文滚动容器不再留 padding-bottom
+ * （否则正文会从那一条里透到按钮下面，见 mobile 段），收尾空隙挂在这里，
+ * 它的不透明背景才能一直铺到容器底边。 */
 .memoria-insight-foot {
   position: sticky;
   bottom: 0;
@@ -5590,7 +5604,7 @@ body.sc-style-context-background-image
   justify-content: space-between;
   gap: 12px;
   margin-top: 16px;
-  padding: 11px 0 14px;
+  padding: 11px 0 16px;
   border-top: 0.5px solid var(--memoria-border-subtle);
   background: var(--memoria-surface-1);
 }

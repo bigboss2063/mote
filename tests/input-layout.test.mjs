@@ -54,3 +54,22 @@ test("both insight doc feet sit the same distance from the bottom", () => {
     "the doc wrapper must not double the gap on the result page"
   );
 });
+
+test("the insight body ends flush with the action bar", () => {
+  // sticky 操作条只贴在滚动容器内容盒的下沿。正文容器一旦自带 padding-bottom，
+  // 那条缝隙里就会滚过视角卡片 —— 用户看到的是按钮下面透出文字。
+  // 收尾空隙改由操作条自己的下内边距承担（见下一条）。
+  assert.ok(
+    declares(".is-mobile .memoria-insight-view .memoria-insight-body", /padding-bottom:\s*0(?:px)?\s*;/),
+    "the scroll container must not leave a strip under the sticky footer"
+  );
+  assert.ok(
+    !declares(".is-mobile .memoria-insight-view .memoria-insight-body", /padding-bottom:\s*[1-9]/),
+    "any positive value here paints content below the footer"
+  );
+});
+
+test("the action bar carries that bottom breath instead", () => {
+  // 16px 收尾空隙挂在操作条上，它的不透明背景才能铺到滚动容器的底边。
+  assert.ok(declares(".memoria-insight-foot", /padding:\s*11px 0 16px/));
+});
